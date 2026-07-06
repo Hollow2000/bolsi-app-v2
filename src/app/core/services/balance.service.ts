@@ -41,17 +41,19 @@ export class BalanceService {
   private readonly monthlyPayments = inject(MonthlyPaymentService);
 
   async calculate(month: number, year: number): Promise<MonthlyBalance> {
-    const [methods, allExpenses, incomes, payments] = await Promise.all([
+    const [methods, allExpenses, incomes, payments, allTransfers] = await Promise.all([
       this.paymentMethods.getAll(),
       database.expenses.toArray(),
       this.incomeService.getByMonth(month, year),
       this.monthlyPayments.getByMonth(month, year),
+      database.transfers.toArray(),
     ]);
 
     const totalAvailable = this.sumAvailable(methods);
     const billableDebtThisMonth = await this.sumBillableDebt(
       methods,
       allExpenses,
+      allTransfers,
       month,
       year,
     );
@@ -77,10 +79,14 @@ export class BalanceService {
    * billing period of each credit card this month" plus "sum of
    * installmentPlans where cutoffYear === currentYear AND cutoffMonth
    * === currentMonth". The card's MSI charge is never added in full.
+   *
+   * After a credit card payment (transfer to the card), the amount
+   * paid is subtracted so the remaining debt reflects reality.
    */
   private async sumBillableDebt(
     methods: readonly PaymentMethod[],
     allExpenses: readonly { paymentMethodId: number; amount: number; date: string; isInstallment: boolean }[],
+    allTransfers: readonly { toPaymentMethodId: number; amount: number; month: number; year: number }[],
     month: number,
     year: number,
   ): Promise<number> {
@@ -107,7 +113,16 @@ export class BalanceService {
           (plan) => plan.cutoffYear === year && plan.cutoffMonth === month && !plan.paid,
         )
         .reduce((sum, plan) => sum + plan.amount, 0);
-      total += directSum + installmentSum;
+      const transfersReceived = allTransfers
+        .filter(
+          (transfer) =>
+            transfer.toPaymentMethodId === card.id &&
+            transfer.month === month &&
+            transfer.year === year,
+        )
+        .reduce((sum, transfer) => sum + transfer.amount, 0);
+      const cardDebt = Math.max(0, directSum + installmentSum - transfersReceived);
+      total += cardDebt;
     }
     return this.round(total);
   }
