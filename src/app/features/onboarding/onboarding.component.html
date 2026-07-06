@@ -1,0 +1,518 @@
+<div class="wizard">
+  <div class="wizard-step-indicator" aria-hidden="true">
+    @for (step of [1, 2, 3, 4, 5]; track step) {
+      <span
+        class="step-dot"
+        [class.step-dot--active]="step === currentStep()"
+        [class.step-dot--complete]="step < currentStep()"
+      ></span>
+    }
+  </div>
+
+  <div class="wizard-progress-label">
+    <span class="wizard-step-counter">Paso {{ currentStep() }} de 5</span>
+  </div>
+
+  <main class="wizard-content">
+    @switch (currentStep()) {
+      @case (1) {
+        <section class="wizard-section">
+          <h1 class="wizard-title">¡Bienvenido a Bolsi!</h1>
+          <p class="wizard-subtitle">Empecemos por lo más simple: ¿cómo te llamas?</p>
+          <div class="form-group">
+            <label class="form-label" for="user-name">Tu nombre</label>
+            <input
+              id="user-name"
+              class="form-input"
+              type="text"
+              autocomplete="given-name"
+              placeholder="Ej. María"
+              [ngModel]="userName()"
+              (ngModelChange)="onUserNameChange($event)"
+            />
+          </div>
+        </section>
+      }
+
+      @case (2) {
+        <section class="wizard-section">
+          <h1 class="wizard-title">Métodos de pago</h1>
+          <p class="wizard-subtitle">Registra al menos uno. Puedes agregar más después.</p>
+
+          @if (paymentMethods().length > 0) {
+            <ul class="summary-list" aria-label="Métodos de pago agregados">
+              @for (method of paymentMethods(); track method.id) {
+                <li class="summary-item">
+                  <div class="summary-item__content">
+                    <strong class="summary-item__title">{{ method.name }}</strong>
+                    <span class="summary-item__subtitle">
+                      {{ paymentMethodTypeLabel(method.type) }}
+                      @if (method.type === 'credit') {
+                        · Límite {{ formatCurrency(method.creditLimit ?? 0) }}
+                        · Corte día {{ method.statementClosingDay }}
+                        · {{ method.creditDays }} días
+                      } @else {
+                        · Saldo {{ formatCurrency(method.currentBalance ?? 0) }}
+                      }
+                    </span>
+                  </div>
+                  <button
+                    class="button-ghost"
+                    type="button"
+                    aria-label="Eliminar método de pago"
+                    (click)="removePaymentMethod($index)"
+                  >
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+
+          <div class="card form-card">
+            <h2 class="form-card__title">Agregar método de pago</h2>
+
+            <div class="form-group">
+              <span class="form-label">Tipo</span>
+              <div class="segmented" role="radiogroup" aria-label="Tipo de método de pago">
+                @for (option of ['cash', 'debit', 'credit']; track option) {
+                  <button
+                    type="button"
+                    role="radio"
+                    [attr.aria-checked]="paymentMethodDraft().type === option"
+                    class="segmented__option"
+                    [class.segmented__option--active]="paymentMethodDraft().type === option"
+                    (click)="onPaymentMethodTypeChange($any(option))"
+                  >
+                    {{ paymentMethodTypeLabel($any(option)) }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="payment-method-name">Nombre</label>
+              <input
+                id="payment-method-name"
+                class="form-input"
+                type="text"
+                placeholder="Ej. BBVA, Nómina, Efectivo"
+                [ngModel]="paymentMethodDraft().name"
+                (ngModelChange)="onPaymentMethodNameChange($event)"
+              />
+            </div>
+
+            @if (paymentMethodDraft().type === 'credit') {
+              <div class="form-group">
+                <label class="form-label" for="payment-method-limit">Límite de crédito</label>
+                <input
+                  id="payment-method-limit"
+                  class="form-input"
+                  type="number"
+                  inputmode="decimal"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  [ngModel]="paymentMethodDraft().creditLimit"
+                  (ngModelChange)="onPaymentMethodLimitChange($event)"
+                />
+              </div>
+
+              <div class="form-group form-group--split">
+                <div>
+                  <label class="form-label" for="payment-method-closing-day">Día de corte</label>
+                  <input
+                    id="payment-method-closing-day"
+                    class="form-input"
+                    type="number"
+                    min="1"
+                    max="31"
+                    [ngModel]="paymentMethodDraft().statementClosingDay"
+                    (ngModelChange)="onPaymentMethodClosingDayChange($event)"
+                  />
+                </div>
+                <div>
+                  <label class="form-label" for="payment-method-credit-days">Días de crédito</label>
+                  <input
+                    id="payment-method-credit-days"
+                    class="form-input"
+                    type="number"
+                    min="1"
+                    max="60"
+                    [ngModel]="paymentMethodDraft().creditDays"
+                    (ngModelChange)="onPaymentMethodCreditDaysChange($event)"
+                  />
+                </div>
+              </div>
+            } @else {
+              <div class="form-group">
+                <label class="form-label" for="payment-method-balance">Saldo actual</label>
+                <input
+                  id="payment-method-balance"
+                  class="form-input"
+                  type="number"
+                  inputmode="decimal"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  [ngModel]="paymentMethodDraft().currentBalance"
+                  (ngModelChange)="onPaymentMethodBalanceChange($event)"
+                />
+              </div>
+            }
+
+            <button
+              type="button"
+              class="button-primary"
+              [disabled]="!paymentMethodDraft().name.trim()"
+              (click)="addPaymentMethod()"
+            >
+              <span class="material-symbols-outlined icon icon--small" aria-hidden="true">add</span>
+              Agregar método
+            </button>
+          </div>
+        </section>
+      }
+
+      @case (3) {
+        <section class="wizard-section">
+          <h1 class="wizard-title">Fuentes de ingreso</h1>
+          <p class="wizard-subtitle">Registra al menos un ingreso para calcular tu balance.</p>
+
+          @if (incomes().length > 0) {
+            <ul class="summary-list" aria-label="Ingresos agregados">
+              @for (income of incomes(); track income.description) {
+                <li class="summary-item">
+                  <div class="summary-item__content">
+                    <strong class="summary-item__title">{{ income.description }}</strong>
+                    <span class="summary-item__subtitle">
+                      {{ formatCurrency(income.amount) }} ·
+                      {{ paymentMethodName(income.paymentMethodId) }} ·
+                      {{ frequencyLabel(income.frequency) }} ·
+                      {{ statusLabel(income.status) }}
+                    </span>
+                  </div>
+                  <button
+                    class="button-ghost"
+                    type="button"
+                    aria-label="Eliminar ingreso"
+                    (click)="removeIncome($index)"
+                  >
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+
+          <div class="card form-card">
+            <h2 class="form-card__title">Agregar ingreso</h2>
+
+            <div class="form-group">
+              <label class="form-label" for="income-description">Descripción</label>
+              <input
+                id="income-description"
+                class="form-input"
+                type="text"
+                placeholder="Ej. Salario quincenal"
+                [ngModel]="incomeDraft().description"
+                (ngModelChange)="onIncomeDraftFieldChange('description', $event)"
+              />
+            </div>
+
+            <div class="form-group form-group--split">
+              <div>
+                <label class="form-label" for="income-amount">Monto</label>
+                <input
+                  id="income-amount"
+                  class="form-input"
+                  type="number"
+                  inputmode="decimal"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  [ngModel]="incomeDraft().amount"
+                  (ngModelChange)="onIncomeDraftFieldChange('amount', +$event)"
+                />
+              </div>
+              <div>
+                <label class="form-label" for="income-date">Fecha</label>
+                <input
+                  id="income-date"
+                  class="form-input"
+                  type="date"
+                  [ngModel]="incomeDraft().date"
+                  (ngModelChange)="onIncomeDraftFieldChange('date', $event)"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="income-payment-method">Método de pago</label>
+              <select
+                id="income-payment-method"
+                class="form-input"
+                [ngModel]="incomeDraft().paymentMethodId"
+                (ngModelChange)="onIncomeDraftFieldChange('paymentMethodId', +$event)"
+              >
+                <option [ngValue]="0" disabled>Selecciona un método</option>
+                @for (method of paymentMethods(); track method.id) {
+                  <option [ngValue]="method.id">
+                    {{ method.name }} ({{ paymentMethodTypeLabel(method.type) }})
+                  </option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="income-category">Categoría</label>
+              <select
+                id="income-category"
+                class="form-input"
+                [ngModel]="incomeDraft().category"
+                (ngModelChange)="onIncomeDraftFieldChange('category', $event)"
+              >
+                @for (category of incomeCategories; track category) {
+                  <option [ngValue]="category">{{ category }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group form-group--split">
+              <div>
+                <label class="form-label" for="income-frequency">Frecuencia</label>
+                <select
+                  id="income-frequency"
+                  class="form-input"
+                  [ngModel]="incomeDraft().frequency"
+                  (ngModelChange)="onIncomeDraftFieldChange('frequency', $event)"
+                >
+                  <option value="one-time">Única</option>
+                  <option value="monthly">Mensual</option>
+                  <option value="biweekly">Quincenal</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" for="income-status">Estatus</label>
+                <select
+                  id="income-status"
+                  class="form-input"
+                  [ngModel]="incomeDraft().status"
+                  (ngModelChange)="onIncomeDraftFieldChange('status', $event)"
+                >
+                  <option value="received">Recibido</option>
+                  <option value="expected">Esperado</option>
+                </select>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="button-primary"
+              [disabled]="!incomeDraft().description.trim() || incomeDraft().amount <= 0 || !incomeDraft().paymentMethodId"
+              (click)="addIncome()"
+            >
+              <span class="material-symbols-outlined icon icon--small" aria-hidden="true">add</span>
+              Agregar ingreso
+            </button>
+          </div>
+        </section>
+      }
+
+      @case (4) {
+        <section class="wizard-section">
+          <h1 class="wizard-title">Bolsillos</h1>
+          <p class="wizard-subtitle">Distribuye tu ingreso en porcentajes. La suma debe ser exactamente 100%.</p>
+
+          <ul class="summary-list" aria-label="Bolsillos configurados">
+              @for (pocket of pockets(); track pocket.name) {
+              <li class="summary-item">
+                <div class="summary-item__content">
+                  <strong class="summary-item__title">
+                    <span aria-hidden="true">{{ pocket.emoji }}</span>
+                    {{ pocket.name }}
+                  </strong>
+                  <span class="summary-item__subtitle">{{ pocket.percentage }}%</span>
+                </div>
+                <button
+                  class="button-ghost"
+                  type="button"
+                  aria-label="Eliminar bolsillo"
+                  (click)="removePocket($index)"
+                >
+                  <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
+                </button>
+              </li>
+            }
+          </ul>
+
+          <div class="pocket-total" [class.pocket-total--ok]="pocketTotalRounded() === 100" [class.pocket-total--bad]="pocketTotalRounded() !== 100">
+            <span class="pocket-total__label">Total</span>
+            <span class="pocket-total__value">{{ pocketTotalRounded() }}%</span>
+          </div>
+
+          <div class="card form-card">
+            <h2 class="form-card__title">Agregar bolsillo</h2>
+
+            <div class="form-group form-group--split">
+              <div>
+                <label class="form-label" for="pocket-name">Nombre</label>
+                <input
+                  id="pocket-name"
+                  class="form-input"
+                  type="text"
+                  placeholder="Ej. Transporte"
+                  [ngModel]="pocketDraft().name"
+                  (ngModelChange)="onPocketDraftFieldChange('name', $event)"
+                />
+              </div>
+              <div>
+                <label class="form-label" for="pocket-emoji">Emoji</label>
+                <input
+                  id="pocket-emoji"
+                  class="form-input"
+                  type="text"
+                  maxlength="2"
+                  placeholder="💼"
+                  [ngModel]="pocketDraft().emoji"
+                  (ngModelChange)="onPocketDraftFieldChange('emoji', $event)"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="pocket-percentage">Porcentaje</label>
+              <input
+                id="pocket-percentage"
+                class="form-input"
+                type="number"
+                inputmode="decimal"
+                min="0"
+                max="100"
+                step="0.5"
+                placeholder="0"
+                [ngModel]="pocketDraft().percentage"
+                (ngModelChange)="onPocketPercentageChange($event)"
+              />
+            </div>
+
+            <div class="form-card__actions">
+              <button
+                type="button"
+                class="button-secondary"
+                [disabled]="pockets().length === 0 || pocketTotal() === 0"
+                (click)="balancePockets()"
+              >
+                <span class="material-symbols-outlined icon icon--small" aria-hidden="true">balance</span>
+                Repartir proporcionalmente
+              </button>
+              <button
+                type="button"
+                class="button-primary"
+                [disabled]="!pocketDraft().name.trim() || pocketDraft().percentage <= 0"
+                (click)="addPocket()"
+              >
+                <span class="material-symbols-outlined icon icon--small" aria-hidden="true">add</span>
+                Agregar bolsillo
+              </button>
+            </div>
+          </div>
+        </section>
+      }
+
+      @case (5) {
+        <section class="wizard-section">
+          <h1 class="wizard-title">Revisa y confirma</h1>
+          <p class="wizard-subtitle">Esta es la información que guardaremos. Después podrás editarla.</p>
+
+          <div class="card summary-card">
+            <h2 class="summary-card__title">Tu nombre</h2>
+            <p class="summary-card__value">{{ userName() }}</p>
+          </div>
+
+          <div class="card summary-card">
+            <h2 class="summary-card__title">Métodos de pago</h2>
+            <ul class="summary-list">
+              @for (method of paymentMethods(); track method.id) {
+                <li class="summary-item summary-item--inline">
+                  <div class="summary-item__content">
+                    <strong class="summary-item__title">{{ method.name }}</strong>
+                    <span class="summary-item__subtitle">{{ paymentMethodTypeLabel(method.type) }}</span>
+                  </div>
+                </li>
+              }
+            </ul>
+          </div>
+
+          <div class="card summary-card">
+            <h2 class="summary-card__title">Ingresos</h2>
+            <ul class="summary-list">
+              @for (income of incomes(); track income.description) {
+                <li class="summary-item summary-item--inline">
+                  <div class="summary-item__content">
+                    <strong class="summary-item__title">{{ income.description }}</strong>
+                    <span class="summary-item__subtitle">
+                      {{ formatCurrency(income.amount) }} · {{ income.category }}
+                    </span>
+                  </div>
+                </li>
+              }
+            </ul>
+          </div>
+
+          <div class="card summary-card">
+            <h2 class="summary-card__title">Bolsillos</h2>
+            <ul class="summary-list">
+            @for (pocket of pockets(); track pocket.name) {
+                <li class="summary-item summary-item--inline">
+                  <div class="summary-item__content">
+                    <strong class="summary-item__title">
+                      <span aria-hidden="true">{{ pocket.emoji }}</span> {{ pocket.name }}
+                    </strong>
+                    <span class="summary-item__subtitle">{{ pocket.percentage }}%</span>
+                  </div>
+                </li>
+              }
+            </ul>
+          </div>
+
+          @if (errorMessage()) {
+            <p class="form-error" role="alert">{{ errorMessage() }}</p>
+          }
+        </section>
+      }
+    }
+  </main>
+
+  <footer class="wizard-footer">
+    @if (currentStep() > 1) {
+      <button type="button" class="button-secondary" (click)="back()">
+        <span class="material-symbols-outlined icon icon--small" aria-hidden="true">chevron_left</span>
+        Atrás
+      </button>
+    } @else {
+      <span></span>
+    }
+
+    @if (currentStep() < 5) {
+      <button
+        type="button"
+        class="button-primary"
+        [disabled]="!canAdvance()"
+        (click)="next()"
+      >
+        Siguiente
+        <span class="material-symbols-outlined icon icon--small" aria-hidden="true">chevron_right</span>
+      </button>
+    } @else {
+      <button
+        type="button"
+        class="button-primary"
+        [disabled]="saving()"
+        (click)="confirm()"
+      >
+        {{ saving() ? 'Guardando…' : 'Finalizar' }}
+      </button>
+    }
+  </footer>
+</div>
