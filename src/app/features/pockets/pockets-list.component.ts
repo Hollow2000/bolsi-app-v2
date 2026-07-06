@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 
 import type { Pocket } from '../../core/models/pocket.model';
 import { PocketService } from '../../core/services/pocket.service';
@@ -6,7 +7,6 @@ import { BottomSheetComponent } from '../../shared/components/bottom-sheet/botto
 import { CardComponent } from '../../shared/components/card/card.component';
 import { IconButtonDirective } from '../../shared/components/icon-button/icon-button.directive';
 import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
-import { ProgressBarComponent } from '../../shared/components/progress-bar/progress-bar.component';
 import { ToastService } from '../../shared/services/toast.service';
 import { EditPocketModalComponent } from './edit-pocket-modal.component';
 
@@ -18,7 +18,7 @@ import { EditPocketModalComponent } from './edit-pocket-modal.component';
     EditPocketModalComponent,
     IconButtonDirective,
     ListItemComponent,
-    ProgressBarComponent,
+    RouterLink,
   ],
   template: `
     <div class="app-screen">
@@ -33,13 +33,16 @@ import { EditPocketModalComponent } from './edit-pocket-modal.component';
           </app-card>
         } @else {
           <ul class="app-list" aria-label="Bolsillos">
-            @for (pocket of pockets(); track pocket.id) {
+            @for (pocket of pockets(); track $index) {
               <li class="pocket-row">
-                <app-list-item
-                  [icon]="pocket.emoji || 'wallet'"
-                  [title]="pocket.name"
-                  [subtitle]="pocket.percentage + '%'"
-                />
+                <a class="pocket-link" [routerLink]="['/pockets', pocket.id]">
+                  <app-list-item
+                    [icon]="pocket.emoji || 'wallet'"
+                    [title]="pocket.name"
+                    [subtitle]="pocket.percentage + '%'"
+                  />
+                  <span class="material-symbols-outlined icon pocket-chevron" aria-hidden="true">chevron_right</span>
+                </a>
                 <button
                   appIconButton
                   type="button"
@@ -56,9 +59,6 @@ import { EditPocketModalComponent } from './edit-pocket-modal.component';
                 >
                   <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
                 </button>
-                <div class="pocket-progress">
-                  <app-progress-bar [value]="0" [max]="100" [autoTone]="false" />
-                </div>
               </li>
             }
           </ul>
@@ -93,16 +93,20 @@ import { EditPocketModalComponent } from './edit-pocket-modal.component';
         grid-template-columns: 1fr auto auto;
         align-items: center;
         gap: var(--space-2);
-        padding: var(--space-3) var(--space-4);
+        padding: var(--space-2) var(--space-4);
         border-bottom: 1px solid var(--border-default);
       }
       .pocket-row:last-child { border-bottom: none; }
-      .pocket-row app-list-item { border-bottom: none; padding: 0; }
-      .pocket-row app-list-item::ng-deep .app-list-item { padding: 0; }
-      .pocket-progress {
-        grid-column: 1 / -1;
-        margin-top: var(--space-1);
+      .pocket-link {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: var(--space-2);
+        text-decoration: none;
+        color: inherit;
+        min-height: 44px;
       }
+      .pocket-chevron { color: var(--text-secondary); }
       .total-warning {
         margin: 0;
         font-size: var(--text-size-small);

@@ -52,6 +52,12 @@ export const routes: Routes = [
       import('./features/pockets/pockets-list.component').then((m) => m.PocketsListComponent),
   },
   {
+    path: 'pockets/:id',
+    canActivate: [setupRequiredGuard],
+    loadComponent: () =>
+      import('./features/pockets/pocket-detail.component').then((m) => m.PocketDetailComponent),
+  },
+  {
     path: 'settings',
     canActivate: [setupRequiredGuard],
     loadComponent: () =>
