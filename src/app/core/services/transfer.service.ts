@@ -19,9 +19,11 @@ export class TransferService {
    * Moves money from one payment method to another. Both balances are
    * updated atomically and a Transfer record is persisted for history.
    *
-   * For credit-card destinations the money increases `availableCredit`
-   * (paying off the card frees credit). For cash / debit destinations
-   * the money increases `currentBalance`.
+   * When the destination is a credit card the transfer is a payment:
+   *   1. `availableCredit` increases (paying off the card frees credit).
+   *   2. Every `InstallmentPlan` whose cutoff matches the transfer's
+   *      month and year is marked `paid = true` so the balance widget
+   *      no longer counts it as billable debt (BR-04).
    */
   async create(transfer: Transfer): Promise<number> {
     this.validate(transfer);
@@ -36,6 +38,11 @@ export class TransferService {
     await this.paymentMethods.deductBalance(transfer.fromPaymentMethodId, transfer.amount);
     await this.paymentMethods.addBalance(transfer.toPaymentMethodId, transfer.amount);
 
+    // Credit-card payment: mark current-month installments as paid.
+    if (to.type === 'credit') {
+      await this.markInstallmentsPaid(transfer.toPaymentMethodId, transfer.month, transfer.year);
+    }
+
     const id = await database.transfers.add(transfer);
     return id as number;
   }
@@ -46,6 +53,48 @@ export class TransferService {
     await this.paymentMethods.addBalance(transfer.fromPaymentMethodId, transfer.amount);
     await this.paymentMethods.deductBalance(transfer.toPaymentMethodId, transfer.amount);
     await database.transfers.delete(id);
+  }
+
+  /**
+   * Returns the total amount transferred TO a specific payment method
+   * in a given month/year. Used by the credit-card detail to subtract
+   * payments from the period charges display.
+   */
+  async getReceivedByMethodAndMonth(
+    paymentMethodId: number,
+    month: number,
+    year: number,
+  ): Promise<number> {
+    const all = await database.transfers.toArray();
+    return Math.round(
+      all
+        .filter(
+          (transfer) =>
+            transfer.toPaymentMethodId === paymentMethodId &&
+            transfer.month === month &&
+            transfer.year === year,
+        )
+        .reduce((sum, transfer) => sum + transfer.amount, 0) * 100,
+    ) / 100;
+  }
+
+  private async markInstallmentsPaid(
+    cardId: number,
+    month: number,
+    year: number,
+  ): Promise<void> {
+    const plans = await database.installmentPlans
+      .where('paymentMethodId')
+      .equals(cardId)
+      .toArray();
+
+    const toMark = plans.filter(
+      (plan) => plan.cutoffMonth === month && plan.cutoffYear === year && !plan.paid,
+    );
+
+    for (const plan of toMark) {
+      await database.installmentPlans.put({ ...plan, paid: true });
+    }
   }
 
   private validate(transfer: Transfer): void {

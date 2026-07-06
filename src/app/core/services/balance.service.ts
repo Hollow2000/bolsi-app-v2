@@ -104,7 +104,7 @@ export class BalanceService {
         .toArray();
       const installmentSum = installmentPlans
         .filter(
-          (plan) => plan.cutoffYear === year && plan.cutoffMonth === month,
+          (plan) => plan.cutoffYear === year && plan.cutoffMonth === month && !plan.paid,
         )
         .reduce((sum, plan) => sum + plan.amount, 0);
       total += directSum + installmentSum;

@@ -11,6 +11,7 @@ import { ExpenseService } from '../../core/services/expense.service';
 import { InstallmentPlanService } from '../../core/services/installment-plan.service';
 import { MonthlyPaymentService } from '../../core/services/monthly-payment.service';
 import { PaymentMethodService } from '../../core/services/payment-method.service';
+import { TransferService } from '../../core/services/transfer.service';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
@@ -401,10 +402,11 @@ interface PeriodRange {
 export class CreditCardDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly paymentMethodService = inject(PaymentMethodService);
   private readonly expenseService = inject(ExpenseService);
   private readonly installmentService = inject(InstallmentPlanService);
   private readonly monthlyPaymentService = inject(MonthlyPaymentService);
+  private readonly paymentMethodService = inject(PaymentMethodService);
+  private readonly transferService = inject(TransferService);
   private readonly toast = inject(ToastService);
 
   private readonly cardId = toSignal(
@@ -419,6 +421,7 @@ export class CreditCardDetailComponent {
   protected readonly upcomingInstallments = signal<InstallmentPlan[]>([]);
   protected readonly expensesById = signal<Map<number, Expense>>(new Map());
   protected readonly recentExpenses = signal<Expense[]>([]);
+  protected readonly transfersReceived = signal(0);
   protected readonly currentMonth = signal(new Date().getMonth() + 1);
   protected readonly currentYear = signal(new Date().getFullYear());
 
@@ -449,8 +452,11 @@ export class CreditCardDetailComponent {
 
   protected readonly periodTotal = computed(() => {
     const direct = this.periodDirectCharges().reduce((sum, charge) => sum + charge.amount, 0);
-    const installments = this.periodInstallments().reduce((sum, plan) => sum + plan.amount, 0);
-    return Math.round((direct + installments) * 100) / 100;
+    const installments = this.periodInstallments()
+      .filter((plan) => !plan.paid)
+      .reduce((sum, plan) => sum + plan.amount, 0);
+    const total = direct + installments - this.transfersReceived();
+    return Math.max(0, Math.round(total * 100) / 100);
   });
 
   protected readonly groupedInstallments = computed<GroupedInstallments[]>(() => {
@@ -636,6 +642,10 @@ export class CreditCardDetailComponent {
       allCardExpenses
         .filter((expense) => expense.month === month && expense.year === year)
         .sort((a, b) => b.date.localeCompare(a.date)),
+    );
+
+    this.transfersReceived.set(
+      await this.transferService.getReceivedByMethodAndMonth(id, month, year),
     );
 
     const installmentPlans = await database.installmentPlans
