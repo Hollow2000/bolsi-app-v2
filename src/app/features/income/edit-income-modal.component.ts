@@ -1,9 +1,9 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, input, output, signal } from '@angular/core';
 
 import { INCOME_CATEGORIES } from '../../core/catalogs';
 import type { Income, IncomeFrequency, IncomeStatus } from '../../core/models/income.model';
-import { IncomeService } from '../../core/services/income.service';
-import { PaymentMethodService } from '../../core/services/payment-method.service';
+import type { PaymentMethod } from '../../core/models/payment-method.model';
+import { assertCanReceiveIncome, validateIncomeFields } from '../../core/validations/income.validation';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { DateInputComponent } from '../../shared/components/date-input/date-input.component';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
@@ -22,6 +22,11 @@ const STATUS_OPTIONS: readonly SegmentedOption<IncomeStatus>[] = [
   { value: 'expected', label: 'Esperado' },
 ];
 
+/**
+ * Form for editing an income. Pure presentational: the parent owns
+ * persistence. Validates with the same pure functions the service
+ * uses, so the parent never receives an invalid record.
+ */
 @Component({
   selector: 'app-edit-income-modal',
   imports: [
@@ -104,14 +109,8 @@ const STATUS_OPTIONS: readonly SegmentedOption<IncomeStatus>[] = [
       <button appButton variant="secondary" type="button" (click)="onCancel()">
         Cancelar
       </button>
-      <button
-        appButton
-        variant="primary"
-        type="button"
-        [disabled]="saving()"
-        (click)="onSave()"
-      >
-        {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
+      <button appButton variant="primary" type="button" (click)="onSave()">
+        Guardar cambios
       </button>
     </div>
   `,
@@ -142,18 +141,15 @@ const STATUS_OPTIONS: readonly SegmentedOption<IncomeStatus>[] = [
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EditIncomeModalComponent {
-  private readonly service = inject(IncomeService);
-  private readonly paymentMethods = inject(PaymentMethodService);
-
+export class EditIncomeModalComponent implements OnInit {
   readonly income = input.required<Income>();
+  readonly receivableMethods = input.required<readonly PaymentMethod[]>();
   readonly cancel = output<void>();
   readonly saved = output<Income>();
 
   protected readonly categories = INCOME_CATEGORIES;
   protected readonly frequencyOptions = FREQUENCY_OPTIONS;
   protected readonly statusOptions = STATUS_OPTIONS;
-  protected readonly saving = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly description = signal('');
@@ -163,12 +159,6 @@ export class EditIncomeModalComponent {
   protected readonly category = signal<string>(INCOME_CATEGORIES[0]);
   protected readonly frequency = signal<IncomeFrequency>('monthly');
   protected readonly status = signal<IncomeStatus>('received');
-
-  protected readonly receivableMethods = signal<{ id: number; name: string; type: string }[]>([]);
-
-  constructor() {
-    void this.loadReceivableMethods();
-  }
 
   ngOnInit(): void {
     const initial = this.income();
@@ -185,18 +175,12 @@ export class EditIncomeModalComponent {
     this.cancel.emit();
   }
 
-  protected async onSave(): Promise<void> {
-    if (this.saving()) {
-      return;
-    }
-    this.saving.set(true);
+  protected onSave(): void {
     this.errorMessage.set(null);
-
     const previous = this.income();
     const date = this.date();
     const parts = date.split('-').map((segment) => Number(segment));
     if (parts.length !== 3 || parts.some((segment) => !Number.isInteger(segment))) {
-      this.saving.set(false);
       this.errorMessage.set('La fecha no es válida.');
       return;
     }
@@ -215,23 +199,14 @@ export class EditIncomeModalComponent {
     };
 
     try {
-      await this.service.update(previous, updated);
-      this.saved.emit(updated);
+      validateIncomeFields(updated);
+      const method = this.receivableMethods().find((entry) => entry.id === updated.paymentMethodId);
+      assertCanReceiveIncome(method);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'No se pudo guardar el ingreso.';
-      this.errorMessage.set(message);
-    } finally {
-      this.saving.set(false);
+      this.errorMessage.set(error instanceof Error ? error.message : 'Datos inválidos.');
+      return;
     }
-  }
-
-  private async loadReceivableMethods(): Promise<void> {
-    const methods = await this.paymentMethods.getAll();
-    this.receivableMethods.set(
-      methods
-        .filter((method) => method.type !== 'credit')
-        .map((method) => ({ id: method.id ?? 0, name: method.name, type: method.type })),
-    );
+    this.saved.emit(updated);
   }
 
   private round(value: number): number {

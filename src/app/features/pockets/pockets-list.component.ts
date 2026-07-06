@@ -76,7 +76,7 @@ import { EditPocketModalComponent } from './edit-pocket-modal.component';
         <app-edit-pocket-modal
           [pocket]="pocket"
           (cancel)="closeEdit()"
-          (saved)="onSaved()"
+          (saved)="onSaved($event)"
         />
       </app-bottom-sheet>
     }
@@ -145,10 +145,16 @@ export class PocketsListComponent {
     this.editing.set(null);
   }
 
-  protected async onSaved(): Promise<void> {
-    this.editing.set(null);
-    await this.load();
-    this.toast.show('Bolsillo actualizado.');
+  protected async onSaved(updated: Pocket): Promise<void> {
+    try {
+      await this.service.update(updated);
+      this.editing.set(null);
+      await this.load();
+      this.toast.show('Bolsillo actualizado.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudo guardar el bolsillo.';
+      this.toast.show(message);
+    }
   }
 
   protected async confirmDelete(pocket: Pocket): Promise<void> {

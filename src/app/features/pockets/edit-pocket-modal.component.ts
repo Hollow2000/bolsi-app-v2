@@ -1,11 +1,14 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, input, output, signal } from '@angular/core';
 
 import type { Pocket } from '../../core/models/pocket.model';
-import { PocketService } from '../../core/services/pocket.service';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
 import { TextInputComponent } from '../../shared/components/text-input/text-input.component';
 
+/**
+ * Form for editing a pocket. Pure presentational: the parent owns
+ * persistence.
+ */
 @Component({
   selector: 'app-edit-pocket-modal',
   imports: [ButtonDirective, NumberInputComponent, TextInputComponent],
@@ -41,14 +44,8 @@ import { TextInputComponent } from '../../shared/components/text-input/text-inpu
       <button appButton variant="secondary" type="button" (click)="onCancel()">
         Cancelar
       </button>
-      <button
-        appButton
-        variant="primary"
-        type="button"
-        [disabled]="saving()"
-        (click)="onSave()"
-      >
-        {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
+      <button appButton variant="primary" type="button" (click)="onSave()">
+        Guardar cambios
       </button>
     </div>
   `,
@@ -79,14 +76,11 @@ import { TextInputComponent } from '../../shared/components/text-input/text-inpu
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EditPocketModalComponent {
-  private readonly service = inject(PocketService);
-
+export class EditPocketModalComponent implements OnInit {
   readonly pocket = input.required<Pocket>();
   readonly cancel = output<void>();
   readonly saved = output<Pocket>();
 
-  protected readonly saving = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly name = signal('');
@@ -104,29 +98,25 @@ export class EditPocketModalComponent {
     this.cancel.emit();
   }
 
-  protected async onSave(): Promise<void> {
-    if (this.saving()) {
+  protected onSave(): void {
+    this.errorMessage.set(null);
+    const name = this.name().trim();
+    if (!name) {
+      this.errorMessage.set('El nombre del bolsillo es obligatorio.');
       return;
     }
-    this.saving.set(true);
-    this.errorMessage.set(null);
-
+    const percentage = this.round(this.percentage());
+    if (percentage <= 0) {
+      this.errorMessage.set('El porcentaje debe ser mayor a 0.');
+      return;
+    }
     const updated: Pocket = {
       ...this.pocket(),
-      name: this.name().trim(),
+      name,
       emoji: this.emoji() || '💼',
-      percentage: this.round(this.percentage()),
+      percentage,
     };
-
-    try {
-      await this.service.update(updated);
-      this.saved.emit(updated);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'No se pudo guardar el bolsillo.';
-      this.errorMessage.set(message);
-    } finally {
-      this.saving.set(false);
-    }
+    this.saved.emit(updated);
   }
 
   private round(value: number): number {

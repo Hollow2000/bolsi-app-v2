@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 
 import type { PaymentMethod, PaymentMethodType } from '../../core/models/payment-method.model';
-import { PaymentMethodService } from '../../core/services/payment-method.service';
+import { validatePaymentMethod } from '../../core/validations/payment-method.validation';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
 import { SegmentedControlComponent, type SegmentedOption } from '../../shared/components/segmented-control/segmented-control.component';
@@ -13,6 +13,12 @@ const TYPE_OPTIONS: readonly SegmentedOption<PaymentMethodType>[] = [
   { value: 'credit', label: 'Crédito' },
 ];
 
+/**
+ * Form for editing a payment method. Pure presentational: the parent
+ * (onboarding wizard, list screen, etc.) is responsible for persisting
+ * the emitted `saved` value. The modal runs the same pure validation
+ * the service uses, so the parent never receives an invalid record.
+ */
 @Component({
   selector: 'app-edit-payment-method-modal',
   imports: [
@@ -79,14 +85,8 @@ const TYPE_OPTIONS: readonly SegmentedOption<PaymentMethodType>[] = [
       <button appButton variant="secondary" type="button" (click)="onCancel()">
         Cancelar
       </button>
-      <button
-        appButton
-        variant="primary"
-        type="button"
-        [disabled]="saving()"
-        (click)="onSave()"
-      >
-        {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
+      <button appButton variant="primary" type="button" (click)="onSave()">
+        Guardar cambios
       </button>
     </div>
   `,
@@ -117,15 +117,12 @@ const TYPE_OPTIONS: readonly SegmentedOption<PaymentMethodType>[] = [
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EditPaymentMethodModalComponent {
-  private readonly service = inject(PaymentMethodService);
-
+export class EditPaymentMethodModalComponent implements OnInit {
   readonly paymentMethod = input.required<PaymentMethod>();
   readonly cancel = output<void>();
   readonly saved = output<PaymentMethod>();
 
   protected readonly typeOptions = TYPE_OPTIONS;
-  protected readonly saving = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly name = signal('');
@@ -155,25 +152,17 @@ export class EditPaymentMethodModalComponent {
     this.cancel.emit();
   }
 
-  protected async onSave(): Promise<void> {
-    if (this.saving()) {
-      return;
-    }
-    this.saving.set(true);
+  protected onSave(): void {
     this.errorMessage.set(null);
-
     const previous = this.paymentMethod();
     const updated = this.buildUpdated(previous);
-
     try {
-      await this.service.update(updated);
-      this.saved.emit(updated);
+      validatePaymentMethod(updated);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'No se pudo guardar el método de pago.';
-      this.errorMessage.set(message);
-    } finally {
-      this.saving.set(false);
+      this.errorMessage.set(error instanceof Error ? error.message : 'Datos inválidos.');
+      return;
     }
+    this.saved.emit(updated);
   }
 
   private buildUpdated(previous: PaymentMethod): PaymentMethod {

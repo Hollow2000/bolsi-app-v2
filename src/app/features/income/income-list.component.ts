@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
 import type { Income } from '../../core/models/income.model';
-import { IncomeService } from '../../core/services/income.service';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
+import { IncomeService } from '../../core/services/income.service';
 import { PaymentMethodService } from '../../core/services/payment-method.service';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { CardComponent } from '../../shared/components/card/card.component';
@@ -76,8 +76,9 @@ import { EditIncomeModalComponent } from './edit-income-modal.component';
       <app-bottom-sheet title="Editar ingreso" (close)="closeEdit()">
         <app-edit-income-modal
           [income]="income"
+          [receivableMethods]="receivableMethods()"
           (cancel)="closeEdit()"
-          (saved)="onSaved()"
+          (saved)="onSaved($event)"
         />
       </app-bottom-sheet>
     }
@@ -129,6 +130,10 @@ export class IncomeListComponent {
       .reduce((sum, income) => sum + income.amount, 0),
   );
 
+  protected readonly receivableMethods = computed(() =>
+    this.paymentMethods().filter((method) => method.type !== 'credit'),
+  );
+
   protected readonly periodLabel = computed(() => {
     const monthNames = [
       'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -156,10 +161,20 @@ export class IncomeListComponent {
     this.editing.set(null);
   }
 
-  protected async onSaved(): Promise<void> {
-    this.editing.set(null);
-    await this.load();
-    this.toast.show('Ingreso actualizado.');
+  protected async onSaved(updated: Income): Promise<void> {
+    const previous = this.editing();
+    if (!previous) {
+      return;
+    }
+    try {
+      await this.incomeService.update(previous, updated);
+      this.editing.set(null);
+      await this.load();
+      this.toast.show('Ingreso actualizado.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudo guardar el ingreso.';
+      this.toast.show(message);
+    }
   }
 
   protected async confirmDelete(income: Income): Promise<void> {

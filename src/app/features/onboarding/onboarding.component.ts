@@ -9,6 +9,7 @@ import { IncomeService } from '../../core/services/income.service';
 import { PaymentMethodService } from '../../core/services/payment-method.service';
 import { PocketService } from '../../core/services/pocket.service';
 import { SettingsService } from '../../core/services/settings.service';
+import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { CardComponent } from '../../shared/components/card/card.component';
 import { DateInputComponent } from '../../shared/components/date-input/date-input.component';
@@ -18,6 +19,9 @@ import { SegmentedControlComponent, type SegmentedOption } from '../../shared/co
 import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
 import { TextInputComponent } from '../../shared/components/text-input/text-input.component';
 import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
+import { EditPaymentMethodModalComponent } from '../credit-cards/edit-payment-method-modal.component';
+import { EditIncomeModalComponent } from '../income/edit-income-modal.component';
+import { EditPocketModalComponent } from '../pockets/edit-pocket-modal.component';
 
 type WizardStep = 1 | 2 | 3 | 4 | 5;
 
@@ -66,9 +70,13 @@ const STATUS_OPTIONS: readonly SegmentedOption<IncomeStatus>[] = [
 @Component({
   selector: 'app-onboarding',
   imports: [
+    BottomSheetComponent,
     ButtonDirective,
     CardComponent,
     DateInputComponent,
+    EditPaymentMethodModalComponent,
+    EditIncomeModalComponent,
+    EditPocketModalComponent,
     IconButtonDirective,
     MexicanCurrencyPipe,
     NumberInputComponent,
@@ -101,6 +109,12 @@ export class OnboardingComponent {
   );
   protected readonly saving = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+
+  protected readonly editingPaymentMethod = signal<PaymentMethod | null>(null);
+  protected readonly editingIncomeIndex = signal<number | null>(null);
+  protected readonly editingIncome = signal<Income | null>(null);
+  protected readonly editingPocketIndex = signal<number | null>(null);
+  protected readonly editingPocket = signal<Pocket | null>(null);
 
   // Starts at -1 and pre-decrements so the first assigned id is -1.
   // We must never produce id 0 because the income step uses 0 as the
@@ -137,6 +151,18 @@ export class OnboardingComponent {
   );
 
   protected readonly pocketTotalRounded = computed(() => Math.round(this.pocketTotal()));
+
+  /**
+   * Ingresos solo pueden asignarse a métodos de pago que no sean
+   * tarjetas de crédito (BR — los ingresos no entran a crédito).
+   */
+  protected readonly incomePaymentMethods = computed(() =>
+    this.paymentMethods().filter((method) => method.type !== 'credit'),
+  );
+
+  protected readonly hasAnyIncomePaymentMethod = computed(() =>
+    this.incomePaymentMethods().length > 0,
+  );
 
   protected readonly canAdvance = computed(() => {
     const step = this.currentStep();
@@ -179,18 +205,6 @@ export class OnboardingComponent {
     const draft = this.pocketDraft();
     return draft.name.trim().length > 0 && draft.percentage > 0;
   });
-
-  /**
-   * Ingresos solo pueden asignarse a métodos de pago que no sean
-   * tarjetas de crédito (BR — los ingresos no entran a crédito).
-   */
-  protected readonly incomePaymentMethods = computed(() =>
-    this.paymentMethods().filter((method) => method.type !== 'credit'),
-  );
-
-  protected readonly hasAnyIncomePaymentMethod = computed(() =>
-    this.incomePaymentMethods().length > 0,
-  );
 
   protected next(): void {
     if (!this.canAdvance()) {
@@ -280,6 +294,21 @@ export class OnboardingComponent {
     this.paymentMethods.update((methods) => methods.filter((_, i) => i !== index));
   }
 
+  protected openEditPaymentMethod(method: PaymentMethod): void {
+    this.editingPaymentMethod.set(method);
+  }
+
+  protected closeEditPaymentMethod(): void {
+    this.editingPaymentMethod.set(null);
+  }
+
+  protected onPaymentMethodSaved(updated: PaymentMethod): void {
+    this.paymentMethods.update((methods) =>
+      methods.map((method) => (method.id === updated.id ? updated : method)),
+    );
+    this.editingPaymentMethod.set(null);
+  }
+
   protected onIncomeDraftChange<K extends keyof IncomeDraft>(field: K, value: IncomeDraft[K]): void {
     this.incomeDraft.update((draft) => ({ ...draft, [field]: value }));
   }
@@ -357,6 +386,32 @@ export class OnboardingComponent {
     this.incomes.update((items) => items.filter((_, i) => i !== index));
   }
 
+  protected openEditIncome(income: Income): void {
+    const index = this.incomes().indexOf(income);
+    if (index === -1) {
+      return;
+    }
+    this.editingIncomeIndex.set(index);
+    this.editingIncome.set(income);
+  }
+
+  protected closeEditIncome(): void {
+    this.editingIncome.set(null);
+    this.editingIncomeIndex.set(null);
+  }
+
+  protected onIncomeSaved(updated: Income): void {
+    const index = this.editingIncomeIndex();
+    if (index === null) {
+      return;
+    }
+    this.incomes.update((incomes) =>
+      incomes.map((income, i) => (i === index ? updated : income)),
+    );
+    this.editingIncome.set(null);
+    this.editingIncomeIndex.set(null);
+  }
+
   protected onPocketDraftChange<K extends keyof PocketDraft>(field: K, value: PocketDraft[K]): void {
     this.pocketDraft.update((draft) => ({ ...draft, [field]: value }));
   }
@@ -392,6 +447,32 @@ export class OnboardingComponent {
 
   protected removePocket(index: number): void {
     this.pockets.update((pockets) => pockets.filter((_, i) => i !== index));
+  }
+
+  protected openEditPocket(pocket: Pocket): void {
+    const index = this.pockets().indexOf(pocket);
+    if (index === -1) {
+      return;
+    }
+    this.editingPocketIndex.set(index);
+    this.editingPocket.set(pocket);
+  }
+
+  protected closeEditPocket(): void {
+    this.editingPocket.set(null);
+    this.editingPocketIndex.set(null);
+  }
+
+  protected onPocketSaved(updated: Pocket): void {
+    const index = this.editingPocketIndex();
+    if (index === null) {
+      return;
+    }
+    this.pockets.update((pockets) =>
+      pockets.map((pocket, i) => (i === index ? updated : pocket)),
+    );
+    this.editingPocket.set(null);
+    this.editingPocketIndex.set(null);
   }
 
   protected balancePockets(): void {

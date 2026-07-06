@@ -32,11 +32,11 @@
       @case (2) {
         <section class="wizard-section">
           <h1 class="wizard-title">Métodos de pago</h1>
-          <p class="wizard-subtitle">Registra al menos uno. Puedes agregar más después.</p>
+          <p class="wizard-subtitle">Registra al menos uno. Puedes agregar, editar o eliminar después.</p>
 
           @if (paymentMethods().length > 0) {
             <ul class="app-list" aria-label="Métodos de pago agregados">
-              @for (method of paymentMethods(); track method.id) {
+              @for (method of paymentMethods(); track $index) {
                 <li class="app-list-item">
                   <div class="app-list-item__icon" aria-hidden="true">
                     <span class="material-symbols-outlined icon">account_balance_wallet</span>
@@ -54,6 +54,14 @@
                       }
                     </span>
                   </div>
+                  <button
+                    appIconButton
+                    type="button"
+                    aria-label="Editar método de pago"
+                    (click)="openEditPaymentMethod(method)"
+                  >
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
+                  </button>
                   <button
                     appIconButton
                     type="button"
@@ -143,7 +151,7 @@
 
           @if (incomes().length > 0) {
             <ul class="app-list" aria-label="Ingresos agregados">
-              @for (income of incomes(); track income.description + income.date) {
+              @for (income of incomes(); track $index) {
                 <li class="app-list-item">
                   <div class="app-list-item__icon" aria-hidden="true">
                     <span class="material-symbols-outlined icon">trending_up</span>
@@ -159,6 +167,14 @@
                   <span class="app-list-item__amount app-list-item__amount--income">
                     {{ income.amount | mexicanCurrency }}
                   </span>
+                  <button
+                    appIconButton
+                    type="button"
+                    aria-label="Editar ingreso"
+                    (click)="openEditIncome(income)"
+                  >
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
+                  </button>
                   <button
                     appIconButton
                     type="button"
@@ -270,7 +286,7 @@
           <p class="wizard-subtitle">Distribuye tu ingreso en porcentajes. La suma debe ser exactamente 100%.</p>
 
           <ul class="app-list" aria-label="Bolsillos configurados">
-            @for (pocket of pockets(); track pocket.name) {
+            @for (pocket of pockets(); track $index) {
               <li class="app-list-item">
                 <div class="app-list-item__icon" aria-hidden="true">
                   <span>{{ pocket.emoji }}</span>
@@ -279,6 +295,14 @@
                   <span class="app-list-item__title">{{ pocket.name }}</span>
                 </div>
                 <span class="app-list-item__amount">{{ pocket.percentage }}%</span>
+                <button
+                  appIconButton
+                  type="button"
+                  aria-label="Editar bolsillo"
+                  (click)="openEditPocket(pocket)"
+                >
+                  <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
+                </button>
                 <button
                   appIconButton
                   type="button"
@@ -364,7 +388,7 @@
           <app-card title="Métodos de pago">
             <ul class="app-list">
               @for (method of paymentMethods(); track method.id) {
-                <li class="app-list-item">
+                <li class="app-list-item summary-item--inline">
                   <div class="app-list-item__icon" aria-hidden="true">
                     <span class="material-symbols-outlined icon">account_balance_wallet</span>
                   </div>
@@ -379,8 +403,8 @@
 
           <app-card title="Ingresos">
             <ul class="app-list">
-              @for (income of incomes(); track income.description + income.date) {
-                <li class="app-list-item">
+              @for (income of incomes(); track $index) {
+                <li class="app-list-item summary-item--inline">
                   <div class="app-list-item__icon" aria-hidden="true">
                     <span class="material-symbols-outlined icon">trending_up</span>
                   </div>
@@ -398,8 +422,8 @@
 
           <app-card title="Bolsillos">
             <ul class="app-list">
-              @for (pocket of pockets(); track pocket.name) {
-                <li class="app-list-item">
+              @for (pocket of pockets(); track $index) {
+                <li class="app-list-item summary-item--inline">
                   <div class="app-list-item__icon" aria-hidden="true">
                     <span>{{ pocket.emoji }}</span>
                   </div>
@@ -454,3 +478,34 @@
     }
   </footer>
 </div>
+
+@if (editingPaymentMethod(); as method) {
+  <app-bottom-sheet title="Editar método de pago" (close)="closeEditPaymentMethod()">
+    <app-edit-payment-method-modal
+      [paymentMethod]="method"
+      (cancel)="closeEditPaymentMethod()"
+      (saved)="onPaymentMethodSaved($event)"
+    />
+  </app-bottom-sheet>
+}
+
+@if (editingIncome(); as income) {
+  <app-bottom-sheet title="Editar ingreso" (close)="closeEditIncome()">
+    <app-edit-income-modal
+      [income]="income"
+      [receivableMethods]="incomePaymentMethods()"
+      (cancel)="closeEditIncome()"
+      (saved)="onIncomeSaved($event)"
+    />
+  </app-bottom-sheet>
+}
+
+@if (editingPocket(); as pocket) {
+  <app-bottom-sheet title="Editar bolsillo" (close)="closeEditPocket()">
+    <app-edit-pocket-modal
+      [pocket]="pocket"
+      (cancel)="closeEditPocket()"
+      (saved)="onPocketSaved($event)"
+    />
+  </app-bottom-sheet>
+}

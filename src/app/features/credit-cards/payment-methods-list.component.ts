@@ -66,7 +66,7 @@ import { EditPaymentMethodModalComponent } from './edit-payment-method-modal.com
         <app-edit-payment-method-modal
           [paymentMethod]="method"
           (cancel)="closeEdit()"
-          (saved)="onSaved()"
+          (saved)="onSaved($event)"
         />
       </app-bottom-sheet>
     }
@@ -91,8 +91,6 @@ export class PaymentMethodsListComponent {
 
   protected readonly paymentMethods = signal<PaymentMethod[]>([]);
   protected readonly editing = signal<PaymentMethod | null>(null);
-
-  protected readonly hasMethods = computed(() => this.paymentMethods().length > 0);
 
   constructor() {
     void this.load();
@@ -119,10 +117,16 @@ export class PaymentMethodsListComponent {
     this.editing.set(null);
   }
 
-  protected async onSaved(): Promise<void> {
-    this.editing.set(null);
-    await this.load();
-    this.toast.show('Método de pago actualizado.');
+  protected async onSaved(updated: PaymentMethod): Promise<void> {
+    try {
+      await this.service.update(updated);
+      this.editing.set(null);
+      await this.load();
+      this.toast.show('Método de pago actualizado.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudo guardar el método de pago.';
+      this.toast.show(message);
+    }
   }
 
   protected async confirmDelete(method: PaymentMethod): Promise<void> {
