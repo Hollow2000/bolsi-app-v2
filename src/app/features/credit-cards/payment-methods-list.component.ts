@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import type { PaymentMethod, PaymentMethodType } from '../../core/models/payment-method.model';
 import { PaymentMethodService } from '../../core/services/payment-method.service';
@@ -19,6 +19,7 @@ import { EditPaymentMethodModalComponent } from './edit-payment-method-modal.com
     EditPaymentMethodModalComponent,
     IconButtonDirective,
     ListItemComponent,
+    RouterLink,
   ],
   template: `
     <div class="app-screen">
@@ -33,31 +34,33 @@ import { EditPaymentMethodModalComponent } from './edit-payment-method-modal.com
         } @else {
           <ul class="app-list" aria-label="Métodos de pago">
             @for (method of paymentMethods(); track method.id) {
-              <li>
-                <app-list-item
-                  [icon]="iconFor(method.type)"
-                  [title]="method.name"
-                  [subtitle]="subtitleFor(method)"
-                >
-                  <div slot="trailing" class="item-actions">
-                    <button
-                      appIconButton
-                      type="button"
-                      aria-label="Editar método de pago"
-                      (click)="openEdit(method)"
-                    >
-                      <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
-                    </button>
-                    <button
-                      appIconButton
-                      type="button"
-                      aria-label="Eliminar método de pago"
-                      (click)="confirmDelete(method)"
-                    >
-                      <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
-                    </button>
-                  </div>
-                </app-list-item>
+              <li class="app-list-row">
+                <a class="item-link" [routerLink]="['/payment-methods', method.id]">
+                  <app-list-item
+                    [icon]="iconFor(method.type)"
+                    [title]="method.name"
+                    [subtitle]="subtitleFor(method)"
+                  />
+                  <span class="material-symbols-outlined icon chevron" aria-hidden="true">chevron_right</span>
+                </a>
+                <div class="item-actions">
+                  <button
+                    appIconButton
+                    type="button"
+                    aria-label="Editar método de pago"
+                    (click)="openEdit(method)"
+                  >
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
+                  </button>
+                  <button
+                    appIconButton
+                    type="button"
+                    aria-label="Eliminar método de pago"
+                    (click)="confirmDelete(method)"
+                  >
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
+                  </button>
+                </div>
               </li>
             }
           </ul>
@@ -83,6 +86,21 @@ import { EditPaymentMethodModalComponent } from './edit-payment-method-modal.com
         color: var(--text-secondary);
         text-align: center;
         padding: var(--space-4) 0;
+      }
+      .item-link {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex: 1;
+        min-width: 0;
+        text-decoration: none;
+        color: inherit;
+        padding: var(--space-3) var(--space-4);
+      }
+      .item-link:hover { background: var(--surface-alternate); }
+      .chevron {
+        color: var(--text-secondary);
+        flex-shrink: 0;
       }
     `,
   ],
