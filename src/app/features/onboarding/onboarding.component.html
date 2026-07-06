@@ -201,9 +201,12 @@
               [value]="incomeDraft().paymentMethodId"
               (valueChange)="onIncomePaymentMethodIdChange($event)"
             >
-              <option value="0" disabled>Selecciona un método</option>
+              <option value="0" disabled [selected]="incomeDraft().paymentMethodId === 0">Selecciona un método</option>
               @for (method of incomePaymentMethods(); track method.id) {
-                <option [value]="method.id">
+                <option
+                  [value]="method.id"
+                  [selected]="method.id === incomeDraft().paymentMethodId"
+                >
                   {{ method.name }} ({{ paymentMethodTypeLabel(method.type) }})
                 </option>
               }
@@ -226,7 +229,7 @@
               (valueChange)="onIncomeCategoryChange($event)"
             >
               @for (category of incomeCategories; track category) {
-                <option [value]="category">{{ category }}</option>
+                <option [value]="category" [selected]="category === incomeDraft().category">{{ category }}</option>
               }
             </app-select-input>
 

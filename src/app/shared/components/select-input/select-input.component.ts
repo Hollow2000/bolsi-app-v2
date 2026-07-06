@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
 
 let selectInputIdCounter = 0;
 function nextSelectInputId(): string {
@@ -8,14 +8,22 @@ function nextSelectInputId(): string {
 
 /**
  * Native <select> wrapped with the design-system label and error
- * message. Options are projected by the parent so complex `<option>`
- * values (e.g. `[ngValue]`) keep working.
+ * message. Options are projected by the parent.
  *
  * Usage:
- *   <app-select-input label="Método de pago" [(value)]="paymentMethodId">
- *     <option [ngValue]="0" disabled>Selecciona…</option>
- *     <option [ngValue]="1">BBVA</option>
+ *   <app-select-input label="Método de pago"
+ *                      [valueType]="'number'"
+ *                      [value]="paymentMethodId"
+ *                      (valueChange)="onPaymentMethodIdChange($event)">
+ *     <option value="0" disabled [selected]="paymentMethodId === 0">…</option>
+ *     <option [value]="1" [selected]="paymentMethodId === 1">BBVA</option>
  *   </app-select-input>
+ *
+ * Important: parents must set `[selected]` on each `<option>` that
+ * matches the current value. Relying on `[value]` on the `<select>`
+ * alone is unreliable: Angular evaluates that binding before the
+ * projected options are in the DOM, so the browser never finds a
+ * match and the select appears empty.
  */
 @Component({
   selector: 'app-select-input',
@@ -30,7 +38,7 @@ function nextSelectInputId(): string {
       class="app-form-input"
       [class.app-form-input--error]="!!error()"
       [disabled]="disabled()"
-      [value]="value() === null || value() === undefined ? '' : value()"
+      [value]="stringValue()"
       (change)="onChange($event)"
     >
       <ng-content></ng-content>
@@ -53,12 +61,22 @@ export class SelectInputComponent {
   readonly valueType = input<'number' | 'string'>('string');
   readonly fieldId = input<string>(nextSelectInputId());
 
+  protected readonly stringValue = computed(() => {
+    const current = this.value();
+    if (current === null || current === undefined) {
+      return '';
+    }
+    return String(current);
+  });
+
   protected onChange(event: Event): void {
     const target = event.target as HTMLSelectElement;
+    const raw = target.value;
     if (this.valueType() === 'number') {
-      this.value.set(Number(target.value));
+      const numeric = Number(raw);
+      this.value.set(Number.isFinite(numeric) ? numeric : 0);
     } else {
-      this.value.set(target.value);
+      this.value.set(raw);
     }
   }
 }
