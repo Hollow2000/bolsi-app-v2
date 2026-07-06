@@ -9,7 +9,7 @@ import { CardComponent } from '../../shared/components/card/card.component';
 import { FabComponent } from '../../shared/components/fab/fab.component';
 import { IconButtonDirective } from '../../shared/components/icon-button/icon-button.directive';
 import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
-import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
+import { MexicanCurrencyPipe, formatMexicanCurrency } from '../../shared/pipes/mexican-currency.pipe';
 import { ToastService } from '../../shared/services/toast.service';
 import { EditIncomeModalComponent } from './edit-income-modal.component';
 
@@ -134,7 +134,6 @@ export class IncomeListComponent {
   private readonly incomeService = inject(IncomeService);
   private readonly paymentMethodService = inject(PaymentMethodService);
   private readonly toast = inject(ToastService);
-  private readonly currency = inject(MexicanCurrencyPipe);
 
   protected readonly incomes = signal<Income[]>([]);
   protected readonly paymentMethods = signal<PaymentMethod[]>([]);

@@ -14,7 +14,7 @@ import { IconButtonDirective } from '../../shared/components/icon-button/icon-bu
 import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
 import { TextInputComponent } from '../../shared/components/text-input/text-input.component';
-import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
+import { MexicanCurrencyPipe, formatMexicanCurrency } from '../../shared/pipes/mexican-currency.pipe';
 import { ToastService } from '../../shared/services/toast.service';
 import { MonthlyPaymentFormModalComponent } from './monthly-payment-form-modal.component';
 
@@ -209,7 +209,6 @@ export class MonthlyPaymentsListComponent {
   private readonly paymentMethodService = inject(PaymentMethodService);
   private readonly pocketService = inject(PocketService);
   private readonly toast = inject(ToastService);
-  private readonly currency = inject(MexicanCurrencyPipe);
 
   protected readonly payments = signal<PaymentWithUrgency[]>([]);
   protected readonly paymentMethods = signal<PaymentMethod[]>([]);

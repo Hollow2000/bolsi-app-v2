@@ -7,7 +7,7 @@ import { BottomSheetComponent } from '../../shared/components/bottom-sheet/botto
 import { CardComponent } from '../../shared/components/card/card.component';
 import { IconButtonDirective } from '../../shared/components/icon-button/icon-button.directive';
 import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
-import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
+import { formatMexicanCurrency } from '../../shared/pipes/mexican-currency.pipe';
 import { ToastService } from '../../shared/services/toast.service';
 import { EditPaymentMethodModalComponent } from './edit-payment-method-modal.component';
 
@@ -19,7 +19,6 @@ import { EditPaymentMethodModalComponent } from './edit-payment-method-modal.com
     EditPaymentMethodModalComponent,
     IconButtonDirective,
     ListItemComponent,
-    MexicanCurrencyPipe,
   ],
   template: `
     <div class="app-screen">
@@ -92,7 +91,6 @@ import { EditPaymentMethodModalComponent } from './edit-payment-method-modal.com
 export class PaymentMethodsListComponent {
   private readonly service = inject(PaymentMethodService);
   private readonly toast = inject(ToastService);
-  private readonly currency = inject(MexicanCurrencyPipe);
   private readonly router = inject(Router);
 
   protected readonly paymentMethods = signal<PaymentMethod[]>([]);
@@ -120,9 +118,9 @@ export class PaymentMethodsListComponent {
 
   protected subtitleFor(method: PaymentMethod): string {
     if (method.type === 'credit') {
-      return `Crédito · Límite ${this.currency.transform(method.creditLimit ?? 0)}`;
+      return `Crédito · Límite ${formatMexicanCurrency(method.creditLimit ?? 0)}`;
     }
-    return `Saldo ${this.currency.transform(method.currentBalance ?? 0)}`;
+    return `Saldo ${formatMexicanCurrency(method.currentBalance ?? 0)}`;
   }
 
   protected openEdit(method: PaymentMethod): void {
