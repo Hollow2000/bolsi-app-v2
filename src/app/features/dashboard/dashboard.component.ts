@@ -6,29 +6,37 @@ import type { MonthlyBalance } from '../../core/models/monthly-balance.model';
 import type { MonthlyPayment } from '../../core/models/monthly-payment.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';
+import type { Transfer } from '../../core/models/transfer.model';
 import { BalanceService } from '../../core/services/balance.service';
 import { IncomeService } from '../../core/services/income.service';
 import { MonthlyPaymentService } from '../../core/services/monthly-payment.service';
 import { PaymentMethodService } from '../../core/services/payment-method.service';
 import { PocketService } from '../../core/services/pocket.service';
 import { SettingsService } from '../../core/services/settings.service';
+import { TransferService } from '../../core/services/transfer.service';
+import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
+import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { CardComponent } from '../../shared/components/card/card.component';
+import { ToastService } from '../../shared/services/toast.service';
 import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
 import { CreditCardStatusWidgetComponent, type CreditCardStatusEntry } from './widgets/credit-card-status-widget.component';
 import { IncomeVsExpensesWidgetComponent } from './widgets/income-vs-expenses-widget.component';
 import { PocketSummaryWidgetComponent, type PocketSummaryEntry } from './widgets/pocket-summary-widget.component';
 import { QuickActionsWidgetComponent } from './widgets/quick-actions-widget.component';
 import { UrgentPaymentsWidgetComponent } from './widgets/urgent-payments-widget.component';
+import { TransferFormModalComponent } from '../transfers/transfer-form-modal.component';
 
 @Component({
   selector: 'app-dashboard',
   imports: [
+    BottomSheetComponent,
     CardComponent,
     CreditCardStatusWidgetComponent,
     IncomeVsExpensesWidgetComponent,
     MexicanCurrencyPipe,
     PocketSummaryWidgetComponent,
     QuickActionsWidgetComponent,
+    TransferFormModalComponent,
     UrgentPaymentsWidgetComponent,
   ],
   template: `
@@ -89,9 +97,19 @@ import { UrgentPaymentsWidgetComponent } from './widgets/urgent-payments-widget.
 
         <app-income-vs-expenses-widget [data]="incomeVsExpenses()" />
 
-        <app-quick-actions-widget />
+        <app-quick-actions-widget (transferPress)="openTransfer()" />
       </main>
     </div>
+
+    @if (transferOpen()) {
+      <app-bottom-sheet title="Transferir entre cuentas" (close)="closeTransfer()">
+        <app-transfer-form-modal
+          [paymentMethods]="paymentMethods()"
+          (cancel)="closeTransfer()"
+          (saved)="onTransferSaved($event)"
+        />
+      </app-bottom-sheet>
+    }
   `,
   styles: [
     `
@@ -177,12 +195,15 @@ export class DashboardComponent {
   private readonly pocketService = inject(PocketService);
   private readonly monthlyPaymentService = inject(MonthlyPaymentService);
   private readonly incomeService = inject(IncomeService);
+  private readonly transferService = inject(TransferService);
+  private readonly toast = inject(ToastService);
 
   protected readonly userName = signal('');
   protected readonly balance = signal<MonthlyBalance | null>(null);
   protected readonly pockets = signal<Pocket[]>([]);
   protected readonly paymentMethods = signal<PaymentMethod[]>([]);
   protected readonly monthlyPayments = signal<MonthlyPayment[]>([]);
+  protected readonly transferOpen = signal(false);
   protected readonly monthlyIncome = signal(0);
   protected readonly monthlyExpenses = signal(0);
   protected readonly pocketBaseIncome = signal(0);
@@ -359,5 +380,26 @@ export class DashboardComponent {
     }
     const diff = next.getTime() - today.getTime();
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  }
+
+  protected openTransfer(): void {
+    this.transferOpen.set(true);
+  }
+
+  protected closeTransfer(): void {
+    this.transferOpen.set(false);
+  }
+
+  protected async onTransferSaved(transfer: Transfer): Promise<void> {
+    try {
+      await this.transferService.create(transfer);
+      this.toast.show('Traspaso realizado.');
+      this.closeTransfer();
+      const month = this.currentMonth();
+      const year = this.currentYear();
+      await this.loadAll(month, year);
+    } catch (error) {
+      this.toast.show(error instanceof Error ? error.message : 'No se pudo realizar el traspaso.');
+    }
   }
 }

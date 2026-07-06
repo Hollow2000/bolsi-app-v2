@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { CardComponent } from '../../../shared/components/card/card.component';
@@ -23,6 +23,12 @@ interface QuickAction {
             </a>
           </li>
         }
+        <li>
+          <button class="quick-link" type="button" (click)="transferPress.emit()">
+            <span class="material-symbols-outlined icon" aria-hidden="true">swap_horiz</span>
+            <span class="quick-link__label">Transferir</span>
+          </button>
+        </li>
       </ul>
     </app-card>
   `,
@@ -52,6 +58,10 @@ interface QuickAction {
         font-size: var(--text-size-small);
         font-weight: 500;
         transition: background 0.15s ease;
+        cursor: pointer;
+        width: 100%;
+        border: none;
+        font-family: inherit;
       }
       .quick-link:hover { background: var(--color-primary-muted); }
       .quick-link__label { color: var(--text-primary); }
@@ -66,4 +76,6 @@ export class QuickActionsWidgetComponent {
     { path: '/credit-cards', icon: 'credit_card', label: 'Ver tarjetas' },
     { path: '/monthly-payments', icon: 'calendar_month', label: 'Ver pagos' },
   ];
+
+  readonly transferPress = output<void>();
 }

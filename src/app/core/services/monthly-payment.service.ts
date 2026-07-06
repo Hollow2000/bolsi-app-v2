@@ -4,11 +4,13 @@ import { database } from '../database/bolsi.database';
 import type { MonthlyPayment } from '../models/monthly-payment.model';
 import { ExpenseService } from './expense.service';
 import { PaymentMethodService } from './payment-method.service';
+import { TransferService } from './transfer.service';
 
 @Injectable({ providedIn: 'root' })
 export class MonthlyPaymentService {
   private readonly paymentMethods = inject(PaymentMethodService);
   private readonly expenseService = inject(ExpenseService);
+  private readonly transferService = inject(TransferService);
 
   async create(payment: MonthlyPayment): Promise<number> {
     this.validate(payment);
@@ -42,11 +44,10 @@ export class MonthlyPaymentService {
   /**
    * BR-07: marking a monthly payment as paid:
    *   1. Sets `paid = true` and `amountPaid`.
-   *   2. Creates an Expense that deducts from the *source* payment
-   *      method (cash / debit) the user chose to pay with.
-   *   3. If the payment is linked to a credit card, increases that
-   *      card's `availableCredit` (BR-02: paying a card frees up
-   *      credit).
+   *   2. If the payment is linked to a credit card → performs a
+   *      transfer (source → card) so availableCredit increases.
+   *   3. Otherwise → creates an Expense that deducts from the source
+   *      account (rent, utilities, etc.).
    */
   async markAsPaid(
     payment: MonthlyPayment,
@@ -64,7 +65,7 @@ export class MonthlyPaymentService {
       throw new Error('El método de pago seleccionado no existe.');
     }
     if (source.type === 'credit') {
-      throw new Error('Para pagar una tarjeta, selecciona una cuenta de efectivo o débito.');
+      throw new Error('Para pagar, selecciona una cuenta de efectivo o débito.');
     }
 
     // 1. Mark the monthly payment as paid.
@@ -75,25 +76,36 @@ export class MonthlyPaymentService {
     };
     await database.monthlyPayments.put(updated);
 
-    // 2. Create an expense that deducts from the source account.
-    await this.expenseService.create({
-      date: this.todayIso(),
-      description: payment.name,
-      amount: amountPaid,
-      paymentMethodId: sourcePaymentMethodId,
-      pocketId: payment.pocketId ?? 0,
-      category: payment.expenseCategory ?? 'Other',
-      month: payment.month,
-      year: payment.year,
-      isInstallment: false,
-    });
+    // 2. Check if the payment is linked to a credit card.
+    const linkedMethod = payment.paymentMethodId !== undefined
+      ? await this.paymentMethods.getById(payment.paymentMethodId)
+      : undefined;
 
-    // 3. If the payment is linked to a credit card, free up credit.
-    if (payment.paymentMethodId !== undefined) {
-      const card = await this.paymentMethods.getById(payment.paymentMethodId);
-      if (card && card.type === 'credit') {
-        await this.paymentMethods.addBalance(card.id!, amountPaid);
-      }
+    if (linkedMethod?.type === 'credit') {
+      // Credit card payment → transfer from source to card.
+      // Increases availableCredit (paying off the card frees credit).
+      await this.transferService.create({
+        fromPaymentMethodId: sourcePaymentMethodId,
+        toPaymentMethodId: payment.paymentMethodId!,
+        amount: amountPaid,
+        date: this.todayIso(),
+        description: payment.name,
+        month: payment.month,
+        year: payment.year,
+      });
+    } else {
+      // Non-credit payment (rent, utilities, etc.) → expense.
+      await this.expenseService.create({
+        date: this.todayIso(),
+        description: payment.name,
+        amount: amountPaid,
+        paymentMethodId: sourcePaymentMethodId,
+        pocketId: payment.pocketId ?? 0,
+        category: payment.expenseCategory ?? 'Other',
+        month: payment.month,
+        year: payment.year,
+        isInstallment: false,
+      });
     }
   }
 
