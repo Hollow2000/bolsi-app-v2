@@ -1,39 +1,28 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, input, output, signal } from '@angular/core';
 
-import { INCOME_CATEGORIES } from '../../core/catalogs';
-import type { Income, IncomeFrequency, IncomeStatus } from '../../core/models/income.model';
+import { EXPENSE_CATEGORIES, type ExpenseCategory } from '../../core/catalogs';
+import type { Expense } from '../../core/models/expense.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
-import { assertCanReceiveIncome, validateIncomeFields } from '../../core/validations/income.validation';
+import type { Pocket } from '../../core/models/pocket.model';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { DateInputComponent } from '../../shared/components/date-input/date-input.component';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
-import { SegmentedControlComponent, type SegmentedOption } from '../../shared/components/segmented-control/segmented-control.component';
 import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
 import { TextInputComponent } from '../../shared/components/text-input/text-input.component';
 
-const FREQUENCY_OPTIONS: readonly SegmentedOption<IncomeFrequency>[] = [
-  { value: 'one-time', label: 'Única' },
-  { value: 'monthly', label: 'Mensual' },
-  { value: 'biweekly', label: 'Quincenal' },
-];
-
-const STATUS_OPTIONS: readonly SegmentedOption<IncomeStatus>[] = [
-  { value: 'received', label: 'Recibido' },
-  { value: 'expected', label: 'Esperado' },
-];
-
 /**
- * Form for editing an income. Pure presentational: the parent owns
- * persistence. Validates with the same pure functions the service
- * uses, so the parent never receives an invalid record.
+ * Form for adding or editing an expense. Pure presentational: the
+ * parent owns persistence. The parent supplies the list of available
+ * payment methods and pockets; the modal never reads from the
+ * database. If `expense` is provided, the form is pre-filled for
+ * editing; otherwise it starts empty for adding.
  */
 @Component({
-  selector: 'app-edit-income-modal',
+  selector: 'app-expense-form-modal',
   imports: [
     ButtonDirective,
     DateInputComponent,
     NumberInputComponent,
-    SegmentedControlComponent,
     SelectInputComponent,
     TextInputComponent,
   ],
@@ -66,12 +55,23 @@ const STATUS_OPTIONS: readonly SegmentedOption<IncomeStatus>[] = [
       (valueChange)="paymentMethodId.set($any($event))"
     >
       <option value="0" disabled [selected]="paymentMethodId() === 0">Selecciona un método</option>
-      @for (method of receivableMethods(); track method.id) {
-        <option
-          [value]="method.id"
-          [selected]="method.id === paymentMethodId()"
-        >
-          {{ method.name }} ({{ method.type === 'cash' ? 'Efectivo' : 'Débito' }})
+      @for (method of paymentMethods(); track method.id) {
+        <option [value]="method.id" [selected]="method.id === paymentMethodId()">
+          {{ method.name }} ({{ typeLabel(method.type) }})
+        </option>
+      }
+    </app-select-input>
+
+    <app-select-input
+      label="Bolsillo"
+      [valueType]="'number'"
+      [value]="pocketId()"
+      (valueChange)="pocketId.set($any($event))"
+    >
+      <option value="0" disabled [selected]="pocketId() === 0">Selecciona un bolsillo</option>
+      @for (pocket of pockets(); track pocket.id) {
+        <option [value]="pocket.id" [selected]="pocket.id === pocketId()">
+          {{ pocket.emoji }} {{ pocket.name }} ({{ pocket.percentage }}%)
         </option>
       }
     </app-select-input>
@@ -86,20 +86,6 @@ const STATUS_OPTIONS: readonly SegmentedOption<IncomeStatus>[] = [
         <option [value]="item" [selected]="item === category()">{{ item }}</option>
       }
     </app-select-input>
-
-    <app-segmented-control
-      ariaLabel="Frecuencia del ingreso"
-      [options]="frequencyOptions"
-      [value]="frequency()"
-      (valueChange)="frequency.set($event)"
-    />
-
-    <app-segmented-control
-      ariaLabel="Estatus del ingreso"
-      [options]="statusOptions"
-      [value]="status()"
-      (valueChange)="status.set($event)"
-    />
 
     @if (errorMessage(); as message) {
       <p class="modal-error" role="alert">{{ message }}</p>
@@ -141,42 +127,45 @@ const STATUS_OPTIONS: readonly SegmentedOption<IncomeStatus>[] = [
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EditIncomeModalComponent implements OnInit {
-  readonly income = input<Income | null>(null);
-  readonly receivableMethods = input.required<readonly PaymentMethod[]>();
+export class ExpenseFormModalComponent implements OnInit {
+  readonly paymentMethods = input.required<readonly PaymentMethod[]>();
+  readonly pockets = input.required<readonly Pocket[]>();
+  readonly expense = input<Expense | null>(null);
   readonly cancel = output<void>();
-  readonly saved = output<Income>();
+  readonly saved = output<Expense>();
 
-  protected readonly categories = INCOME_CATEGORIES;
-  protected readonly frequencyOptions = FREQUENCY_OPTIONS;
-  protected readonly statusOptions = STATUS_OPTIONS;
+  protected readonly categories = EXPENSE_CATEGORIES;
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly description = signal('');
   protected readonly amount = signal(0);
   protected readonly date = signal('');
   protected readonly paymentMethodId = signal<number>(0);
-  protected readonly category = signal<string>(INCOME_CATEGORIES[0]);
-  protected readonly frequency = signal<IncomeFrequency>('monthly');
-  protected readonly status = signal<IncomeStatus>('received');
+  protected readonly pocketId = signal<number>(0);
+  protected readonly category = signal<ExpenseCategory>(EXPENSE_CATEGORIES[0]);
 
   ngOnInit(): void {
-    const initial = this.income();
+    const initial = this.expense();
     if (initial) {
       this.description.set(initial.description);
       this.amount.set(initial.amount);
       this.date.set(initial.date);
       this.paymentMethodId.set(initial.paymentMethodId);
-      this.category.set(initial.category);
-      this.frequency.set(initial.frequency);
-      this.status.set(initial.status);
+      this.pocketId.set(initial.pocketId);
+      this.category.set(initial.category as ExpenseCategory);
     } else {
       this.date.set(this.todayIso());
     }
   }
 
+  protected typeLabel(type: PaymentMethod['type']): string {
+    if (type === 'cash') return 'Efectivo';
+    if (type === 'debit') return 'Débito';
+    return 'Crédito';
+  }
+
   protected submitLabel(): string {
-    return this.income() ? 'Guardar cambios' : 'Agregar ingreso';
+    return this.expense() ? 'Guardar cambios' : 'Agregar gasto';
   }
 
   protected onCancel(): void {
@@ -185,7 +174,16 @@ export class EditIncomeModalComponent implements OnInit {
 
   protected onSave(): void {
     this.errorMessage.set(null);
-    const previous = this.income();
+    const description = this.description().trim();
+    if (!description) {
+      this.errorMessage.set('La descripción es obligatoria.');
+      return;
+    }
+    const amount = this.round(this.amount());
+    if (amount <= 0) {
+      this.errorMessage.set('El monto debe ser mayor a 0.');
+      return;
+    }
     const date = this.date();
     const parts = date.split('-').map((segment) => Number(segment));
     if (parts.length !== 3 || parts.some((segment) => !Number.isInteger(segment))) {
@@ -193,38 +191,41 @@ export class EditIncomeModalComponent implements OnInit {
       return;
     }
     const [year, month] = parts;
-    const updated: Income = {
+    const paymentMethodId = this.paymentMethodId();
+    const pocketId = this.pocketId();
+    if (paymentMethodId === 0) {
+      this.errorMessage.set('Selecciona un método de pago.');
+      return;
+    }
+    if (pocketId === 0) {
+      this.errorMessage.set('Selecciona un bolsillo.');
+      return;
+    }
+
+    const previous = this.expense();
+    const updated: Expense = {
       ...(previous ?? {}),
-      description: this.description().trim(),
-      amount: this.round(this.amount()),
       date,
-      paymentMethodId: this.paymentMethodId(),
+      description,
+      amount,
       category: this.category(),
-      frequency: this.frequency(),
-      status: this.status(),
+      paymentMethodId,
+      pocketId,
       month,
       year,
+      isInstallment: false,
     };
     if (previous?.id !== undefined) {
       updated.id = previous.id;
-    }
-
-    try {
-      validateIncomeFields(updated);
-      const method = this.receivableMethods().find((entry) => entry.id === updated.paymentMethodId);
-      assertCanReceiveIncome(method);
-    } catch (error) {
-      this.errorMessage.set(error instanceof Error ? error.message : 'Datos inválidos.');
-      return;
     }
     this.saved.emit(updated);
   }
 
   private todayIso(): string {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
 

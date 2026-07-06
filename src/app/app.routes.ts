@@ -21,7 +21,7 @@ export const routes: Routes = [
     path: 'expenses',
     canActivate: [setupRequiredGuard],
     loadComponent: () =>
-      import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
+      import('./features/expenses/expenses-list.component').then((m) => m.ExpensesListComponent),
   },
   {
     path: 'credit-cards',

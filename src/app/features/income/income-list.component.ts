@@ -6,6 +6,7 @@ import { IncomeService } from '../../core/services/income.service';
 import { PaymentMethodService } from '../../core/services/payment-method.service';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { CardComponent } from '../../shared/components/card/card.component';
+import { FabComponent } from '../../shared/components/fab/fab.component';
 import { IconButtonDirective } from '../../shared/components/icon-button/icon-button.directive';
 import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
 import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
@@ -18,6 +19,7 @@ import { EditIncomeModalComponent } from './edit-income-modal.component';
     BottomSheetComponent,
     CardComponent,
     EditIncomeModalComponent,
+    FabComponent,
     IconButtonDirective,
     ListItemComponent,
     MexicanCurrencyPipe,
@@ -70,12 +72,16 @@ import { EditIncomeModalComponent } from './edit-income-modal.component';
           </ul>
         }
       </main>
+      <app-fab icon="add" ariaLabel="Registrar nuevo ingreso" (press)="openAdd()" />
     </div>
 
-    @if (editing(); as income) {
-      <app-bottom-sheet title="Editar ingreso" (close)="closeEdit()">
+    @if (modalOpen()) {
+      <app-bottom-sheet
+        [title]="editing() ? 'Editar ingreso' : 'Nuevo ingreso'"
+        (close)="closeEdit()"
+      >
         <app-edit-income-modal
-          [income]="income"
+          [income]="editing()"
           [receivableMethods]="receivableMethods()"
           (cancel)="closeEdit()"
           (saved)="onSaved($event)"
@@ -121,6 +127,7 @@ export class IncomeListComponent {
   protected readonly incomes = signal<Income[]>([]);
   protected readonly paymentMethods = signal<PaymentMethod[]>([]);
   protected readonly editing = signal<Income | null>(null);
+  protected readonly modalOpen = signal(false);
   protected readonly currentMonth = signal(new Date().getMonth() + 1);
   protected readonly currentYear = signal(new Date().getFullYear());
 
@@ -153,24 +160,33 @@ export class IncomeListComponent {
     return `${methodName} · ${status} · ${income.category}`;
   }
 
+  protected openAdd(): void {
+    this.editing.set(null);
+    this.modalOpen.set(true);
+  }
+
   protected openEdit(income: Income): void {
     this.editing.set(income);
+    this.modalOpen.set(true);
   }
 
   protected closeEdit(): void {
     this.editing.set(null);
+    this.modalOpen.set(false);
   }
 
   protected async onSaved(updated: Income): Promise<void> {
     const previous = this.editing();
-    if (!previous) {
-      return;
-    }
     try {
-      await this.incomeService.update(previous, updated);
-      this.editing.set(null);
+      if (previous) {
+        await this.incomeService.update(previous, updated);
+        this.toast.show('Ingreso actualizado.');
+      } else {
+        await this.incomeService.create(updated);
+        this.toast.show('Ingreso registrado.');
+      }
+      this.closeEdit();
       await this.load();
-      this.toast.show('Ingreso actualizado.');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'No se pudo guardar el ingreso.';
       this.toast.show(message);
