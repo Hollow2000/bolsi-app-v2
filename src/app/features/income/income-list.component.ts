@@ -43,7 +43,7 @@ import { EditIncomeModalComponent } from './edit-income-modal.component';
         } @else {
           <ul class="app-list" aria-label="Ingresos del mes">
             @for (income of incomes(); track income.id) {
-              <li class="app-list-item">
+              <li class="app-list-row">
                 <app-list-item
                   [icon]="income.status === 'received' ? 'arrow_downward' : 'schedule'"
                   [title]="income.description"
@@ -51,32 +51,34 @@ import { EditIncomeModalComponent } from './edit-income-modal.component';
                   [amount]="(income.amount | mexicanCurrency) ?? ''"
                   [tone]="income.status === 'received' ? 'income' : 'default'"
                 />
-                @if (income.status === 'expected' && income.id !== undefined) {
+                <div class="item-actions">
+                  @if (income.status === 'expected' && income.id !== undefined) {
+                    <button
+                      appIconButton
+                      type="button"
+                      aria-label="Marcar ingreso como recibido"
+                      (click)="markAsReceived(income.id!)"
+                    >
+                      <span class="material-symbols-outlined icon icon--small" aria-hidden="true">check_circle</span>
+                    </button>
+                  }
                   <button
                     appIconButton
                     type="button"
-                    aria-label="Marcar ingreso como recibido"
-                    (click)="markAsReceived(income.id!)"
+                    aria-label="Editar ingreso"
+                    (click)="openEdit(income)"
                   >
-                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">check_circle</span>
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
                   </button>
-                }
-                <button
-                  appIconButton
-                  type="button"
-                  aria-label="Editar ingreso"
-                  (click)="openEdit(income)"
-                >
-                  <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
-                </button>
-                <button
-                  appIconButton
-                  type="button"
-                  aria-label="Eliminar ingreso"
-                  (click)="confirmDelete(income)"
-                >
-                  <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
-                </button>
+                  <button
+                    appIconButton
+                    type="button"
+                    aria-label="Eliminar ingreso"
+                    (click)="confirmDelete(income)"
+                  >
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
+                  </button>
+                </div>
               </li>
             }
           </ul>

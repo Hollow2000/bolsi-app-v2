@@ -33,28 +33,31 @@ import { EditPaymentMethodModalComponent } from './edit-payment-method-modal.com
         } @else {
           <ul class="app-list" aria-label="Métodos de pago">
             @for (method of paymentMethods(); track method.id) {
-              <li class="app-list-item">
+              <li>
                 <app-list-item
                   [icon]="iconFor(method.type)"
                   [title]="method.name"
                   [subtitle]="subtitleFor(method)"
-                />
-                <button
-                  appIconButton
-                  type="button"
-                  aria-label="Editar método de pago"
-                  (click)="openEdit(method)"
                 >
-                  <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
-                </button>
-                <button
-                  appIconButton
-                  type="button"
-                  aria-label="Eliminar método de pago"
-                  (click)="confirmDelete(method)"
-                >
-                  <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
-                </button>
+                  <div slot="trailing" class="item-actions">
+                    <button
+                      appIconButton
+                      type="button"
+                      aria-label="Editar método de pago"
+                      (click)="openEdit(method)"
+                    >
+                      <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
+                    </button>
+                    <button
+                      appIconButton
+                      type="button"
+                      aria-label="Eliminar método de pago"
+                      (click)="confirmDelete(method)"
+                    >
+                      <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
+                    </button>
+                  </div>
+                </app-list-item>
               </li>
             }
           </ul>

@@ -41,28 +41,31 @@ import { ToastService } from '../../shared/services/toast.service';
         <app-card title="Métodos de pago">
           <ul class="app-list" aria-label="Métodos de pago">
             @for (method of paymentMethods(); track method.id) {
-              <li class="app-list-item">
+              <li>
                 <app-list-item
                   [icon]="iconFor(method.type)"
                   [title]="method.name"
                   [subtitle]="subtitleFor(method)"
-                />
-                <button
-                  appIconButton
-                  type="button"
-                  aria-label="Editar método de pago"
-                  (click)="openEditMethod(method)"
                 >
-                  <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
-                </button>
-                <button
-                  appIconButton
-                  type="button"
-                  aria-label="Eliminar método de pago"
-                  (click)="confirmDeleteMethod(method)"
-                >
-                  <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
-                </button>
+                  <div slot="trailing" class="item-actions">
+                    <button
+                      appIconButton
+                      type="button"
+                      aria-label="Editar método de pago"
+                      (click)="openEditMethod(method)"
+                    >
+                      <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
+                    </button>
+                    <button
+                      appIconButton
+                      type="button"
+                      aria-label="Eliminar método de pago"
+                      (click)="confirmDeleteMethod(method)"
+                    >
+                      <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
+                    </button>
+                  </div>
+                </app-list-item>
               </li>
             }
           </ul>
@@ -82,28 +85,31 @@ import { ToastService } from '../../shared/services/toast.service';
           }
           <ul class="app-list" aria-label="Bolsillos">
             @for (pocket of pockets(); track pocket.id) {
-              <li class="app-list-item">
+              <li>
                 <app-list-item
                   [icon]="pocket.emoji || 'wallet'"
                   [title]="pocket.name"
                   [subtitle]="pocket.percentage + '%'"
-                />
-                <button
-                  appIconButton
-                  type="button"
-                  aria-label="Editar bolsillo"
-                  (click)="openEditPocket(pocket)"
                 >
-                  <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
-                </button>
-                <button
-                  appIconButton
-                  type="button"
-                  aria-label="Eliminar bolsillo"
-                  (click)="confirmDeletePocket(pocket)"
-                >
-                  <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
-                </button>
+                  <div slot="trailing" class="item-actions">
+                    <button
+                      appIconButton
+                      type="button"
+                      aria-label="Editar bolsillo"
+                      (click)="openEditPocket(pocket)"
+                    >
+                      <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
+                    </button>
+                    <button
+                      appIconButton
+                      type="button"
+                      aria-label="Eliminar bolsillo"
+                      (click)="confirmDeletePocket(pocket)"
+                    >
+                      <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
+                    </button>
+                  </div>
+                </app-list-item>
               </li>
             }
           </ul>

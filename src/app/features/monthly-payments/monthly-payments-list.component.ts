@@ -61,7 +61,7 @@ interface PaymentWithUrgency extends MonthlyPayment {
         } @else {
           <ul class="app-list" aria-label="Pagos del mes">
             @for (payment of payments(); track payment.id) {
-              <li class="payment-row" [class]="urgencyClass(payment)">
+              <li class="app-list-row payment-row" [class]="urgencyClass(payment)">
                 <app-list-item
                   [icon]="payment.paid ? 'check_circle' : iconFor(payment)"
                   [title]="payment.name"
@@ -69,32 +69,34 @@ interface PaymentWithUrgency extends MonthlyPayment {
                   [amount]="(payment.amount | mexicanCurrency) ?? ''"
                   [tone]="payment.paid ? 'income' : 'expense'"
                 />
-                @if (!payment.paid && payment.id !== undefined) {
+                <div class="item-actions">
+                  @if (!payment.paid && payment.id !== undefined) {
+                    <button
+                      appIconButton
+                      type="button"
+                      aria-label="Marcar como pagado"
+                      (click)="openMarkAsPaid(payment)"
+                    >
+                      <span class="material-symbols-outlined icon icon--small" aria-hidden="true">check_circle</span>
+                    </button>
+                  }
                   <button
                     appIconButton
                     type="button"
-                    aria-label="Marcar como pagado"
-                    (click)="openMarkAsPaid(payment)"
+                    aria-label="Editar pago"
+                    (click)="openEdit(payment)"
                   >
-                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">check_circle</span>
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
                   </button>
-                }
-                <button
-                  appIconButton
-                  type="button"
-                  aria-label="Editar pago"
-                  (click)="openEdit(payment)"
-                >
-                  <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
-                </button>
-                <button
-                  appIconButton
-                  type="button"
-                  aria-label="Eliminar pago"
-                  (click)="confirmDelete(payment)"
-                >
-                  <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
-                </button>
+                  <button
+                    appIconButton
+                    type="button"
+                    aria-label="Eliminar pago"
+                    (click)="confirmDelete(payment)"
+                  >
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
+                  </button>
+                </div>
               </li>
             }
           </ul>

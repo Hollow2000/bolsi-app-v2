@@ -107,7 +107,7 @@ const NO_CATEGORY = '';
         } @else {
           <ul class="app-list" aria-label="Gastos del mes">
             @for (expense of filteredExpenses(); track expense.id) {
-              <li class="app-list-item">
+              <li class="app-list-row">
                 <app-list-item
                   icon="shopping_bag"
                   [title]="expense.description"
@@ -115,22 +115,24 @@ const NO_CATEGORY = '';
                   [amount]="(expense.amount | mexicanCurrency) ?? ''"
                   tone="expense"
                 />
-                <button
-                  appIconButton
-                  type="button"
-                  aria-label="Editar gasto"
-                  (click)="openEdit(expense)"
-                >
-                  <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
-                </button>
-                <button
-                  appIconButton
-                  type="button"
-                  aria-label="Eliminar gasto"
-                  (click)="confirmDelete(expense)"
-                >
-                  <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
-                </button>
+                <div class="item-actions">
+                  <button
+                    appIconButton
+                    type="button"
+                    aria-label="Editar gasto"
+                    (click)="openEdit(expense)"
+                  >
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
+                  </button>
+                  <button
+                    appIconButton
+                    type="button"
+                    aria-label="Eliminar gasto"
+                    (click)="confirmDelete(expense)"
+                  >
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
+                  </button>
+                </div>
               </li>
             }
           </ul>

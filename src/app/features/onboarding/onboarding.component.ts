@@ -500,6 +500,7 @@ export class OnboardingComponent {
     this.saving.set(true);
     this.errorMessage.set(null);
     try {
+      // 1. Persist payment methods and build the tempId → realId map.
       const paymentMethodIdMap = new Map<number, number>();
       for (const paymentMethod of this.paymentMethods()) {
         const tempId = paymentMethod.id as number;
@@ -507,25 +508,39 @@ export class OnboardingComponent {
         const realId = await this.paymentMethodService.create(rest);
         paymentMethodIdMap.set(tempId, realId);
       }
+
+      // 2. Persist pockets.
       for (const pocket of this.pockets()) {
         const { id: _id, ...rest } = pocket;
         await this.pocketService.create(rest);
       }
+
+      // 3. Persist incomes — each one must resolve its paymentMethodId.
       for (const income of this.incomes()) {
         const { id: _id, ...rest } = income;
         const realPaymentMethodId = paymentMethodIdMap.get(income.paymentMethodId);
         if (realPaymentMethodId === undefined) {
-          throw new Error('Ingreso referencia un método de pago inexistente.');
+          throw new Error(
+            `El ingreso "${income.description}" referencia un método de pago que no existe.`,
+          );
         }
         await this.incomeService.create({ ...rest, paymentMethodId: realPaymentMethodId });
       }
+
+      // 4. Mark setup complete LAST — if anything above fails, the
+      //    guard keeps the user on the wizard so they can retry.
       await this.settingsService.save({
         userName: this.userName().trim(),
         setupComplete: true,
       });
+
       await this.router.navigate(['/dashboard']);
     } catch (error) {
-      this.errorMessage.set('No pudimos guardar tu configuración. Intenta de nuevo.');
+      this.errorMessage.set(
+        error instanceof Error
+          ? error.message
+          : 'No pudimos guardar tu configuración. Intenta de nuevo.',
+      );
       console.error('Onboarding save error', error);
     } finally {
       this.saving.set(false);
