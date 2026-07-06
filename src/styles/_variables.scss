@@ -1,0 +1,162 @@
+// =====================================================================
+// Bolsi App — Design tokens
+// Single source of truth for colors, spacing, radii, shadows, typography.
+// All components must consume these CSS custom properties — never
+// hardcode any color, spacing value, radius, or shadow.
+// =====================================================================
+
+// ----- Seagull (primary) -----
+$seagull-50:  #eff9ff;
+$seagull-100: #dff4ff;
+$seagull-200: #b8eaff;
+$seagull-300: #78dbff;
+$seagull-400: #4dd2ff;
+$seagull-500: #06b5f1;
+$seagull-600: #0093ce;
+$seagull-700: #0075a7;
+$seagull-800: #02628a;
+$seagull-900: #085172;
+$seagull-950: #06334b;
+
+// ----- Zinc (neutrals) -----
+$gray-50:  #fafafa;
+$gray-100: #f4f4f5;
+$gray-200: #e4e4e7;
+$gray-300: #d4d4d8;
+$gray-400: #a1a1aa;
+$gray-500: #71717a;
+$gray-600: #52525b;
+$gray-700: #3f3f46;
+$gray-800: #27272a;
+$gray-900: #18181b;
+$gray-950: #09090b;
+
+// ----- Semantic -----
+$color-success: #16a34a;
+$color-warning: #d97706;
+$color-danger:  #dc2626;
+
+// ----- Shadows -----
+$shadow-small:  0 1px 2px rgba(0, 0, 0, 0.06);
+$shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.08);
+$shadow-large:  0 8px 24px rgba(0, 0, 0, 0.10);
+
+// =====================================================================
+// CSS custom properties — exposed to components.
+// =====================================================================
+
+:root {
+  // Backgrounds
+  --background-primary:     #{$gray-50};
+  --background-secondary:   #{$gray-100};
+  --background-elevated:    #ffffff;
+  --background-overlay:     rgba(0, 0, 0, 0.4);
+
+  // Surfaces
+  --surface:                #ffffff;
+  --surface-alternate:      #{$gray-100};
+
+  // Borders
+  --border-default:         #{$gray-200};
+  --border-focus:           #{$seagull-500};
+
+  // Text
+  --text-primary:           #{$gray-900};
+  --text-secondary:         #{$gray-500};
+  --text-disabled:          #{$gray-400};
+  --text-inverse:           #ffffff;
+  --text-on-primary:        #ffffff;
+
+  // Primary interactive
+  --color-primary:          #{$seagull-600};
+  --color-primary-hover:    #{$seagull-700};
+  --color-primary-subtle:   #{$seagull-50};
+  --color-primary-muted:    #{$seagull-100};
+
+  // Semantic
+  --color-success:          #{$color-success};
+  --color-success-subtle:   #dcfce7;
+  --color-warning:          #{$color-warning};
+  --color-warning-subtle:   #fef3c7;
+  --color-danger:           #{$color-danger};
+  --color-danger-subtle:    #fee2e2;
+
+  // Navigation
+  --navigation-height:      64px;
+  --navigation-background:  #ffffff;
+  --navigation-border:      #{$gray-200};
+
+  // Radii
+  --radius-small:           6px;
+  --radius-medium:          10px;
+  --radius-large:           16px;
+  --radius-extra-large:     24px;
+  --radius-full:            9999px;
+
+  // Shadows
+  --shadow-small:           #{$shadow-small};
+  --shadow-medium:          #{$shadow-medium};
+  --shadow-large:           #{$shadow-large};
+
+  // Spacing
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  // Typography
+  --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-family-mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+
+  --text-size-extra-small:  11px;
+  --text-size-small:        13px;
+  --text-size-base:         15px;
+  --text-size-medium:       17px;
+  --text-size-large:        20px;
+  --text-size-extra-large:  24px;
+  --text-size-display:      32px;
+
+  // Layout
+  --max-content-width:      480px;
+  --tap-target-min:         44px;
+  --safe-area-bottom:       env(safe-area-inset-bottom, 0px);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background-primary:     #{$gray-950};
+    --background-secondary:   #{$gray-900};
+    --background-elevated:    #{$gray-900};
+
+    --surface:                #{$gray-800};
+    --surface-alternate:      #{$gray-900};
+
+    --border-default:         #{$gray-700};
+    --border-focus:           #{$seagull-400};
+
+    --text-primary:           #{$gray-50};
+    --text-secondary:         #{$gray-400};
+    --text-disabled:          #{$gray-600};
+
+    --color-primary:          #{$seagull-500};
+    --color-primary-hover:    #{$seagull-400};
+    --color-primary-subtle:   rgba(6, 181, 241, 0.12);
+    --color-primary-muted:    rgba(6, 181, 241, 0.18);
+
+    --color-success-subtle:   rgba(22, 163, 74, 0.15);
+    --color-warning-subtle:   rgba(217, 119, 6, 0.15);
+    --color-danger-subtle:    rgba(220, 38, 38, 0.15);
+
+    --navigation-background:  #{$gray-900};
+    --navigation-border:      #{$gray-800};
+
+    --shadow-small:           0 1px 2px rgba(0, 0, 0, 0.30);
+    --shadow-medium:          0 4px 12px rgba(0, 0, 0, 0.40);
+    --shadow-large:           0 8px 24px rgba(0, 0, 0, 0.50);
+  }
+}

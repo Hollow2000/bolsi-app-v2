@@ -1,1 +1,6 @@
-/* You can add global styles to this file, and also import other style files */
+// Bolsi App — global styles entry point.
+// Order matters: variables first (CSS custom properties), then reset, then base.
+
+@use 'styles/variables';
+@use 'styles/reset';
+@use 'styles/base';
