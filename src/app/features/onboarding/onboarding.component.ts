@@ -102,7 +102,10 @@ export class OnboardingComponent {
   protected readonly saving = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
 
-  private nextPaymentMethodTempId = 0;
+  // Starts at -1 and pre-decrements so the first assigned id is -1.
+  // We must never produce id 0 because the income step uses 0 as the
+  // "no payment method selected" sentinel.
+  private nextPaymentMethodTempId = -1;
 
   protected readonly paymentMethodDraft = signal<PaymentMethodDraft>({
     type: 'cash',
