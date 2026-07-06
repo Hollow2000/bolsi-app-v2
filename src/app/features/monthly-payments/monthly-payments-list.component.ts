@@ -13,6 +13,7 @@ import { FabComponent } from '../../shared/components/fab/fab.component';
 import { IconButtonDirective } from '../../shared/components/icon-button/icon-button.directive';
 import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
+import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
 import { TextInputComponent } from '../../shared/components/text-input/text-input.component';
 import { MexicanCurrencyPipe, formatMexicanCurrency } from '../../shared/pipes/mexican-currency.pipe';
 import { ToastService } from '../../shared/services/toast.service';
@@ -34,6 +35,7 @@ interface PaymentWithUrgency extends MonthlyPayment {
     MexicanCurrencyPipe,
     MonthlyPaymentFormModalComponent,
     NumberInputComponent,
+    SelectInputComponent,
     TextInputComponent,
   ],
   template: `
@@ -134,6 +136,19 @@ interface PaymentWithUrgency extends MonthlyPayment {
           [value]="amountToPay()"
           (valueChange)="amountToPay.set($event)"
         />
+        <app-select-input
+          label="Pagar con"
+          [valueType]="'number'"
+          [value]="sourcePaymentMethodId()"
+          (valueChange)="sourcePaymentMethodId.set($any($event))"
+        >
+          <option value="0" disabled [selected]="sourcePaymentMethodId() === 0">Selecciona una cuenta</option>
+          @for (method of sourcePaymentMethods(); track method.id) {
+            <option [value]="method.id" [selected]="method.id === sourcePaymentMethodId()">
+              {{ method.name }} ({{ method.type === 'cash' ? 'Efectivo' : 'Débito' }})
+            </option>
+          }
+        </app-select-input>
         @if (markAsPaidError(); as message) {
           <p class="modal-error" role="alert">{{ message }}</p>
         }
@@ -220,8 +235,13 @@ export class MonthlyPaymentsListComponent {
 
   protected readonly markingAsPaid = signal<MonthlyPayment | null>(null);
   protected readonly amountToPay = signal(0);
+  protected readonly sourcePaymentMethodId = signal<number>(0);
   protected readonly savingPayment = signal(false);
   protected readonly markAsPaidError = signal<string | null>(null);
+
+  protected readonly sourcePaymentMethods = computed(() =>
+    this.paymentMethods().filter((method) => method.type !== 'credit'),
+  );
 
   protected readonly totals = computed(() => {
     const items = this.payments();
@@ -312,6 +332,7 @@ export class MonthlyPaymentsListComponent {
   protected openMarkAsPaid(payment: MonthlyPayment): void {
     this.markingAsPaid.set(payment);
     this.amountToPay.set(payment.amount - payment.amountPaid);
+    this.sourcePaymentMethodId.set(this.sourcePaymentMethods()[0]?.id ?? 0);
     this.markAsPaidError.set(null);
   }
 
@@ -330,10 +351,15 @@ export class MonthlyPaymentsListComponent {
       this.markAsPaidError.set('El monto a pagar debe ser mayor a 0.');
       return;
     }
+    const sourceId = this.sourcePaymentMethodId();
+    if (sourceId === 0) {
+      this.markAsPaidError.set('Selecciona una cuenta para pagar.');
+      return;
+    }
     this.savingPayment.set(true);
     this.markAsPaidError.set(null);
     try {
-      await this.service.markAsPaid(payment, amount);
+      await this.service.markAsPaid(payment, amount, sourceId);
       this.toast.show('Pago registrado. Se creó un gasto automático.');
       this.closeMarkAsPaid();
       await this.loadPayments(this.currentMonth(), this.currentYear());

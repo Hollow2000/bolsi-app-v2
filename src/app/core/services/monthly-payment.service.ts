@@ -40,20 +40,34 @@ export class MonthlyPaymentService {
   }
 
   /**
-   * BR-07: marking a monthly payment as paid sets `paid` and
-   * `amountPaid`, and creates the corresponding `Expense` row so the
-   * money actually leaves the linked account. The expense is logged
-   * with the user-chosen category and pocket, and the balance of the
-   * linked payment method is decremented (handled by
-   * `ExpenseService.create`).
+   * BR-07: marking a monthly payment as paid:
+   *   1. Sets `paid = true` and `amountPaid`.
+   *   2. Creates an Expense that deducts from the *source* payment
+   *      method (cash / debit) the user chose to pay with.
+   *   3. If the payment is linked to a credit card, increases that
+   *      card's `availableCredit` (BR-02: paying a card frees up
+   *      credit).
    */
-  async markAsPaid(payment: MonthlyPayment, amountPaid: number): Promise<void> {
+  async markAsPaid(
+    payment: MonthlyPayment,
+    amountPaid: number,
+    sourcePaymentMethodId: number,
+  ): Promise<void> {
     if (payment.id === undefined) {
       throw new Error('No se puede marcar como pagado un pago sin identificador.');
     }
     if (!Number.isFinite(amountPaid) || amountPaid <= 0) {
       throw new Error('El monto a pagar debe ser mayor a 0.');
     }
+    const source = await this.paymentMethods.getById(sourcePaymentMethodId);
+    if (!source) {
+      throw new Error('El método de pago seleccionado no existe.');
+    }
+    if (source.type === 'credit') {
+      throw new Error('Para pagar una tarjeta, selecciona una cuenta de efectivo o débito.');
+    }
+
+    // 1. Mark the monthly payment as paid.
     const updated: MonthlyPayment = {
       ...payment,
       paid: true,
@@ -61,20 +75,25 @@ export class MonthlyPaymentService {
     };
     await database.monthlyPayments.put(updated);
 
+    // 2. Create an expense that deducts from the source account.
+    await this.expenseService.create({
+      date: this.todayIso(),
+      description: payment.name,
+      amount: amountPaid,
+      paymentMethodId: sourcePaymentMethodId,
+      pocketId: payment.pocketId ?? 0,
+      category: payment.expenseCategory ?? 'Other',
+      month: payment.month,
+      year: payment.year,
+      isInstallment: false,
+    });
+
+    // 3. If the payment is linked to a credit card, free up credit.
     if (payment.paymentMethodId !== undefined) {
-      const month = payment.month;
-      const year = payment.year;
-      await this.expenseService.create({
-        date: this.todayIso(),
-        description: payment.name,
-        amount: amountPaid,
-        paymentMethodId: payment.paymentMethodId,
-        pocketId: payment.pocketId ?? 0,
-        category: payment.expenseCategory ?? 'Other',
-        month,
-        year,
-        isInstallment: false,
-      });
+      const card = await this.paymentMethods.getById(payment.paymentMethodId);
+      if (card && card.type === 'credit') {
+        await this.paymentMethods.addBalance(card.id!, amountPaid);
+      }
     }
   }
 
@@ -136,8 +155,8 @@ export class MonthlyPaymentService {
     const due = new Date(`${payment.dueDate}T00:00:00`);
     const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     if (payment.paid) return 1000;
-    if (diffDays < 0) return 0; // overdue
-    if (diffDays <= 3) return 1; // due very soon
+    if (diffDays < 0) return 0;
+    if (diffDays <= 3) return 1;
     if (diffDays <= 7) return 2;
     return 3;
   }

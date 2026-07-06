@@ -40,6 +40,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'payment-methods/:id',
+    canActivate: [setupRequiredGuard],
+    loadComponent: () =>
+      import('./features/credit-cards/payment-method-detail.component').then(
+        (m) => m.PaymentMethodDetailComponent,
+      ),
+  },
+  {
     path: 'income',
     canActivate: [setupRequiredGuard],
     loadComponent: () =>

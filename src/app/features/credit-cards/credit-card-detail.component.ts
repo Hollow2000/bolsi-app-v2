@@ -17,6 +17,7 @@ import { ButtonDirective } from '../../shared/components/button/button.directive
 import { CardComponent } from '../../shared/components/card/card.component';
 import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
+import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
 import { TextInputComponent } from '../../shared/components/text-input/text-input.component';
 import { DateInputComponent } from '../../shared/components/date-input/date-input.component';
 import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
@@ -51,6 +52,7 @@ interface PeriodRange {
     MexicanCurrencyPipe,
     NumberInputComponent,
     RouterLink,
+    SelectInputComponent,
     TextInputComponent,
   ],
   template: `
@@ -206,6 +208,19 @@ interface PeriodRange {
             [value]="paymentDraft().dueDate"
             (valueChange)="onPaymentFieldChange('dueDate', $event)"
           />
+          <app-select-input
+            label="Pagar con"
+            [valueType]="'number'"
+            [value]="sourcePaymentMethodId()"
+            (valueChange)="sourcePaymentMethodId.set($any($event))"
+          >
+            <option value="0" disabled [selected]="sourcePaymentMethodId() === 0">Selecciona una cuenta</option>
+            @for (method of sourcePaymentMethods(); track method.id) {
+              <option [value]="method.id" [selected]="method.id === sourcePaymentMethodId()">
+                {{ method.name }} ({{ method.type === 'cash' ? 'Efectivo' : 'Débito' }})
+              </option>
+            }
+          </app-select-input>
           @if (paymentError(); as message) {
             <p class="modal-error" role="alert">{{ message }}</p>
           }
@@ -373,6 +388,7 @@ export class CreditCardDetailComponent {
   );
 
   protected readonly card = signal<PaymentMethod | null>(null);
+  protected readonly paymentMethods = signal<PaymentMethod[]>([]);
   protected readonly periodDirectCharges = signal<Expense[]>([]);
   protected readonly periodInstallments = signal<InstallmentPlan[]>([]);
   protected readonly upcomingInstallments = signal<InstallmentPlan[]>([]);
@@ -383,11 +399,16 @@ export class CreditCardDetailComponent {
   protected readonly payingCard = signal(false);
   protected readonly savingPayment = signal(false);
   protected readonly paymentError = signal<string | null>(null);
+  protected readonly sourcePaymentMethodId = signal<number>(0);
   protected readonly paymentDraft = signal({
     name: '',
     amount: 0,
     dueDate: this.todayIso(),
   });
+
+  protected readonly sourcePaymentMethods = computed(() =>
+    this.paymentMethods().filter((method) => method.type !== 'credit'),
+  );
 
   protected readonly periodRange = computed<PeriodRange>(() => this.calculatePeriodRange());
 
@@ -495,6 +516,7 @@ export class CreditCardDetailComponent {
       amount: this.periodTotal(),
       dueDate: this.addDaysToIso(range.endIso, 20),
     });
+    this.sourcePaymentMethodId.set(this.sourcePaymentMethods()[0]?.id ?? 0);
     this.paymentError.set(null);
     this.payingCard.set(true);
   }
@@ -517,6 +539,11 @@ export class CreditCardDetailComponent {
       return;
     }
     const draft = this.paymentDraft();
+    const sourceId = this.sourcePaymentMethodId();
+    if (sourceId === 0) {
+      this.paymentError.set('Selecciona una cuenta para pagar.');
+      return;
+    }
     this.savingPayment.set(true);
     this.paymentError.set(null);
     try {
@@ -525,7 +552,7 @@ export class CreditCardDetailComponent {
         throw new Error('Fecha de vencimiento inválida.');
       }
       const [year, month] = parts;
-      await this.monthlyPaymentService.create({
+      const paymentId = await this.monthlyPaymentService.create({
         name: draft.name.trim() || `Pago ${method.name}`,
         amount: this.roundCurrency(draft.amount),
         paid: false,
@@ -539,8 +566,13 @@ export class CreditCardDetailComponent {
         month,
         year,
       });
-      this.toast.show('Pago de tarjeta registrado.');
+      const saved = await this.monthlyPaymentService.getById(paymentId);
+      if (saved) {
+        await this.monthlyPaymentService.markAsPaid(saved, draft.amount, sourceId);
+      }
+      this.toast.show('Pago registrado. Se descontó de la cuenta seleccionada.');
       this.closePay();
+      await this.load();
     } catch (error) {
       this.paymentError.set(error instanceof Error ? error.message : 'No se pudo registrar el pago.');
     } finally {
@@ -553,11 +585,15 @@ export class CreditCardDetailComponent {
     if (id === 0) {
       return;
     }
-    const method = await this.paymentMethodService.getById(id);
+    const [method, allMethods] = await Promise.all([
+      this.paymentMethodService.getById(id),
+      this.paymentMethodService.getAll(),
+    ]);
     if (!method) {
       return;
     }
     this.card.set(method);
+    this.paymentMethods.set(allMethods);
 
     const range = this.periodRange();
     const direct = await database.expenses
