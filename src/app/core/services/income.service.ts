@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { database } from '../database/bolsi.database';
 import type { Income } from '../models/income.model';
 import { PaymentMethodService } from './payment-method.service';
+import { assertCanReceiveIncome, validateIncomeFields } from '../validations/income.validation';
 
 @Injectable({ providedIn: 'root' })
 export class IncomeService {
@@ -16,6 +17,9 @@ export class IncomeService {
   }
 
   async create(income: Income): Promise<void> {
+    validateIncomeFields(income);
+    const paymentMethod = await this.paymentMethods.getById(income.paymentMethodId);
+    assertCanReceiveIncome(paymentMethod);
     await database.incomes.add(income);
     if (income.status === 'received') {
       await this.paymentMethods.addBalance(income.paymentMethodId, income.amount);
@@ -27,6 +31,8 @@ export class IncomeService {
     if (!income || income.status === 'received') {
       return;
     }
+    const paymentMethod = await this.paymentMethods.getById(income.paymentMethodId);
+    assertCanReceiveIncome(paymentMethod);
     await database.incomes.put({ ...income, status: 'received' });
     await this.paymentMethods.addBalance(income.paymentMethodId, income.amount);
   }

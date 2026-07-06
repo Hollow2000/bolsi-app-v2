@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 
 import { database } from '../database/bolsi.database';
 import type { PaymentMethod } from '../models/payment-method.model';
+import { validatePaymentMethod } from '../validations/payment-method.validation';
 
 @Injectable({ providedIn: 'root' })
 export class PaymentMethodService {
@@ -14,11 +15,13 @@ export class PaymentMethodService {
   }
 
   async create(paymentMethod: PaymentMethod): Promise<number> {
+    validatePaymentMethod(paymentMethod);
     const id = await database.paymentMethods.add(paymentMethod);
     return id as number;
   }
 
   async update(paymentMethod: PaymentMethod): Promise<void> {
+    validatePaymentMethod(paymentMethod);
     await database.paymentMethods.put(paymentMethod);
   }
 
@@ -27,6 +30,7 @@ export class PaymentMethodService {
   }
 
   async deductBalance(id: number, amount: number): Promise<void> {
+    this.assertAmountIsPositive(amount);
     const paymentMethod = await this.getById(id);
     if (!paymentMethod) {
       return;
@@ -40,6 +44,7 @@ export class PaymentMethodService {
   }
 
   async addBalance(id: number, amount: number): Promise<void> {
+    this.assertAmountIsPositive(amount);
     const paymentMethod = await this.getById(id);
     if (!paymentMethod) {
       return;
@@ -50,5 +55,11 @@ export class PaymentMethodService {
       paymentMethod.availableCredit = (paymentMethod.availableCredit ?? 0) + amount;
     }
     await this.update(paymentMethod);
+  }
+
+  private assertAmountIsPositive(amount: number): void {
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new Error('El monto debe ser mayor a 0.');
+    }
   }
 }

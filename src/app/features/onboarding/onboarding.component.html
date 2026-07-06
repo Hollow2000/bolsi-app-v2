@@ -202,12 +202,22 @@
               (valueChange)="onIncomePaymentMethodIdChange($event)"
             >
               <option value="0" disabled>Selecciona un método</option>
-              @for (method of paymentMethods(); track method.id) {
+              @for (method of incomePaymentMethods(); track method.id) {
                 <option [value]="method.id">
                   {{ method.name }} ({{ paymentMethodTypeLabel(method.type) }})
                 </option>
               }
             </app-select-input>
+
+            @if (!hasAnyIncomePaymentMethod()) {
+              <p class="wizard-callout wizard-callout--warning" role="alert">
+                <span class="material-symbols-outlined icon icon--small" aria-hidden="true">warning</span>
+                <span>
+                  Necesitas al menos un método de pago que no sea tarjeta de crédito
+                  (efectivo o débito) para registrar ingresos. Regresa al paso 2 y agrega uno.
+                </span>
+              </p>
+            }
 
             <app-select-input
               label="Categoría"

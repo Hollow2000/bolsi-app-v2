@@ -144,7 +144,7 @@ export class OnboardingComponent {
       return this.paymentMethods().length > 0;
     }
     if (step === 3) {
-      return this.incomes().length > 0;
+      return this.incomes().length > 0 && this.hasAnyIncomePaymentMethod();
     }
     if (step === 4) {
       return this.pockets().length > 0 && this.pocketTotalRounded() === 100;
@@ -165,13 +165,29 @@ export class OnboardingComponent {
 
   protected readonly canAddIncome = computed(() => {
     const draft = this.incomeDraft();
-    return draft.description.trim().length > 0 && draft.amount > 0 && draft.paymentMethodId !== 0;
+    if (!draft.description.trim() || draft.amount <= 0 || draft.paymentMethodId === 0) {
+      return false;
+    }
+    const selected = this.paymentMethods().find((method) => method.id === draft.paymentMethodId);
+    return selected !== undefined && selected.type !== 'credit';
   });
 
   protected readonly canAddPocket = computed(() => {
     const draft = this.pocketDraft();
     return draft.name.trim().length > 0 && draft.percentage > 0;
   });
+
+  /**
+   * Ingresos solo pueden asignarse a métodos de pago que no sean
+   * tarjetas de crédito (BR — los ingresos no entran a crédito).
+   */
+  protected readonly incomePaymentMethods = computed(() =>
+    this.paymentMethods().filter((method) => method.type !== 'credit'),
+  );
+
+  protected readonly hasAnyIncomePaymentMethod = computed(() =>
+    this.incomePaymentMethods().length > 0,
+  );
 
   protected next(): void {
     if (!this.canAdvance()) {
