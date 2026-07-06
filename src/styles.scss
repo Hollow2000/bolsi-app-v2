@@ -1,6 +1,9 @@
 // Bolsi App — global styles entry point.
-// Order matters: variables first (CSS custom properties), then reset, then base.
+// Order matters: variables first (CSS custom properties), then reset,
+// then base, then component primitives, then layout helpers.
 
 @use 'styles/variables';
 @use 'styles/reset';
 @use 'styles/base';
+@use 'styles/components';
+@use 'styles/layout';

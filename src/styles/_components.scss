@@ -1,0 +1,444 @@
+// =====================================================================
+// Bolsi App — Shared component styles
+// Every visual primitive lives here. Components and directives only
+// toggle the right classes; they never redeclare these properties.
+// =====================================================================
+
+// ----- Buttons ---------------------------------------------------------
+
+.app-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-medium);
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--text-size-base);
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  min-height: var(--tap-target-min);
+  text-decoration: none;
+  border: 1.5px solid transparent;
+  background: transparent;
+  color: inherit;
+  line-height: 1.2;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.app-button:active:not(:disabled):not([aria-disabled='true']) {
+  transform: scale(0.98);
+}
+
+.app-button:disabled,
+.app-button[aria-disabled='true'] {
+  cursor: not-allowed;
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.app-button--primary {
+  background: var(--color-primary);
+  color: var(--text-on-primary);
+  border-color: var(--color-primary);
+}
+
+.app-button--primary:hover:not(:disabled):not([aria-disabled='true']) {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+.app-button--secondary {
+  background: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.app-button--secondary:hover:not(:disabled):not([aria-disabled='true']) {
+  background: var(--color-primary-subtle);
+}
+
+.app-button--ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: transparent;
+  padding: var(--space-2) var(--space-3);
+}
+
+.app-button--ghost:hover:not(:disabled):not([aria-disabled='true']) {
+  background: var(--surface-alternate);
+  color: var(--text-primary);
+}
+
+.app-button--destructive {
+  background: var(--color-danger);
+  color: #ffffff;
+  border-color: var(--color-danger);
+}
+
+.app-button--destructive:hover:not(:disabled):not([aria-disabled='true']) {
+  background: color-mix(in srgb, var(--color-danger) 85%, black);
+}
+
+// ----- Icon buttons (icon-only) ---------------------------------------
+
+.app-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  border-radius: var(--radius-small);
+  padding: var(--space-2);
+  cursor: pointer;
+  min-width: var(--tap-target-min);
+  min-height: var(--tap-target-min);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.app-icon-button:hover:not(:disabled):not([aria-disabled='true']) {
+  background: var(--surface-alternate);
+  color: var(--text-primary);
+}
+
+.app-icon-button:disabled,
+.app-icon-button[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+// ----- Cards -----------------------------------------------------------
+
+.app-card {
+  background: var(--surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-large);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-small);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.app-card--interactive {
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.app-card--interactive:hover {
+  box-shadow: var(--shadow-medium);
+}
+
+.app-card--interactive:active {
+  transform: scale(0.99);
+}
+
+.app-card__title {
+  font-size: var(--text-size-medium);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.app-card__subtitle {
+  font-size: var(--text-size-small);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+// ----- Form fields -----------------------------------------------------
+
+.app-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+}
+
+.app-form-field__label {
+  display: block;
+  font-size: var(--text-size-small);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.app-form-field__label--required::after {
+  content: ' *';
+  color: var(--color-danger);
+}
+
+.app-form-input {
+  width: 100%;
+  background: var(--background-primary);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-medium);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-size-base);
+  color: var(--text-primary);
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+  min-height: var(--tap-target-min);
+  appearance: none;
+}
+
+.app-form-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--color-primary-subtle);
+}
+
+.app-form-input::placeholder {
+  color: var(--text-disabled);
+}
+
+.app-form-input:disabled {
+  background: var(--surface-alternate);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+select.app-form-input {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2371717a'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right var(--space-3) center;
+  background-size: 20px 20px;
+  padding-right: calc(var(--space-4) + 24px);
+}
+
+.app-form-input--error {
+  border-color: var(--color-danger);
+}
+
+.app-form-input--error:focus {
+  box-shadow: 0 0 0 3px var(--color-danger-subtle);
+}
+
+.app-form-field__error {
+  font-size: var(--text-size-extra-small);
+  color: var(--color-danger);
+  margin: 0;
+}
+
+.app-form-field__helper {
+  font-size: var(--text-size-extra-small);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+// ----- Segmented control ----------------------------------------------
+
+.app-segmented {
+  display: inline-flex;
+  background: var(--surface-alternate);
+  border-radius: var(--radius-full);
+  padding: 3px;
+  width: 100%;
+  gap: 2px;
+}
+
+.app-segmented__option {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: var(--text-size-small);
+  font-family: inherit;
+  cursor: pointer;
+  min-height: 38px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.app-segmented__option--active {
+  background: var(--surface);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-small);
+}
+
+// ----- Badges ----------------------------------------------------------
+
+.app-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--text-size-extra-small);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.app-badge--success {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+}
+
+.app-badge--warning {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+}
+
+.app-badge--danger {
+  background: var(--color-danger-subtle);
+  color: var(--color-danger);
+}
+
+.app-badge--neutral {
+  background: var(--surface-alternate);
+  color: var(--text-secondary);
+}
+
+.app-badge--primary {
+  background: var(--color-primary-muted);
+  color: var(--color-primary);
+}
+
+// ----- Progress bar ----------------------------------------------------
+
+.app-progress {
+  height: 6px;
+  background: var(--surface-alternate);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.app-progress__fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  transition: width 0.3s ease;
+}
+
+.app-progress__fill--warning {
+  background: var(--color-warning);
+}
+
+.app-progress__fill--danger {
+  background: var(--color-danger);
+}
+
+// ----- List items ------------------------------------------------------
+
+.app-list {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-large);
+  overflow: hidden;
+}
+
+.app-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.app-list-item:last-child {
+  border-bottom: none;
+}
+
+.app-list-item__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-medium);
+  background: var(--surface-alternate);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.app-list-item__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.app-list-item__title {
+  font-size: var(--text-size-base);
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-list-item__subtitle {
+  font-size: var(--text-size-small);
+  color: var(--text-secondary);
+}
+
+.app-list-item__amount {
+  font-size: var(--text-size-base);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.app-list-item__amount--expense {
+  color: var(--text-primary);
+}
+
+.app-list-item__amount--income {
+  color: var(--color-success);
+}
+
+// ----- Toast -----------------------------------------------------------
+
+.app-toast {
+  position: fixed;
+  bottom: calc(var(--navigation-height) + var(--space-4) + var(--safe-area-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--gray-900);
+  color: #ffffff;
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-full);
+  font-size: var(--text-size-small);
+  font-weight: 500;
+  z-index: 9999;
+  box-shadow: var(--shadow-large);
+  white-space: nowrap;
+  pointer-events: none;
+  max-width: 90vw;
+}
+
+// ----- Floating action button ------------------------------------------
+
+.app-floating-action-button {
+  position: fixed;
+  bottom: calc(var(--navigation-height) + var(--space-4) + var(--safe-area-bottom));
+  right: var(--space-4);
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--text-on-primary);
+  border: none;
+  box-shadow: var(--shadow-medium);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 90;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.app-floating-action-button:hover {
+  background: var(--color-primary-hover);
+}
+
+.app-floating-action-button:active {
+  transform: scale(0.94);
+}

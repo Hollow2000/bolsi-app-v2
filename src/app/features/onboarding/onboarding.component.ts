@@ -1,16 +1,23 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
-import { DEFAULT_POCKETS, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../../core/catalogs';
-import type { Income } from '../../core/models/income.model';
-import type { MonthlyPayment } from '../../core/models/monthly-payment.model';
+import { DEFAULT_POCKETS, INCOME_CATEGORIES, type IncomeCategory } from '../../core/catalogs';
+import type { Income, IncomeFrequency, IncomeStatus } from '../../core/models/income.model';
 import type { PaymentMethod, PaymentMethodType } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';
 import { IncomeService } from '../../core/services/income.service';
 import { PaymentMethodService } from '../../core/services/payment-method.service';
 import { PocketService } from '../../core/services/pocket.service';
 import { SettingsService } from '../../core/services/settings.service';
+import { ButtonDirective } from '../../shared/components/button/button.directive';
+import { CardComponent } from '../../shared/components/card/card.component';
+import { DateInputComponent } from '../../shared/components/date-input/date-input.component';
+import { IconButtonDirective } from '../../shared/components/icon-button/icon-button.directive';
+import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
+import { SegmentedControlComponent, type SegmentedOption } from '../../shared/components/segmented-control/segmented-control.component';
+import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
+import { TextInputComponent } from '../../shared/components/text-input/text-input.component';
+import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
 
 type WizardStep = 1 | 2 | 3 | 4 | 5;
 
@@ -27,10 +34,10 @@ interface IncomeDraft {
   date: string;
   description: string;
   amount: number;
-  category: string;
+  category: IncomeCategory;
   paymentMethodId: number;
-  frequency: Income['frequency'];
-  status: Income['status'];
+  frequency: IncomeFrequency;
+  status: IncomeStatus;
 }
 
 interface PocketDraft {
@@ -39,9 +46,36 @@ interface PocketDraft {
   percentage: number;
 }
 
+const PAYMENT_METHOD_TYPE_OPTIONS: readonly SegmentedOption<PaymentMethodType>[] = [
+  { value: 'cash', label: 'Efectivo' },
+  { value: 'debit', label: 'Débito' },
+  { value: 'credit', label: 'Crédito' },
+];
+
+const FREQUENCY_OPTIONS: readonly SegmentedOption<IncomeFrequency>[] = [
+  { value: 'one-time', label: 'Única' },
+  { value: 'monthly', label: 'Mensual' },
+  { value: 'biweekly', label: 'Quincenal' },
+];
+
+const STATUS_OPTIONS: readonly SegmentedOption<IncomeStatus>[] = [
+  { value: 'received', label: 'Recibido' },
+  { value: 'expected', label: 'Esperado' },
+];
+
 @Component({
   selector: 'app-onboarding',
-  imports: [FormsModule],
+  imports: [
+    ButtonDirective,
+    CardComponent,
+    DateInputComponent,
+    IconButtonDirective,
+    MexicanCurrencyPipe,
+    NumberInputComponent,
+    SegmentedControlComponent,
+    SelectInputComponent,
+    TextInputComponent,
+  ],
   templateUrl: './onboarding.component.html',
   styleUrl: './onboarding.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -53,9 +87,10 @@ export class OnboardingComponent {
   private readonly incomeService = inject(IncomeService);
   private readonly router = inject(Router);
 
-  protected readonly expenseCategories = EXPENSE_CATEGORIES;
+  protected readonly paymentMethodTypeOptions = PAYMENT_METHOD_TYPE_OPTIONS;
+  protected readonly frequencyOptions = FREQUENCY_OPTIONS;
+  protected readonly statusOptions = STATUS_OPTIONS;
   protected readonly incomeCategories = INCOME_CATEGORIES;
-  protected readonly installmentOptions = [3, 6, 9, 12, 18, 24] as const;
 
   protected readonly currentStep = signal<WizardStep>(1);
   protected readonly userName = signal('');
@@ -117,6 +152,27 @@ export class OnboardingComponent {
     return true;
   });
 
+  protected readonly canAddPaymentMethod = computed(() => {
+    const draft = this.paymentMethodDraft();
+    if (!draft.name.trim()) {
+      return false;
+    }
+    if (draft.type === 'credit') {
+      return draft.creditLimit > 0 && draft.statementClosingDay >= 1 && draft.statementClosingDay <= 31 && draft.creditDays >= 1;
+    }
+    return true;
+  });
+
+  protected readonly canAddIncome = computed(() => {
+    const draft = this.incomeDraft();
+    return draft.description.trim().length > 0 && draft.amount > 0 && draft.paymentMethodId !== 0;
+  });
+
+  protected readonly canAddPocket = computed(() => {
+    const draft = this.pocketDraft();
+    return draft.name.trim().length > 0 && draft.percentage > 0;
+  });
+
   protected next(): void {
     if (!this.canAdvance()) {
       return;
@@ -128,14 +184,12 @@ export class OnboardingComponent {
     this.currentStep.update((step) => (step > 1 ? ((step - 1) as WizardStep) : step));
   }
 
-  protected goToStep(step: WizardStep): void {
-    if (step < this.currentStep()) {
-      this.currentStep.set(step);
-    }
-  }
-
   protected onUserNameChange(value: string): void {
     this.userName.set(value);
+  }
+
+  protected onPaymentMethodDraftChange<K extends keyof PaymentMethodDraft>(field: K, value: PaymentMethodDraft[K]): void {
+    this.paymentMethodDraft.update((draft) => ({ ...draft, [field]: value }));
   }
 
   protected onPaymentMethodTypeChange(type: PaymentMethodType): void {
@@ -143,54 +197,41 @@ export class OnboardingComponent {
   }
 
   protected onPaymentMethodNameChange(value: string): void {
-    this.paymentMethodDraft.update((draft) => ({ ...draft, name: value }));
+    this.onPaymentMethodDraftChange('name', value);
   }
 
-  protected onPaymentMethodBalanceChange(value: string): void {
-    const numeric = this.parseAmount(value);
-    this.paymentMethodDraft.update((draft) => ({ ...draft, currentBalance: numeric }));
+  protected onPaymentMethodBalanceChange(value: number): void {
+    this.onPaymentMethodDraftChange('currentBalance', value);
   }
 
-  protected onPaymentMethodLimitChange(value: string): void {
-    const numeric = this.parseAmount(value);
-    this.paymentMethodDraft.update((draft) => ({ ...draft, creditLimit: numeric }));
+  protected onPaymentMethodLimitChange(value: number): void {
+    this.onPaymentMethodDraftChange('creditLimit', value);
   }
 
-  protected onPaymentMethodClosingDayChange(value: string): void {
-    const numeric = this.parseInteger(value, 1, 31);
-    this.paymentMethodDraft.update((draft) => ({ ...draft, statementClosingDay: numeric }));
+  protected onPaymentMethodClosingDayChange(value: number): void {
+    this.onPaymentMethodDraftChange('statementClosingDay', Math.min(31, Math.max(1, Math.trunc(value) || 1)));
   }
 
-  protected onPaymentMethodCreditDaysChange(value: string): void {
-    const numeric = this.parseInteger(value, 1, 60);
-    this.paymentMethodDraft.update((draft) => ({ ...draft, creditDays: numeric }));
+  protected onPaymentMethodCreditDaysChange(value: number): void {
+    this.onPaymentMethodDraftChange('creditDays', Math.max(1, Math.trunc(value) || 1));
   }
 
   protected addPaymentMethod(): void {
-    const draft = this.paymentMethodDraft();
-    const trimmedName = draft.name.trim();
-    if (!trimmedName) {
+    if (!this.canAddPaymentMethod()) {
       return;
     }
+    const draft = this.paymentMethodDraft();
     const tempId = this.nextPaymentMethodTempId--;
     if (draft.type === 'credit') {
-      if (draft.creditLimit <= 0) {
-        return;
-      }
-      if (draft.statementClosingDay < 1 || draft.statementClosingDay > 31) {
-        return;
-      }
-      if (draft.creditDays < 1) {
-        return;
-      }
+      const creditLimit = this.roundCurrency(draft.creditLimit);
       this.paymentMethods.update((methods) => [
         ...methods,
         {
           id: tempId,
           type: 'credit',
-          name: trimmedName,
-          creditLimit: this.roundCurrency(draft.creditLimit),
-          availableCredit: this.roundCurrency(draft.creditLimit),
+          name: draft.name.trim(),
+          creditLimit,
+          availableCredit: creditLimit,
           statementClosingDay: draft.statementClosingDay,
           creditDays: draft.creditDays,
         },
@@ -201,7 +242,7 @@ export class OnboardingComponent {
         {
           id: tempId,
           type: draft.type,
-          name: trimmedName,
+          name: draft.name.trim(),
           currentBalance: this.roundCurrency(draft.currentBalance),
         },
       ]);
@@ -220,15 +261,49 @@ export class OnboardingComponent {
     this.paymentMethods.update((methods) => methods.filter((_, i) => i !== index));
   }
 
-  protected onIncomeDraftFieldChange<K extends keyof IncomeDraft>(field: K, value: IncomeDraft[K]): void {
+  protected onIncomeDraftChange<K extends keyof IncomeDraft>(field: K, value: IncomeDraft[K]): void {
     this.incomeDraft.update((draft) => ({ ...draft, [field]: value }));
   }
 
+  protected onIncomeDescriptionChange(value: string): void {
+    this.onIncomeDraftChange('description', value);
+  }
+
+  protected onIncomeAmountChange(value: number): void {
+    this.onIncomeDraftChange('amount', value);
+  }
+
+  protected onIncomeDateChange(value: string): void {
+    this.onIncomeDraftChange('date', value);
+  }
+
+  protected onIncomePaymentMethodIdChange(value: number | string | null): void {
+    this.onIncomeDraftChange('paymentMethodId', typeof value === 'number' ? value : 0);
+  }
+
+  protected onIncomeCategoryChange(value: number | string | null): void {
+    if (typeof value === 'string') {
+      this.onIncomeDraftChange('category', value as IncomeCategory);
+    }
+  }
+
+  protected onIncomeFrequencyChange(value: IncomeFrequency | null): void {
+    if (value !== null) {
+      this.onIncomeDraftChange('frequency', value);
+    }
+  }
+
+  protected onIncomeStatusChange(value: IncomeStatus | null): void {
+    if (value !== null) {
+      this.onIncomeDraftChange('status', value);
+    }
+  }
+
   protected addIncome(): void {
-    const draft = this.incomeDraft();
-    if (!draft.description.trim() || draft.amount <= 0 || !draft.paymentMethodId) {
+    if (!this.canAddIncome()) {
       return;
     }
+    const draft = this.incomeDraft();
     const parts = draft.date.split('-').map((segment) => Number(segment));
     if (parts.length !== 3 || parts.some((segment) => Number.isNaN(segment))) {
       return;
@@ -252,7 +327,7 @@ export class OnboardingComponent {
       date: this.todayIsoDate(),
       description: '',
       amount: 0,
-      category: this.incomeCategories[0],
+      category: draft.category,
       paymentMethodId: draft.paymentMethodId,
       frequency: 'monthly',
       status: 'received',
@@ -263,25 +338,31 @@ export class OnboardingComponent {
     this.incomes.update((items) => items.filter((_, i) => i !== index));
   }
 
-  protected onPocketDraftFieldChange<K extends keyof PocketDraft>(field: K, value: PocketDraft[K]): void {
+  protected onPocketDraftChange<K extends keyof PocketDraft>(field: K, value: PocketDraft[K]): void {
     this.pocketDraft.update((draft) => ({ ...draft, [field]: value }));
   }
 
-  protected onPocketPercentageChange(value: string): void {
-    const numeric = this.parseAmount(value);
-    this.pocketDraft.update((draft) => ({ ...draft, percentage: numeric }));
+  protected onPocketNameChange(value: string): void {
+    this.onPocketDraftChange('name', value);
+  }
+
+  protected onPocketEmojiChange(value: string): void {
+    this.onPocketDraftChange('emoji', value);
+  }
+
+  protected onPocketPercentageChange(value: number): void {
+    this.onPocketDraftChange('percentage', value);
   }
 
   protected addPocket(): void {
-    const draft = this.pocketDraft();
-    const name = draft.name.trim();
-    if (!name || draft.percentage <= 0) {
+    if (!this.canAddPocket()) {
       return;
     }
+    const draft = this.pocketDraft();
     this.pockets.update((pockets) => [
       ...pockets,
       {
-        name,
+        name: draft.name.trim(),
         emoji: draft.emoji || '💼',
         percentage: this.roundCurrency(draft.percentage),
         sortOrder: pockets.length,
@@ -351,12 +432,8 @@ export class OnboardingComponent {
     }
   }
 
-  protected formatCurrency(value: number): string {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN',
-      maximumFractionDigits: 2,
-    }).format(value);
+  protected paymentMethodName(id: number): string {
+    return this.paymentMethods().find((method) => method.id === id)?.name ?? '—';
   }
 
   protected paymentMethodTypeLabel(type: PaymentMethodType): string {
@@ -365,23 +442,18 @@ export class OnboardingComponent {
     return 'Crédito';
   }
 
-  protected frequencyLabel(frequency: Income['frequency']): string {
+  protected frequencyLabel(frequency: IncomeFrequency): string {
     if (frequency === 'one-time') return 'Única';
     if (frequency === 'monthly') return 'Mensual';
     return 'Quincenal';
   }
 
-  protected statusLabel(status: Income['status']): string {
+  protected statusLabel(status: IncomeStatus): string {
     return status === 'received' ? 'Recibido' : 'Esperado';
   }
 
-  protected paymentMethodName(id: number): string {
-    return this.paymentMethods().find((method) => method.id === id)?.name ?? '—';
-  }
-
   private todayIsoDate(): string {
-    const today = new Date();
-    return this.toIsoDate(today);
+    return this.toIsoDate(new Date());
   }
 
   private toIsoDate(date: Date): string {
@@ -389,20 +461,6 @@ export class OnboardingComponent {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
-  }
-
-  private parseAmount(value: string): number {
-    const cleaned = value.replace(/[^0-9.]/g, '');
-    const numeric = Number(cleaned);
-    return Number.isFinite(numeric) && numeric >= 0 ? numeric : 0;
-  }
-
-  private parseInteger(value: string, min: number, max: number): number {
-    const numeric = Number(value);
-    if (!Number.isFinite(numeric)) {
-      return min;
-    }
-    return Math.min(Math.max(Math.trunc(numeric), min), max);
   }
 
   private roundCurrency(value: number): number {

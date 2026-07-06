@@ -1,0 +1,126 @@
+// =====================================================================
+// Bolsi App — Layout helpers (screen containers, headers, modals, etc.)
+// =====================================================================
+
+.app-screen {
+  min-height: 100dvh;
+  background: var(--background-primary);
+  padding-bottom: var(--navigation-height);
+}
+
+.app-screen--no-navigation {
+  padding-bottom: 0;
+}
+
+.app-screen-header {
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--border-default);
+  background: var(--background-elevated);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.app-screen-header h1 {
+  font-size: var(--text-size-large);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.app-screen-content {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.app-section-title {
+  font-size: var(--text-size-medium);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.app-section-subtitle {
+  font-size: var(--text-size-base);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+// ----- Modal / bottom sheet --------------------------------------------
+
+.app-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--background-overlay);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.app-modal-sheet {
+  width: 100%;
+  max-width: var(--max-content-width);
+  background: var(--surface);
+  border-radius: var(--radius-extra-large) var(--radius-extra-large) 0 0;
+  padding: var(--space-4) var(--space-4)
+           calc(var(--space-4) + env(safe-area-inset-bottom));
+  max-height: 92dvh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  animation: app-slide-up 0.25s ease;
+}
+
+@keyframes app-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.app-modal-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--border-default);
+  border-radius: var(--radius-full);
+  margin: 0 auto var(--space-3);
+}
+
+.app-modal-title {
+  font-size: var(--text-size-medium);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2);
+}
+
+// ----- Step indicator (wizard) -----------------------------------------
+
+.app-step-indicator {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: center;
+}
+
+.app-step-indicator__dot {
+  height: 8px;
+  width: 8px;
+  border-radius: var(--radius-full);
+  background: var(--border-default);
+  transition: all 0.2s ease;
+}
+
+.app-step-indicator__dot--active {
+  background: var(--color-primary);
+  width: 20px;
+}
+
+.app-step-indicator__dot--complete {
+  background: var(--color-primary);
+  opacity: 0.45;
+}

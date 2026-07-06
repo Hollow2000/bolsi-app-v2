@@ -1,27 +1,22 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 
+import { CardComponent } from '../../shared/components/card/card.component';
+
 @Component({
   selector: 'app-expenses-placeholder',
+  imports: [CardComponent],
   template: `
-    <div class="screen">
-      <header class="screen-header">
+    <div class="app-screen">
+      <header class="app-screen-header">
         <h1>Gastos</h1>
       </header>
-      <main class="screen-content">
-        <p class="placeholder-message">Disponible en la siguiente fase.</p>
+      <main class="app-screen-content">
+        <app-card title="Próximamente">
+          <p class="placeholder-message">El registro y la lista de gastos llegan en la siguiente fase.</p>
+        </app-card>
       </main>
     </div>
   `,
-  styles: [
-    `
-      :host { display: block; }
-      .placeholder-message {
-        text-align: center;
-        color: var(--text-secondary);
-        padding: var(--space-8) 0;
-      }
-    `,
-  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExpensesPlaceholderComponent {}
