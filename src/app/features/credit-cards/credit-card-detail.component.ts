@@ -186,6 +186,31 @@ interface PeriodRange {
               </ul>
             }
           </section>
+
+          <section>
+            <header class="section-header">
+              <h2 class="section-title">Gastos recientes</h2>
+            </header>
+            @if (recentExpenses().length === 0) {
+              <app-card>
+                <p class="empty">Sin gastos registrados este mes.</p>
+              </app-card>
+            } @else {
+              <ul class="app-list" aria-label="Gastos recientes">
+                @for (expense of recentExpenses(); track expense.id) {
+                  <li>
+                    <app-list-item
+                      icon="shopping_bag"
+                      [title]="expense.description"
+                      [subtitle]="expense.date + ' · ' + expense.category"
+                      [amount]="(expense.amount | mexicanCurrency) ?? ''"
+                      tone="expense"
+                    />
+                  </li>
+                }
+              </ul>
+            }
+          </section>
         </main>
       </div>
 
@@ -393,6 +418,7 @@ export class CreditCardDetailComponent {
   protected readonly periodInstallments = signal<InstallmentPlan[]>([]);
   protected readonly upcomingInstallments = signal<InstallmentPlan[]>([]);
   protected readonly expensesById = signal<Map<number, Expense>>(new Map());
+  protected readonly recentExpenses = signal<Expense[]>([]);
   protected readonly currentMonth = signal(new Date().getMonth() + 1);
   protected readonly currentYear = signal(new Date().getFullYear());
 
@@ -596,13 +622,21 @@ export class CreditCardDetailComponent {
     this.paymentMethods.set(allMethods);
 
     const range = this.periodRange();
-    const direct = await database.expenses
+    const allCardExpenses = await database.expenses
       .where('paymentMethodId').equals(id)
       .toArray();
-    const inRange = direct.filter(
+    const inRange = allCardExpenses.filter(
       (expense) => !expense.isInstallment && expense.date >= range.startIso && expense.date <= range.endIso,
     );
     this.periodDirectCharges.set(inRange);
+
+    const month = this.currentMonth();
+    const year = this.currentYear();
+    this.recentExpenses.set(
+      allCardExpenses
+        .filter((expense) => expense.month === month && expense.year === year)
+        .sort((a, b) => b.date.localeCompare(a.date)),
+    );
 
     const installmentPlans = await database.installmentPlans
       .where('paymentMethodId').equals(id)

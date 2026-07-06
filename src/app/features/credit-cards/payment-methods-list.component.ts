@@ -35,7 +35,7 @@ import { EditPaymentMethodModalComponent } from './edit-payment-method-modal.com
           <ul class="app-list" aria-label="Métodos de pago">
             @for (method of paymentMethods(); track method.id) {
               <li class="app-list-row">
-                <a class="item-link" [routerLink]="['/payment-methods', method.id]">
+                <a class="item-link" [routerLink]="detailRoute(method)">
                   <app-list-item
                     [icon]="iconFor(method.type)"
                     [title]="method.name"
@@ -126,6 +126,13 @@ export class PaymentMethodsListComponent {
     if (method.id !== undefined) {
       void this.router.navigate(['/credit-cards', method.id]);
     }
+  }
+
+  protected detailRoute(method: PaymentMethod): string[] {
+    if (method.type === 'credit') {
+      return ['/credit-cards', String(method.id)];
+    }
+    return ['/payment-methods', String(method.id)];
   }
 
   protected iconFor(type: PaymentMethodType): string {
