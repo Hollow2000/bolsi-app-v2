@@ -44,6 +44,17 @@ export class BolsiDatabase extends Dexie {
       expenseTemplates: '++id, description',
       appSettings: '++id',
     });
+    this.version(3).stores({
+      paymentMethods: '++id, type',
+      expenses: '++id, month, year, paymentMethodId, pocketId, isInstallment',
+      installmentPlans: '++id, expenseOriginId, paymentMethodId, cutoffMonth, cutoffYear, paid',
+      incomes: '++id, month, year, paymentMethodId, status',
+      pockets: '++id, sortOrder',
+      monthlyPayments: '++id, month, year, paid, isRecurring',
+      budgets: '++id, month, year, category',
+      expenseTemplates: '++id, description',
+      appSettings: '++id',
+    });
   }
 }
 
