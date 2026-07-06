@@ -4,14 +4,19 @@ import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs/operators';
 
 import { BottomNavigationComponent } from './shared/components/bottom-navigation/bottom-navigation.component';
+import { ToastComponent } from './shared/components/toast/toast.component';
+import { ToastService } from './shared/services/toast.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, BottomNavigationComponent],
+  imports: [BottomNavigationComponent, RouterOutlet, ToastComponent],
   template: `
     <router-outlet />
     @if (showNavigation()) {
       <app-bottom-navigation />
+    }
+    @if (toastMessage(); as message) {
+      <app-toast>{{ message }}</app-toast>
     }
   `,
   styleUrl: './app.scss',
@@ -19,6 +24,7 @@ import { BottomNavigationComponent } from './shared/components/bottom-navigation
 })
 export class App {
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
 
   private readonly currentUrl = toSignal(
     this.router.events.pipe(
@@ -32,4 +38,6 @@ export class App {
     const url = this.currentUrl();
     return !url.startsWith('/onboarding') && url !== '/' && url !== '';
   });
+
+  protected readonly toastMessage = this.toast.message;
 }

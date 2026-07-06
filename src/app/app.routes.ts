@@ -21,33 +21,39 @@ export const routes: Routes = [
     path: 'expenses',
     canActivate: [setupRequiredGuard],
     loadComponent: () =>
-      import('./features/expenses/expenses-placeholder.component').then(
-        (m) => m.ExpensesPlaceholderComponent,
-      ),
+      import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
   },
   {
     path: 'credit-cards',
     canActivate: [setupRequiredGuard],
     loadComponent: () =>
-      import('./features/credit-cards/credit-cards-placeholder.component').then(
-        (m) => m.CreditCardsPlaceholderComponent,
+      import('./features/credit-cards/payment-methods-list.component').then(
+        (m) => m.PaymentMethodsListComponent,
       ),
   },
   {
-    path: 'monthly-payments',
+    path: 'income',
     canActivate: [setupRequiredGuard],
     loadComponent: () =>
-      import('./features/monthly-payments/monthly-payments-placeholder.component').then(
-        (m) => m.MonthlyPaymentsPlaceholderComponent,
-      ),
+      import('./features/income/income-list.component').then((m) => m.IncomeListComponent),
+  },
+  {
+    path: 'pockets',
+    canActivate: [setupRequiredGuard],
+    loadComponent: () =>
+      import('./features/pockets/pockets-list.component').then((m) => m.PocketsListComponent),
   },
   {
     path: 'settings',
     canActivate: [setupRequiredGuard],
     loadComponent: () =>
-      import('./features/settings/settings-placeholder.component').then(
-        (m) => m.SettingsPlaceholderComponent,
-      ),
+      import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
+  },
+  {
+    path: 'monthly-payments',
+    canActivate: [setupRequiredGuard],
+    loadComponent: () =>
+      import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
   },
   { path: '**', redirectTo: 'onboarding' },
 ];
