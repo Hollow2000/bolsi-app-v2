@@ -19,6 +19,7 @@ import { EditPaymentMethodModalComponent } from './edit-payment-method-modal.com
     EditPaymentMethodModalComponent,
     IconButtonDirective,
     ListItemComponent,
+    MexicanCurrencyPipe,
   ],
   template: `
     <div class="app-screen">
