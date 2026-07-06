@@ -61,7 +61,19 @@ export const routes: Routes = [
     path: 'settings',
     canActivate: [setupRequiredGuard],
     loadComponent: () =>
-      import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
+      import('./features/settings/settings.component').then((m) => m.SettingsComponent),
+  },
+  {
+    path: 'budgets',
+    canActivate: [setupRequiredGuard],
+    loadComponent: () =>
+      import('./features/budgets/budgets-list.component').then((m) => m.BudgetsListComponent),
+  },
+  {
+    path: 'history',
+    canActivate: [setupRequiredGuard],
+    loadComponent: () =>
+      import('./features/history/history.component').then((m) => m.HistoryComponent),
   },
   {
     path: 'monthly-payments',

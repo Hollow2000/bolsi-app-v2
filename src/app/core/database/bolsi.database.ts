@@ -3,6 +3,7 @@ import Dexie, { type EntityTable } from 'dexie';
 import type { AppSettings } from '../models/app-settings.model';
 import type { Budget } from '../models/budget.model';
 import type { Expense } from '../models/expense.model';
+import type { ExpenseTemplate } from '../models/expense-template.model';
 import type { Income } from '../models/income.model';
 import type { InstallmentPlan } from '../models/installment-plan.model';
 import type { MonthlyPayment } from '../models/monthly-payment.model';
@@ -17,6 +18,7 @@ export class BolsiDatabase extends Dexie {
   pockets!: EntityTable<Pocket, 'id'>;
   monthlyPayments!: EntityTable<MonthlyPayment, 'id'>;
   budgets!: EntityTable<Budget, 'id'>;
+  expenseTemplates!: EntityTable<ExpenseTemplate, 'id'>;
   appSettings!: EntityTable<AppSettings, 'id'>;
 
   constructor() {
@@ -29,6 +31,17 @@ export class BolsiDatabase extends Dexie {
       pockets: '++id',
       monthlyPayments: '++id, month, year, paid, isRecurring',
       budgets: '++id, month, year, category',
+      appSettings: '++id',
+    });
+    this.version(2).stores({
+      paymentMethods: '++id, type',
+      expenses: '++id, month, year, paymentMethodId, pocketId, isInstallment',
+      installmentPlans: '++id, expenseOriginId, paymentMethodId, cutoffMonth, cutoffYear, paid',
+      incomes: '++id, month, year, paymentMethodId, status',
+      pockets: '++id',
+      monthlyPayments: '++id, month, year, paid, isRecurring',
+      budgets: '++id, month, year, category',
+      expenseTemplates: '++id, description',
       appSettings: '++id',
     });
   }
