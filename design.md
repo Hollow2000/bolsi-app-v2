@@ -1,14 +1,14 @@
-# design.md — Sistema de Diseño · Bolsi App
+# design.md — Bolsi App Design System
 
-## Filosofía
+## Philosophy
 
-Diseño **minimalista y funcional**. La interfaz no compite con los datos, los sirve. Paleta de un solo color primario (Seagull), grises neutros para el resto. Sin gradientes decorativos, sin sombras exageradas, sin colores de acento múltiples. Lo que debe destacar es el número, no el componente.
+**Minimalist and functional.** The interface does not compete with the data — it serves it. A single primary color (Seagull), neutral grays for everything else. No decorative gradients, no heavy shadows, no multiple accent colors. What must stand out is the number, not the component.
 
 ---
 
-## Paleta de colores
+## Color Palette
 
-### Primario — Seagull
+### Primary — Seagull
 
 ```scss
 $seagull-50:  #eff9ff;
@@ -16,15 +16,15 @@ $seagull-100: #dff4ff;
 $seagull-200: #b8eaff;
 $seagull-300: #78dbff;
 $seagull-400: #4dd2ff;  // hover states
-$seagull-500: #06b5f1;  // interactivo principal
-$seagull-600: #0093ce;  // botones primarios
-$seagull-700: #0075a7;  // botones activos / pressed
-$seagull-800: #02628a;  // texto sobre fondo claro
-$seagull-900: #085172;  // énfasis fuerte
-$seagull-950: #06334b;  // headers oscuros
+$seagull-500: #06b5f1;  // main interactive
+$seagull-600: #0093ce;  // primary buttons
+$seagull-700: #0075a7;  // active / pressed buttons
+$seagull-800: #02628a;  // text on light background
+$seagull-900: #085172;  // strong emphasis
+$seagull-950: #06334b;  // dark headers
 ```
 
-### Neutros — Gray (zinc)
+### Neutrals — Zinc
 
 ```scss
 $gray-50:  #fafafa;
@@ -40,237 +40,340 @@ $gray-900: #18181b;
 $gray-950: #09090b;
 ```
 
-### Semánticos
+### Semantic Colors
 
 ```scss
-$color-success:  #16a34a;  // verde — saldo positivo, pagado
-$color-warning:  #d97706;  // ámbar — cerca del límite (80%+)
-$color-danger:   #dc2626;  // rojo — déficit, vencido, límite superado
-$color-info:     $seagull-600;
+$color-success: #16a34a;  // positive balance, paid
+$color-warning: #d97706;  // near limit (80%+)
+$color-danger:  #dc2626;  // deficit, overdue, over limit
+$color-info:    $seagull-600;
 ```
 
 ---
 
-## Variables CSS — Implementación
+## CSS Custom Properties — Implementation
 
-Definir en `:root` para modo claro y sobreescribir en `@media (prefers-color-scheme: dark)`. Todos los componentes usan **exclusivamente** estas variables, nunca valores hardcodeados.
+Define in `:root` for light mode and override in `@media (prefers-color-scheme: dark)`.
+All components use **only** these custom properties — never hardcoded color values.
 
 ```scss
 :root {
-  // Fondos
-  --bg-primary:    #{$gray-50};
-  --bg-secondary:  #{$gray-100};
-  --bg-elevated:   #ffffff;
-  --bg-overlay:    rgba(0, 0, 0, 0.4);
+  // Backgrounds
+  --background-primary:     #{$gray-50};
+  --background-secondary:   #{$gray-100};
+  --background-elevated:    #ffffff;
+  --background-overlay:     rgba(0, 0, 0, 0.4);
 
-  // Superficies de cards y modales
-  --surface:       #ffffff;
-  --surface-alt:   #{$gray-100};
+  // Card and modal surfaces
+  --surface:                #ffffff;
+  --surface-alternate:      #{$gray-100};
 
-  // Bordes
-  --border:        #{$gray-200};
-  --border-focus:  #{$seagull-500};
+  // Borders
+  --border-default:         #{$gray-200};
+  --border-focus:           #{$seagull-500};
 
-  // Texto
-  --text-primary:  #{$gray-900};
-  --text-secondary:#{$gray-500};
-  --text-disabled: #{$gray-400};
-  --text-inverse:  #ffffff;
-  --text-on-primary: #ffffff;
+  // Text
+  --text-primary:           #{$gray-900};
+  --text-secondary:         #{$gray-500};
+  --text-disabled:          #{$gray-400};
+  --text-inverse:           #ffffff;
+  --text-on-primary:        #ffffff;
 
-  // Primario interactivo
-  --color-primary:        #{$seagull-600};
-  --color-primary-hover:  #{$seagull-700};
-  --color-primary-subtle: #{$seagull-50};
-  --color-primary-muted:  #{$seagull-100};
+  // Primary interactive
+  --color-primary:          #{$seagull-600};
+  --color-primary-hover:    #{$seagull-700};
+  --color-primary-subtle:   #{$seagull-50};
+  --color-primary-muted:    #{$seagull-100};
 
-  // Semánticos
-  --color-success:        #{$color-success};
-  --color-success-subtle: #dcfce7;
-  --color-warning:        #{$color-warning};
-  --color-warning-subtle: #fef3c7;
-  --color-danger:         #{$color-danger};
-  --color-danger-subtle:  #fee2e2;
+  // Semantic
+  --color-success:          #{$color-success};
+  --color-success-subtle:   #dcfce7;
+  --color-warning:          #{$color-warning};
+  --color-warning-subtle:   #fef3c7;
+  --color-danger:           #{$color-danger};
+  --color-danger-subtle:    #fee2e2;
 
-  // Navegación
-  --nav-height:    64px;
-  --nav-bg:        #ffffff;
-  --nav-border:    #{$gray-200};
+  // Navigation
+  --navigation-height:      64px;
+  --navigation-background:  #ffffff;
+  --navigation-border:      #{$gray-200};
 
-  // Radios
-  --radius-sm:  6px;
-  --radius-md:  10px;
-  --radius-lg:  16px;
-  --radius-xl:  24px;
-  --radius-full:9999px;
+  // Border radius
+  --radius-small:           6px;
+  --radius-medium:          10px;
+  --radius-large:           16px;
+  --radius-extra-large:     24px;
+  --radius-full:            9999px;
 
-  // Sombras
-  --shadow-sm:  0 1px 2px rgba(0,0,0,0.06);
-  --shadow-md:  0 4px 12px rgba(0,0,0,0.08);
-  --shadow-lg:  0 8px 24px rgba(0,0,0,0.10);
+  // Shadows
+  --shadow-small:           0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-medium:          0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-large:           0 8px 24px rgba(0, 0, 0, 0.10);
+
+  // Spacing scale — 4px base
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  // Typography scale
+  --text-size-extra-small:  11px;
+  --text-size-small:        13px;
+  --text-size-base:         15px;
+  --text-size-medium:       17px;
+  --text-size-large:        20px;
+  --text-size-extra-large:  24px;
+  --text-size-display:      32px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-primary:    #{$gray-950};
-    --bg-secondary:  #{$gray-900};
-    --bg-elevated:   #{$gray-900};
+    --background-primary:     #{$gray-950};
+    --background-secondary:   #{$gray-900};
+    --background-elevated:    #{$gray-900};
 
-    --surface:       #{$gray-800};
-    --surface-alt:   #{$gray-900};
+    --surface:                #{$gray-800};
+    --surface-alternate:      #{$gray-900};
 
-    --border:        #{$gray-700};
-    --border-focus:  #{$seagull-400};
+    --border-default:         #{$gray-700};
+    --border-focus:           #{$seagull-400};
 
-    --text-primary:  #{$gray-50};
-    --text-secondary:#{$gray-400};
-    --text-disabled: #{$gray-600};
+    --text-primary:           #{$gray-50};
+    --text-secondary:         #{$gray-400};
+    --text-disabled:          #{$gray-600};
 
-    --color-primary:        #{$seagull-500};
-    --color-primary-hover:  #{$seagull-400};
-    --color-primary-subtle: rgba(6, 181, 241, 0.12);
-    --color-primary-muted:  rgba(6, 181, 241, 0.18);
+    --color-primary:          #{$seagull-500};
+    --color-primary-hover:    #{$seagull-400};
+    --color-primary-subtle:   rgba(6, 181, 241, 0.12);
+    --color-primary-muted:    rgba(6, 181, 241, 0.18);
 
-    --color-success-subtle: rgba(22, 163, 74, 0.15);
-    --color-warning-subtle: rgba(217, 119, 6, 0.15);
-    --color-danger-subtle:  rgba(220, 38, 38, 0.15);
+    --color-success-subtle:   rgba(22, 163, 74, 0.15);
+    --color-warning-subtle:   rgba(217, 119, 6, 0.15);
+    --color-danger-subtle:    rgba(220, 38, 38, 0.15);
 
-    --nav-bg:     #{$gray-900};
-    --nav-border: #{$gray-800};
+    --navigation-background:  #{$gray-900};
+    --navigation-border:      #{$gray-800};
 
-    --shadow-sm:  0 1px 2px rgba(0,0,0,0.3);
-    --shadow-md:  0 4px 12px rgba(0,0,0,0.4);
-    --shadow-lg:  0 8px 24px rgba(0,0,0,0.5);
+    --shadow-small:           0 1px 2px rgba(0, 0, 0, 0.30);
+    --shadow-medium:          0 4px 12px rgba(0, 0, 0, 0.40);
+    --shadow-large:           0 8px 24px rgba(0, 0, 0, 0.50);
   }
 }
 ```
 
 ---
 
-## Tipografía
+## Typography
 
-Usar la fuente del sistema (`system-ui`) para máxima velocidad de carga sin dependencias externas.
+Use the system font stack for zero loading cost:
 
 ```scss
---font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
---font-mono:   'SF Mono', 'Fira Code', 'Consolas', monospace; // solo para montos grandes
+--font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+--font-family-mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+// mono is reserved for large monetary display amounts only
 ```
 
-### Escala tipográfica
+### Type Scale
 
-| Token | Tamaño | Peso | Uso |
-|-------|--------|------|-----|
-| `--text-xs`  | 11px | 400 | Labels de formulario, metadata |
-| `--text-sm`  | 13px | 400 | Texto secundario, subtítulos de card |
-| `--text-base`| 15px | 400 | Texto de cuerpo, listas |
-| `--text-md`  | 17px | 500 | Títulos de sección, nombres de tarjeta |
-| `--text-lg`  | 20px | 600 | Títulos de pantalla |
-| `--text-xl`  | 24px | 700 | Montos destacados en cards |
-| `--text-2xl` | 32px | 700 | Balance principal del dashboard |
+| Token | Size | Weight | Usage |
+|-------|------|--------|-------|
+| `--text-size-extra-small` | 11px | 400 | Form labels, metadata, badges |
+| `--text-size-small`       | 13px | 400 | Secondary text, card subtitles |
+| `--text-size-base`        | 15px | 400 | Body text, list items |
+| `--text-size-medium`      | 17px | 500 | Section titles, card names |
+| `--text-size-large`       | 20px | 600 | Screen titles |
+| `--text-size-extra-large` | 24px | 700 | Highlighted amounts in cards |
+| `--text-size-display`     | 32px | 700 | Main balance on dashboard |
 
-### Montos de dinero
-
-Los montos relevantes (balance, saldo disponible, totales) deben usar `--font-mono` para alineación visual y `--text-xl` o `--text-2xl`. Los montos en listas usan `--font-family` normal.
+Monetary amounts shown at display size must use `--font-family-mono` for digit alignment.
 
 ---
 
-## Espaciado
+## Icon Library — Google Material Symbols
 
-Sistema de 4px base:
+Import via CDN in `index.html` (outlined style, no fill):
 
-```scss
---space-1:  4px;
---space-2:  8px;
---space-3:  12px;
---space-4:  16px;
---space-5:  20px;
---space-6:  24px;
---space-8:  32px;
---space-10: 40px;
---space-12: 48px;
+```html
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+/>
 ```
 
-Padding interior de pantallas: `--space-4` (16px) en móvil, `--space-6` (24px) en tablet+.
+Usage in Angular templates:
+
+```html
+<span class="material-symbols-outlined icon">wallet</span>
+<span class="material-symbols-outlined icon">credit_card</span>
+```
+
+```scss
+.icon {
+  font-size: 22px;
+  line-height: 1;
+  user-select: none;
+  vertical-align: middle;
+  // Always inherit color from parent — never hardcode icon color
+}
+.icon--small  { font-size: 18px; }
+.icon--large  { font-size: 28px; }
+```
+
+### Icon Map — Use These Exact Names
+
+| Context | Icon name |
+|---------|-----------|
+| Dashboard | `home` |
+| Expenses | `shopping_cart` |
+| Income | `trending_up` |
+| Credit cards | `credit_card` |
+| Monthly payments | `calendar_month` |
+| Pockets (bolsillos) | `wallet` |
+| Settings | `settings` |
+| Add | `add` |
+| Add circle (FAB) | `add_circle` |
+| Edit | `edit` |
+| Delete | `delete` |
+| Close | `close` |
+| Paid / confirmed | `check_circle` |
+| Pending | `schedule` |
+| Overdue / warning | `warning` |
+| Installments (MSI) | `payments` |
+| Balance | `account_balance` |
+| Export / backup | `download` |
+| Import / restore | `upload` |
+| History | `history` |
+| Chevron right | `chevron_right` |
+| Expand / collapse | `expand_more` |
+| Received income | `arrow_downward` |
+| Expense outflow | `arrow_upward` |
 
 ---
 
-## Componentes base
+## Base Components
 
-### Botón primario
+### Primary Button
+
 ```scss
-.btn-primary {
+.button-primary {
   background: var(--color-primary);
   color: var(--text-on-primary);
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-medium);
   padding: var(--space-3) var(--space-6);
-  font-size: var(--text-base);
+  font-size: var(--text-size-base);
   font-weight: 600;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   transition: background 0.15s ease;
+  min-height: 44px;
 
-  &:hover  { background: var(--color-primary-hover); }
-  &:active { transform: scale(0.98); }
-  &:disabled { background: var(--text-disabled); cursor: not-allowed; }
+  &:hover   { background: var(--color-primary-hover); }
+  &:active  { transform: scale(0.98); }
+  &:disabled {
+    background: var(--text-disabled);
+    cursor: not-allowed;
+    pointer-events: none;
+  }
 }
 ```
 
-### Botón secundario (outline)
+### Secondary Button (outline)
+
 ```scss
-.btn-secondary {
+.button-secondary {
   background: transparent;
   color: var(--color-primary);
   border: 1.5px solid var(--color-primary);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-medium);
   padding: var(--space-3) var(--space-6);
-  font-size: var(--text-base);
+  font-size: var(--text-size-base);
   font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
 }
 ```
 
-### Botón destructivo
+### Destructive Button
+
 ```scss
-.btn-danger {
+.button-destructive {
   background: var(--color-danger);
   color: #ffffff;
-  // misma estructura que btn-primary
+  // same structure as button-primary
 }
 ```
 
-### Botón fantasma (ghost) — para acciones secundarias en listas
+### Ghost Button (icon actions in lists)
+
 ```scss
-.btn-ghost {
+.button-ghost {
   background: transparent;
   color: var(--text-secondary);
   border: none;
   padding: var(--space-2);
-  border-radius: var(--radius-sm);
-  &:hover { background: var(--surface-alt); }
+  border-radius: var(--radius-small);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+
+  &:hover { background: var(--surface-alternate); }
 }
 ```
 
 ### Card
+
 ```scss
 .card {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-large);
   padding: var(--space-4);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-small);
+}
+
+.card--interactive {
+  cursor: pointer;
+  transition: box-shadow 0.15s ease;
+  &:hover { box-shadow: var(--shadow-medium); }
 }
 ```
 
-### Input
+### Form Field
+
 ```scss
-.input-field {
+// Every input must be paired with a visible label — never use placeholder alone
+.form-label {
+  display: block;
+  font-size: var(--text-size-small);
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-1);
+}
+
+.form-input {
   width: 100%;
-  background: var(--bg-primary);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-md);
+  background: var(--background-primary);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-medium);
   padding: var(--space-3) var(--space-4);
-  font-size: var(--text-base);
+  font-size: var(--text-size-base);
   color: var(--text-primary);
   transition: border-color 0.15s ease;
+  min-height: 44px;
 
   &:focus {
     outline: none;
@@ -281,40 +384,45 @@ Padding interior de pantallas: `--space-4` (16px) en móvil, `--space-6` (24px) 
   &::placeholder { color: var(--text-disabled); }
 }
 
-.input-label {
-  display: block;
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--text-secondary);
-  margin-bottom: var(--space-1);
+.form-error {
+  font-size: var(--text-size-extra-small);
+  color: var(--color-danger);
+  margin-top: var(--space-1);
 }
 
-// Siempre incluir label visible — nunca solo placeholder
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--space-4);
+}
 ```
 
-### Badge / Chip de estado
+### Status Badge
+
 ```scss
 .badge {
   display: inline-flex;
   align-items: center;
+  gap: var(--space-1);
   padding: 2px var(--space-2);
   border-radius: var(--radius-full);
-  font-size: var(--text-xs);
+  font-size: var(--text-size-extra-small);
   font-weight: 600;
 
   &--success { background: var(--color-success-subtle); color: var(--color-success); }
   &--warning { background: var(--color-warning-subtle); color: var(--color-warning); }
   &--danger  { background: var(--color-danger-subtle);  color: var(--color-danger);  }
-  &--neutral { background: var(--surface-alt);          color: var(--text-secondary); }
+  &--neutral { background: var(--surface-alternate);    color: var(--text-secondary); }
   &--primary { background: var(--color-primary-muted);  color: var(--color-primary); }
 }
 ```
 
-### Barra de progreso (bolsillos)
+### Progress Bar
+
 ```scss
 .progress-bar {
   height: 6px;
-  background: var(--surface-alt);
+  background: var(--surface-alternate);
   border-radius: var(--radius-full);
   overflow: hidden;
 
@@ -324,119 +432,133 @@ Padding interior de pantallas: `--space-4` (16px) en móvil, `--space-6` (24px) 
     background: var(--color-primary);
     transition: width 0.3s ease;
 
-    &--warning { background: var(--color-warning); }
-    &--danger  { background: var(--color-danger); }
+    &--warning { background: var(--color-warning); } // pocket usage > 80%
+    &--danger  { background: var(--color-danger);  } // pocket usage > 100%
   }
 }
-// warning cuando > 80%, danger cuando > 100%
 ```
 
-### Fila de lista (movimientos)
+### List Item (transactions)
+
 ```scss
 .list-item {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-default);
+
+  &:last-child { border-bottom: none; }
 
   &__icon {
-    width: 36px;
-    height: 36px;
-    border-radius: var(--radius-md);
-    background: var(--surface-alt);
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-medium);
+    background: var(--surface-alternate);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
     flex-shrink: 0;
+    color: var(--text-secondary);
   }
 
-  &__content { flex: 1; min-width: 0; }
-  &__title   { font-size: var(--text-base); font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  &__sub     { font-size: var(--text-sm); color: var(--text-secondary); }
+  &__content  { flex: 1; min-width: 0; }
 
-  &__amount  {
-    font-size: var(--text-base);
+  &__title {
+    font-size: var(--text-size-base);
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__subtitle {
+    font-size: var(--text-size-small);
+    color: var(--text-secondary);
+  }
+
+  &__amount {
+    font-size: var(--text-size-base);
     font-weight: 600;
     white-space: nowrap;
-    &--egreso  { color: var(--text-primary); }
-    &--ingreso { color: var(--color-success); }
+
+    &--expense { color: var(--text-primary); }
+    &--income  { color: var(--color-success); }
   }
 }
 ```
 
 ### Toast / Snackbar
+
 ```scss
 .toast {
   position: fixed;
-  bottom: calc(var(--nav-height) + var(--space-4));
+  bottom: calc(var(--navigation-height) + var(--space-4));
   left: 50%;
   transform: translateX(-50%);
-  background: var(--gray-900);     // siempre oscuro en ambos modos
+  background: #{$gray-900};         // always dark regardless of color scheme
   color: #ffffff;
   padding: var(--space-3) var(--space-5);
   border-radius: var(--radius-full);
-  font-size: var(--text-sm);
+  font-size: var(--text-size-small);
   font-weight: 500;
   z-index: 9999;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-large);
   white-space: nowrap;
+  pointer-events: none;
 }
 ```
 
 ---
 
-## Navegación (Bottom Nav)
+## Navigation
+
+### Bottom Navigation Bar
 
 ```scss
-.bottom-nav {
+.bottom-navigation {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: var(--nav-height);         // 64px
-  background: var(--nav-bg);
-  border-top: 1px solid var(--nav-border);
+  height: var(--navigation-height);             // 64px
+  background: var(--navigation-background);
+  border-top: 1px solid var(--navigation-border);
   display: flex;
   align-items: center;
   justify-content: space-around;
   z-index: 100;
-  padding-bottom: env(safe-area-inset-bottom); // soporte notch iOS
+  padding-bottom: env(safe-area-inset-bottom);  // iOS notch support
 }
 
-.nav-item {
+.navigation-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 3px;
   padding: var(--space-2);
   color: var(--text-secondary);
-  font-size: var(--text-xs);
+  font-size: var(--text-size-extra-small);
   font-weight: 500;
   cursor: pointer;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-medium);
   transition: color 0.15s ease;
-  min-width: 48px;                   // tap target mínimo
+  min-width: 48px;
+  text-decoration: none;
 
-  svg { width: 22px; height: 22px; }
-
-  &--active {
-    color: var(--color-primary);
-  }
+  &--active { color: var(--color-primary); }
 }
 ```
 
-**Ítems del nav:** Dashboard · Gastos · Tarjetas · Pagos · Ajustes
+Navigation items in order: Dashboard · Expenses · Cards · Payments · Settings
 
----
-
-## FAB (Floating Action Button)
+### Floating Action Button
 
 ```scss
-.fab {
+.floating-action-button {
   position: fixed;
-  bottom: calc(var(--nav-height) + var(--space-4));  // 64px + 16px = 80px
+  bottom: calc(var(--navigation-height) + var(--space-4));  // 64 + 16 = 80px
   right: var(--space-4);
   width: 52px;
   height: 52px;
@@ -444,15 +566,13 @@ Padding interior de pantallas: `--space-4` (16px) en móvil, `--space-6` (24px) 
   background: var(--color-primary);
   color: var(--text-on-primary);
   border: none;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-medium);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 90;
   transition: background 0.15s ease, transform 0.15s ease;
-
-  svg { width: 24px; height: 24px; }
 
   &:active { transform: scale(0.94); }
   &:hover  { background: var(--color-primary-hover); }
@@ -461,22 +581,25 @@ Padding interior de pantallas: `--space-4` (16px) en móvil, `--space-6` (24px) 
 
 ---
 
-## Layout general de pantalla
+## Screen Layout
 
 ```scss
 .screen {
-  min-height: 100dvh;                        // dvh para mobile browsers
-  background: var(--bg-primary);
-  padding-bottom: var(--nav-height);         // espacio para el bottom nav
+  min-height: 100dvh;                              // dvh handles mobile browser chrome
+  background: var(--background-primary);
+  padding-bottom: var(--navigation-height);        // always leave room for bottom navigation
 }
 
 .screen-header {
   padding: var(--space-4) var(--space-4) var(--space-3);
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-default);
+  background: var(--background-elevated);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 
   h1 {
-    font-size: var(--text-lg);
+    font-size: var(--text-size-large);
     font-weight: 700;
     color: var(--text-primary);
     margin: 0;
@@ -496,17 +619,18 @@ Padding interior de pantallas: `--space-4` (16px) en móvil, `--space-6` (24px) 
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: var(--bg-overlay);
+  background: var(--background-overlay);
   z-index: 200;
   display: flex;
-  align-items: flex-end;             // bottom sheet en móvil
+  align-items: flex-end;
 }
 
 .modal-sheet {
   width: 100%;
   background: var(--surface);
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  padding: var(--space-4) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom));
+  border-radius: var(--radius-extra-large) var(--radius-extra-large) 0 0;
+  padding: var(--space-4) var(--space-4)
+           calc(var(--space-4) + env(safe-area-inset-bottom));
   max-height: 92dvh;
   overflow-y: auto;
 }
@@ -514,13 +638,13 @@ Padding interior de pantallas: `--space-4` (16px) en móvil, `--space-6` (24px) 
 .modal-handle {
   width: 36px;
   height: 4px;
-  background: var(--border);
+  background: var(--border-default);
   border-radius: var(--radius-full);
   margin: 0 auto var(--space-4);
 }
 
 .modal-title {
-  font-size: var(--text-md);
+  font-size: var(--text-size-medium);
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: var(--space-4);
@@ -529,7 +653,7 @@ Padding interior de pantallas: `--space-4` (16px) en móvil, `--space-6` (24px) 
 
 ---
 
-## Wizard de Onboarding
+## Onboarding Wizard Step Indicator
 
 ```scss
 .wizard-step-indicator {
@@ -537,53 +661,54 @@ Padding interior de pantallas: `--space-4` (16px) en móvil, `--space-6` (24px) 
   gap: var(--space-2);
   justify-content: center;
   margin-bottom: var(--space-6);
+}
 
-  .step-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: var(--radius-full);
-    background: var(--border);
-    transition: all 0.2s ease;
+.step-dot {
+  height: 8px;
+  width: 8px;
+  border-radius: var(--radius-full);
+  background: var(--border-default);
+  transition: all 0.2s ease;
 
-    &--active   { background: var(--color-primary); width: 20px; }
-    &--complete { background: var(--color-primary); opacity: 0.5; }
-  }
+  &--active   { background: var(--color-primary); width: 20px; }
+  &--complete { background: var(--color-primary); opacity: 0.45; }
 }
 ```
 
 ---
 
-## Accesibilidad
+## Accessibility Rules
 
-- Todo campo de formulario debe tener un `<label>` visible asociado con `for` / `id`. Nunca depender solo del `placeholder`.
-- Los botones de ícono deben tener `aria-label` descriptivo.
-- El contraste de texto sobre fondo debe cumplir WCAG AA (ratio mínimo 4.5:1 para texto normal).
-- Tamaño mínimo de área táctil: 44×44px.
-- Los errores de formulario deben estar vinculados al campo con `aria-describedby`.
-
----
-
-## Reglas de uso del color — Lo que NO hacer
-
-- ❌ No usar más de un color de acento por pantalla además del primario (Seagull)
-- ❌ No usar colores neón, gradientes multicolor ni sombras de color
-- ❌ No cambiar el color de fondo de toda la pantalla para indicar un estado
-- ❌ No hardcodear colores en los componentes — siempre usar variables CSS
-- ❌ No usar colores distintos de `--color-success`, `--color-warning`, `--color-danger` para estados semánticos
+- Every form field must have a visible `<label>` linked via `for`/`id`. Never rely on `placeholder` alone.
+- Icon-only buttons must include `aria-label` with descriptive text.
+- Text contrast must meet WCAG AA (minimum 4.5:1 ratio for normal text).
+- Minimum tap target size: 44×44px for any interactive element.
+- Form errors must be linked to the field with `aria-describedby`.
+- Focus states must be clearly visible in both light and dark mode.
 
 ---
 
-## Tokens de referencia rápida
+## Forbidden Patterns
 
-```scss
-// Los más usados en el día a día
-var(--bg-primary)        // fondo de pantalla
-var(--surface)           // fondo de card / modal
-var(--border)            // líneas divisorias
-var(--text-primary)      // texto principal
-var(--text-secondary)    // texto de apoyo
-var(--color-primary)     // botones, links, activos
-var(--color-danger)      // errores, déficit, vencidos
-var(--color-success)     // pagado, saldo positivo
-var(--nav-height)        // 64px — usar en padding-bottom
+- Do not use more than one accent color per screen beyond the primary Seagull palette.
+- Do not use neon colors, multi-color gradients, or colored drop shadows.
+- Do not change the full screen background to communicate a state.
+- Do not hardcode any color value in a component — always use CSS custom properties.
+- Do not use abbreviations in CSS class names. Write the full word: `button` not `btn`, `navigation` not `nav`, `image` not `img`.
+
+---
+
+## Quick Reference — Most Used Tokens
+
+```
+--background-primary    screen background
+--surface               card and modal background
+--border-default        divider lines
+--text-primary          main readable text
+--text-secondary        supporting / muted text
+--color-primary         buttons, links, active states
+--color-danger          errors, deficit, overdue
+--color-success         paid, positive balance
+--color-warning         approaching limit
+--navigation-height     64px — always add as padding-bottom to screen
 ```
