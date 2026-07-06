@@ -185,6 +185,7 @@ export class DashboardComponent {
   protected readonly monthlyPayments = signal<MonthlyPayment[]>([]);
   protected readonly monthlyIncome = signal(0);
   protected readonly monthlyExpenses = signal(0);
+  protected readonly pocketBaseIncome = signal(0);
   protected readonly creditCardEntries = signal<CreditCardStatusEntry[]>([]);
 
   protected readonly currentMonth = signal(new Date().getMonth() + 1);
@@ -199,7 +200,7 @@ export class DashboardComponent {
   });
 
   protected readonly pocketEntries = computed<PocketSummaryEntry[]>(() => {
-    const income = this.monthlyIncome();
+    const income = this.pocketBaseIncome();
     const usage = this.expensesByPocket();
     return this.pockets().map((pocket) => {
       const assigned = Math.round(income * (pocket.percentage / 100) * 100) / 100;
@@ -263,6 +264,9 @@ export class DashboardComponent {
         incomes
           .filter((income) => income.status === 'received')
           .reduce((sum, income) => sum + income.amount, 0),
+      );
+      this.pocketBaseIncome.set(
+        incomes.reduce((sum, income) => sum + income.amount, 0),
       );
       this.monthlyExpenses.set(
         this.sumMonthExpenses(expenses, month, year),
