@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 
 import type { PaymentMethod, PaymentMethodType } from '../../core/models/payment-method.model';
 import { PaymentMethodService } from '../../core/services/payment-method.service';
@@ -88,12 +89,23 @@ export class PaymentMethodsListComponent {
   private readonly service = inject(PaymentMethodService);
   private readonly toast = inject(ToastService);
   private readonly currency = inject(MexicanCurrencyPipe);
+  private readonly router = inject(Router);
 
   protected readonly paymentMethods = signal<PaymentMethod[]>([]);
   protected readonly editing = signal<PaymentMethod | null>(null);
 
+  protected readonly creditCards = computed(() =>
+    this.paymentMethods().filter((method) => method.type === 'credit'),
+  );
+
   constructor() {
     void this.load();
+  }
+
+  protected openDetail(method: PaymentMethod): void {
+    if (method.id !== undefined) {
+      void this.router.navigate(['/credit-cards', method.id]);
+    }
   }
 
   protected iconFor(type: PaymentMethodType): string {

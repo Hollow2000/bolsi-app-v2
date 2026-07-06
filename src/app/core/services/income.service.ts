@@ -20,6 +20,12 @@ export class IncomeService {
     validateIncomeFields(income);
     const paymentMethod = await this.paymentMethods.getById(income.paymentMethodId);
     assertCanReceiveIncome(paymentMethod);
+
+    if (income.frequency === 'biweekly') {
+      await this.createBiweekly(income);
+      return;
+    }
+
     await database.incomes.add(income);
     if (income.status === 'received') {
       await this.paymentMethods.addBalance(income.paymentMethodId, income.amount);
@@ -78,6 +84,49 @@ export class IncomeService {
     }
     await database.incomes.delete(income.id);
   }
+
+  /**
+   * Persists a biweekly income as two separate records (BR-01):
+   * one on the given date, one 15 days later. Both rows count toward
+   * the monthly income total at query time.
+   */
+  private async createBiweekly(source: Income): Promise<void> {
+    const firstDate = parseIsoDate(source.date);
+    if (Number.isNaN(firstDate.getTime())) {
+      throw new Error('La fecha del ingreso no es válida.');
+    }
+    const secondDate = new Date(firstDate);
+    secondDate.setDate(firstDate.getDate() + 15);
+
+    const first: Income = {
+      ...source,
+      month: firstDate.getMonth() + 1,
+      year: firstDate.getFullYear(),
+    };
+    const second: Income = {
+      ...source,
+      date: toIsoDate(secondDate),
+      month: secondDate.getMonth() + 1,
+      year: secondDate.getFullYear(),
+    };
+
+    await database.incomes.bulkAdd([first, second]);
+    if (source.status === 'received') {
+      await this.paymentMethods.addBalance(source.paymentMethodId, source.amount);
+      await this.paymentMethods.addBalance(source.paymentMethodId, source.amount);
+    }
+  }
+}
+
+function parseIsoDate(value: string): Date {
+  return new Date(`${value}T00:00:00`);
+}
+
+function toIsoDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function deriveMonthAndYear(isoDate: string): { month: number; year: number } {

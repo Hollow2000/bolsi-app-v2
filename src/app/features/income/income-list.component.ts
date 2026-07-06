@@ -51,6 +51,16 @@ import { EditIncomeModalComponent } from './edit-income-modal.component';
                   [amount]="(income.amount | mexicanCurrency) ?? ''"
                   [tone]="income.status === 'received' ? 'income' : 'default'"
                 />
+                @if (income.status === 'expected' && income.id !== undefined) {
+                  <button
+                    appIconButton
+                    type="button"
+                    aria-label="Marcar ingreso como recibido"
+                    (click)="markAsReceived(income.id!)"
+                  >
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">check_circle</span>
+                  </button>
+                }
                 <button
                   appIconButton
                   type="button"
@@ -189,6 +199,17 @@ export class IncomeListComponent {
       await this.load();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'No se pudo guardar el ingreso.';
+      this.toast.show(message);
+    }
+  }
+
+  protected async markAsReceived(id: number): Promise<void> {
+    try {
+      await this.incomeService.markAsReceived(id);
+      this.toast.show('Ingreso marcado como recibido.');
+      await this.load();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudo marcar como recibido.';
       this.toast.show(message);
     }
   }

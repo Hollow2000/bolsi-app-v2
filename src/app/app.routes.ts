@@ -32,6 +32,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'credit-cards/:id',
+    canActivate: [setupRequiredGuard],
+    loadComponent: () =>
+      import('./features/credit-cards/credit-card-detail.component').then(
+        (m) => m.CreditCardDetailComponent,
+      ),
+  },
+  {
     path: 'income',
     canActivate: [setupRequiredGuard],
     loadComponent: () =>

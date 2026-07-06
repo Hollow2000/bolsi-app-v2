@@ -1,28 +1,32 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 
-import { EXPENSE_CATEGORIES, type ExpenseCategory } from '../../core/catalogs';
+import { EXPENSE_CATEGORIES, INSTALLMENT_OPTIONS, type ExpenseCategory } from '../../core/catalogs';
 import type { Expense } from '../../core/models/expense.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { DateInputComponent } from '../../shared/components/date-input/date-input.component';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
+import { SegmentedControlComponent, type SegmentedOption } from '../../shared/components/segmented-control/segmented-control.component';
 import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
 import { TextInputComponent } from '../../shared/components/text-input/text-input.component';
+import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
 
 /**
  * Form for adding or editing an expense. Pure presentational: the
- * parent owns persistence. The parent supplies the list of available
- * payment methods and pockets; the modal never reads from the
- * database. If `expense` is provided, the form is pre-filled for
- * editing; otherwise it starts empty for adding.
+ * parent owns persistence. Supports MSI (meses sin intereses) when the
+ * selected payment method is a credit card — in that case the user
+ * picks the number of installments and the modal previews the monthly
+ * amount.
  */
 @Component({
   selector: 'app-expense-form-modal',
   imports: [
     ButtonDirective,
     DateInputComponent,
+    MexicanCurrencyPipe,
     NumberInputComponent,
+    SegmentedControlComponent,
     SelectInputComponent,
     TextInputComponent,
   ],
@@ -39,7 +43,7 @@ import { TextInputComponent } from '../../shared/components/text-input/text-inpu
         placeholder="0.00"
         [min]="0"
         [value]="amount()"
-        (valueChange)="amount.set($event)"
+        (valueChange)="onAmountChange($event)"
       />
       <app-date-input
         label="Fecha"
@@ -52,7 +56,7 @@ import { TextInputComponent } from '../../shared/components/text-input/text-inpu
       label="Método de pago"
       [valueType]="'number'"
       [value]="paymentMethodId()"
-      (valueChange)="paymentMethodId.set($any($event))"
+      (valueChange)="onPaymentMethodChange($any($event))"
     >
       <option value="0" disabled [selected]="paymentMethodId() === 0">Selecciona un método</option>
       @for (method of paymentMethods(); track method.id) {
@@ -87,6 +91,33 @@ import { TextInputComponent } from '../../shared/components/text-input/text-inpu
       }
     </app-select-input>
 
+    @if (isCreditSelected()) {
+      <div class="msi-toggle">
+        <label class="msi-toggle__label">
+          <input
+            type="checkbox"
+            [checked]="isInstallment()"
+            (change)="onInstallmentToggle($event)"
+          />
+          <span>A meses sin intereses (MSI)</span>
+        </label>
+      </div>
+
+      @if (isInstallment()) {
+        <app-segmented-control
+          ariaLabel="Número de meses sin intereses"
+          [options]="installmentOptions"
+          [value]="installmentMonths()"
+          (valueChange)="installmentMonths.set($any($event))"
+        />
+        <p class="msi-preview">
+          {{ installmentCount() }} pagos de
+          <strong>{{ monthlyInstallment() | mexicanCurrency }}</strong>
+          cada uno. Se descuenta el total ({{ amount() | mexicanCurrency }}) del crédito disponible de la tarjeta al registrar.
+        </p>
+      }
+    }
+
     @if (errorMessage(); as message) {
       <p class="modal-error" role="alert">{{ message }}</p>
     }
@@ -112,6 +143,37 @@ import { TextInputComponent } from '../../shared/components/text-input/text-inpu
         grid-template-columns: 1fr 1fr;
         gap: var(--space-3);
       }
+      .msi-toggle {
+        background: var(--color-primary-muted);
+        border-radius: var(--radius-medium);
+        padding: var(--space-3);
+      }
+      .msi-toggle__label {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-size: var(--text-size-base);
+        font-weight: 500;
+        color: var(--color-primary);
+        cursor: pointer;
+      }
+      .msi-toggle__label input {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+      }
+      .msi-preview {
+        margin: 0;
+        padding: var(--space-3);
+        background: var(--surface-alternate);
+        border-radius: var(--radius-medium);
+        font-size: var(--text-size-small);
+        color: var(--text-primary);
+      }
+      .msi-preview strong {
+        color: var(--color-primary);
+        font-family: var(--font-family-mono);
+      }
       .modal-actions {
         display: flex;
         justify-content: flex-end;
@@ -135,6 +197,9 @@ export class ExpenseFormModalComponent implements OnInit {
   readonly saved = output<Expense>();
 
   protected readonly categories = EXPENSE_CATEGORIES;
+  protected readonly installmentOptions: readonly SegmentedOption<number>[] = INSTALLMENT_OPTIONS.map(
+    (value) => ({ value, label: `${value} MSI` }),
+  );
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly description = signal('');
@@ -143,6 +208,25 @@ export class ExpenseFormModalComponent implements OnInit {
   protected readonly paymentMethodId = signal<number>(0);
   protected readonly pocketId = signal<number>(0);
   protected readonly category = signal<ExpenseCategory>(EXPENSE_CATEGORIES[0]);
+  protected readonly isInstallment = signal(false);
+  protected readonly installmentMonths = signal<number>(INSTALLMENT_OPTIONS[1]);
+
+  protected readonly selectedPaymentMethod = computed<PaymentMethod | null>(() => {
+    const id = this.paymentMethodId();
+    return this.paymentMethods().find((method) => method.id === id) ?? null;
+  });
+
+  protected readonly isCreditSelected = computed(() => this.selectedPaymentMethod()?.type === 'credit');
+
+  protected readonly installmentCount = computed(() => this.installmentMonths());
+
+  protected readonly monthlyInstallment = computed(() => {
+    const months = this.installmentMonths();
+    if (months < 2) {
+      return 0;
+    }
+    return Math.round((this.amount() / months) * 100) / 100;
+  });
 
   ngOnInit(): void {
     const initial = this.expense();
@@ -153,6 +237,10 @@ export class ExpenseFormModalComponent implements OnInit {
       this.paymentMethodId.set(initial.paymentMethodId);
       this.pocketId.set(initial.pocketId);
       this.category.set(initial.category as ExpenseCategory);
+      this.isInstallment.set(initial.isInstallment);
+      if (initial.installmentMonths !== undefined) {
+        this.installmentMonths.set(initial.installmentMonths);
+      }
     } else {
       this.date.set(this.todayIso());
     }
@@ -166,6 +254,24 @@ export class ExpenseFormModalComponent implements OnInit {
 
   protected submitLabel(): string {
     return this.expense() ? 'Guardar cambios' : 'Agregar gasto';
+  }
+
+  protected onAmountChange(value: number): void {
+    this.amount.set(value);
+  }
+
+  protected onPaymentMethodChange(value: number | string | null): void {
+    const id = typeof value === 'number' ? value : 0;
+    this.paymentMethodId.set(id);
+    const method = this.paymentMethods().find((m) => m.id === id);
+    if (method?.type !== 'credit' && this.isInstallment()) {
+      this.isInstallment.set(false);
+    }
+  }
+
+  protected onInstallmentToggle(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.isInstallment.set(input.checked);
   }
 
   protected onCancel(): void {
@@ -203,6 +309,7 @@ export class ExpenseFormModalComponent implements OnInit {
     }
 
     const previous = this.expense();
+    const installment = this.isInstallment() ? this.installmentMonths() : undefined;
     const updated: Expense = {
       ...(previous ?? {}),
       date,
@@ -213,7 +320,9 @@ export class ExpenseFormModalComponent implements OnInit {
       pocketId,
       month,
       year,
-      isInstallment: false,
+      isInstallment: this.isInstallment(),
+      installmentMonths: installment,
+      monthlyInstallmentAmount: installment ? this.monthlyInstallment() : undefined,
     };
     if (previous?.id !== undefined) {
       updated.id = previous.id;
