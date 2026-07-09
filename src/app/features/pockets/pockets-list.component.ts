@@ -5,6 +5,7 @@ import type { Pocket } from '../../core/models/pocket.model';
 import { PocketService } from '../../core/services/pocket.service';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { CardComponent } from '../../shared/components/card/card.component';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { IconButtonDirective } from '../../shared/components/icon-button/icon-button.directive';
 import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
 import { ToastService } from '../../shared/services/toast.service';
@@ -15,6 +16,7 @@ import { EditPocketModalComponent } from './edit-pocket-modal.component';
   imports: [
     BottomSheetComponent,
     CardComponent,
+    ConfirmDialogComponent,
     EditPocketModalComponent,
     IconButtonDirective,
     ListItemComponent,
@@ -37,7 +39,7 @@ import { EditPocketModalComponent } from './edit-pocket-modal.component';
               <li class="pocket-row">
                 <a class="pocket-link" [routerLink]="['/pockets', pocket.id]">
                   <app-list-item
-                    [icon]="pocket.emoji || 'wallet'"
+                    [icon]="pocket.icon || 'money_bag'"
                     [title]="pocket.name"
                     [subtitle]="pocket.percentage + '%'"
                   />
@@ -77,6 +79,16 @@ import { EditPocketModalComponent } from './edit-pocket-modal.component';
           [pocket]="pocket"
           (cancel)="closeEdit()"
           (saved)="onSaved($event)"
+        />
+      </app-bottom-sheet>
+    }
+
+    @if (confirmOpen()) {
+      <app-bottom-sheet title="Confirmar" (close)="onCancelConfirm()">
+        <app-confirm-dialog
+          [message]="confirmMessage()"
+          (confirmed)="onConfirm()"
+          (cancelled)="onCancelConfirm()"
         />
       </app-bottom-sheet>
     }
@@ -132,6 +144,9 @@ export class PocketsListComponent {
 
   protected readonly pockets = signal<Pocket[]>([]);
   protected readonly editing = signal<Pocket | null>(null);
+  protected readonly confirmOpen = signal(false);
+  protected readonly confirmMessage = signal('');
+  protected readonly confirmAction = signal<(() => void) | null>(null);
 
   protected readonly totalPercentage = computed(() =>
     Math.round(this.pockets().reduce((sum, pocket) => sum + pocket.percentage, 0)),
@@ -161,21 +176,33 @@ export class PocketsListComponent {
     }
   }
 
-  protected async confirmDelete(pocket: Pocket): Promise<void> {
-    const confirmed = window.confirm(
-      `¿Eliminar el bolsillo "${pocket.name}"? Esta acción no se puede deshacer.`,
-    );
-    if (!confirmed || pocket.id === undefined) {
-      return;
-    }
-    try {
-      await this.service.delete(pocket.id);
-      this.toast.show('Bolsillo eliminado.');
-      await this.load();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'No se pudo eliminar el bolsillo.';
-      this.toast.show(message);
-    }
+  protected confirmDelete(pocket: Pocket): void {
+    this.confirmMessage.set(`¿Eliminar el bolsillo "${pocket.name}"? Esta acción no se puede deshacer.`);
+    this.confirmAction.set(() => {
+      if (pocket.id === undefined) return;
+      void (async () => {
+        try {
+          await this.service.delete(pocket.id!);
+          this.toast.show('Bolsillo eliminado.');
+          await this.load();
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'No se pudo eliminar el bolsillo.';
+          this.toast.show(message);
+        }
+      })();
+    });
+    this.confirmOpen.set(true);
+  }
+
+  protected onConfirm(): void {
+    this.confirmAction()?.();
+    this.confirmOpen.set(false);
+    this.confirmAction.set(null);
+  }
+
+  protected onCancelConfirm(): void {
+    this.confirmOpen.set(false);
+    this.confirmAction.set(null);
   }
 
   private async load(): Promise<void> {

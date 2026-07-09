@@ -64,15 +64,16 @@ export class IncomeService {
     await database.incomes.put({ ...updatedIncome, id: previousIncome.id, ...derived });
   }
 
-  async markAsReceived(id: number): Promise<void> {
+  async markAsReceived(id: number, actualAmount?: number): Promise<void> {
     const income = await database.incomes.get(id);
     if (!income || income.status === 'received') {
       return;
     }
     const paymentMethod = await this.paymentMethods.getById(income.paymentMethodId);
     assertCanReceiveIncome(paymentMethod);
-    await database.incomes.put({ ...income, status: 'received' });
-    await this.paymentMethods.addBalance(income.paymentMethodId, income.amount);
+    const amount = actualAmount !== undefined ? actualAmount : income.amount;
+    await database.incomes.put({ ...income, status: 'received', amount });
+    await this.paymentMethods.addBalance(income.paymentMethodId, amount);
   }
 
   async delete(income: Income): Promise<void> {

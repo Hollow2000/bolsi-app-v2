@@ -30,6 +30,14 @@
   margin-top: var(--space-1);
   padding-top: var(--space-1);
   border-top: 1px solid var(--border-default);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.card-extra__amount-to-pay {
+  font-size: var(--text-size-extra-small);
+  color: var(--color-danger);
+  font-weight: 600;
 }
 .card-extra__charges {
   font-size: var(--text-size-extra-small);

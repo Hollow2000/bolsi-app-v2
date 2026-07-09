@@ -1,7 +1,7 @@
 export interface Pocket {
   id?: number;
   name: string;
-  emoji: string;
+  icon: string;
   percentage: number;
   sortOrder: number;
 }

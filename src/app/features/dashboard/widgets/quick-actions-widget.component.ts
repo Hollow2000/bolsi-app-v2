@@ -19,6 +19,7 @@ interface QuickAction {
 export class QuickActionsWidgetComponent {
   protected readonly actions: readonly QuickAction[] = [
     { path: '/expenses', icon: 'shopping_cart', label: 'Nuevo gasto' },
+    { path: '/templates', icon: 'bolt', label: 'Gasto rápido' },
     { path: '/income', icon: 'trending_up', label: 'Nuevo ingreso' },
     { path: '/credit-cards', icon: 'credit_card', label: 'Ver tarjetas' },
     { path: '/monthly-payments', icon: 'calendar_month', label: 'Ver pagos' },

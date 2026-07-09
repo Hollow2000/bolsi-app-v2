@@ -35,14 +35,11 @@ export class ExpenseService {
 
     if (expense.isInstallment) {
       if (method.type !== 'credit') {
-        throw new Error('Las MSI solo aplican a tarjetas de crédito.');
+        throw new Error('Las cuotas solo aplican a tarjetas de crédito.');
       }
       this.assertInstallmentFields(expense);
     }
 
-    // For credit-card purchases (installment or not) the full charge
-    // is deducted from `availableCredit` immediately (BR-02). For cash
-    // and debit, it comes out of the running balance.
     if (method.type === 'credit') {
       const available = method.availableCredit ?? 0;
       if (expense.amount > available) {
@@ -53,14 +50,37 @@ export class ExpenseService {
       await this.paymentMethods.deductBalance(expense.paymentMethodId, expense.amount);
     }
 
-    const id = await database.expenses.add(expense);
+    const id = await database.expenses.add(expense) as number;
     const stored = { ...expense, id };
 
-    if (expense.isInstallment) {
+    if (expense.isInstallment && method.type === 'credit') {
+      // Register hidden refund to cancel the upfront deduction.
+      // The installment plans will track the debt progressively.
+      const refund: Expense = {
+        date: expense.date,
+        description: `Reembolso: ${expense.description}`,
+        amount: expense.amount,
+        paymentMethodId: expense.paymentMethodId,
+        pocketId: expense.pocketId,
+        category: expense.category,
+        month: expense.month,
+        year: expense.year,
+        isInstallment: false,
+        hidden: true,
+      };
+      await database.expenses.add(refund);
+      await this.paymentMethods.addBalance(expense.paymentMethodId, expense.amount);
+
+      // Generate installment plans
       await this.installmentPlans.generatePlans(stored, method);
+
+      // Mark past installments as paid if purchase is from a past month
+      const purchaseDate = this.parseIsoDate(expense.date);
+      const plans = await this.installmentPlans.getActiveByExpense(id);
+      await this.installmentPlans.markPastAsPaid(plans, purchaseDate);
     }
 
-    return id as number;
+    return id;
   }
 
   async update(previous: Expense, updated: Expense): Promise<void> {
@@ -72,7 +92,7 @@ export class ExpenseService {
     await this.assertPocketExists(updated.pocketId);
     if (updated.isInstallment) {
       if (method.type !== 'credit') {
-        throw new Error('Las MSI solo aplican a tarjetas de crédito.');
+        throw new Error('Las cuotas solo aplican a tarjetas de crédito.');
       }
       this.assertInstallmentFields(updated);
     }
@@ -104,10 +124,27 @@ export class ExpenseService {
       return;
     }
     if (expense.isInstallment) {
+      // Delete the hidden refund expense
+      const allExpenses = await database.expenses.toArray();
+      const refund = allExpenses.find(
+        (e) => e.hidden && e.description === `Reembolso: ${expense.description}` &&
+          e.paymentMethodId === expense.paymentMethodId && e.amount === expense.amount,
+      );
+      if (refund?.id !== undefined) {
+        await database.expenses.delete(refund.id);
+        await this.paymentMethods.deductBalance(expense.paymentMethodId, expense.amount);
+      }
       await this.installmentPlans.deleteByExpense(expense.id);
     }
     await this.paymentMethods.addBalance(expense.paymentMethodId, expense.amount);
     await database.expenses.delete(expense.id);
+  }
+
+  async getHiddenByCard(paymentMethodId: number): Promise<Expense[]> {
+    const all = await database.expenses.toArray();
+    return all
+      .filter((expense) => expense.paymentMethodId === paymentMethodId && expense.hidden)
+      .sort((a, b) => b.date.localeCompare(a.date));
   }
 
   private assertValidFields(expense: Expense): void {
@@ -130,10 +167,10 @@ export class ExpenseService {
 
   private assertInstallmentFields(expense: Expense): void {
     if (!expense.installmentMonths || expense.installmentMonths < 2) {
-      throw new Error('Indica al menos 2 meses para MSI.');
+      throw new Error('Indica al menos 2 meses para cuotas.');
     }
-    if (![3, 6, 9, 12, 18, 24].includes(expense.installmentMonths)) {
-      throw new Error('Número de MSI no permitido (3, 6, 9, 12, 18, 24).');
+    if (expense.installmentMonths > 48) {
+      throw new Error('El número máximo de cuotas es 48.');
     }
   }
 
@@ -150,5 +187,13 @@ export class ExpenseService {
     if (!pocket.some((p) => p.id === id)) {
       throw new Error('El bolsillo seleccionado no existe.');
     }
+  }
+
+  private parseIsoDate(value: string): Date {
+    const parsed = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) {
+      throw new Error(`Fecha inválida: ${value}`);
+    }
+    return parsed;
   }
 }

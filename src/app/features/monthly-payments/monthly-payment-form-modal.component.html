@@ -42,7 +42,7 @@
       <option [value]="0" [selected]="pocketId() === 0">Sin bolsillo</option>
       @for (pocket of pockets(); track pocket.id) {
         <option [value]="pocket.id" [selected]="pocket.id === pocketId()">
-          {{ pocket.emoji }} {{ pocket.name }} ({{ pocket.percentage }}%)
+          {{ pocket.name }} ({{ pocket.percentage }}%)
         </option>
       }
     </app-select-input>

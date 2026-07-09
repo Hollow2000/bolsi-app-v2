@@ -30,7 +30,7 @@
                       appIconButton
                       type="button"
                       aria-label="Marcar ingreso como recibido"
-                      (click)="markAsReceived(income.id!)"
+                      (click)="openReceiveConfirm(income)"
                     >
                       <span class="material-symbols-outlined icon icon--small" aria-hidden="true">check_circle</span>
                     </button>
@@ -71,5 +71,42 @@
           (cancel)="closeEdit()"
           (saved)="onSaved($event)"
         />
+      </app-bottom-sheet>
+    }
+
+    @if (confirmOpen()) {
+      <app-bottom-sheet title="Confirmar" (close)="onCancelConfirm()">
+        <app-confirm-dialog
+          [message]="confirmMessage()"
+          (confirmed)="onConfirm()"
+          (cancelled)="onCancelConfirm()"
+        />
+      </app-bottom-sheet>
+    }
+
+    @if (confirmingIncome(); as income) {
+      <app-bottom-sheet title="Confirmar ingreso" (close)="closeReceiveConfirm()">
+        <p class="receive-description">{{ income.description }}</p>
+        <p class="receive-estimated">
+          Monto estimado: <strong>{{ income.amount | mexicanCurrency }}</strong>
+        </p>
+        <app-number-input
+          label="Monto real recibido"
+          placeholder="0.00"
+          [min]="0"
+          [value]="receivedAmount()"
+          (valueChange)="receivedAmount.set($event)"
+        />
+        @if (receiveError(); as message) {
+          <p class="modal-error" role="alert">{{ message }}</p>
+        }
+        <div class="modal-actions">
+          <button appButton variant="secondary" type="button" (click)="closeReceiveConfirm()">
+            Cancelar
+          </button>
+          <button appButton variant="primary" type="button" [disabled]="savingReceive()" (click)="confirmReceive()">
+            {{ savingReceive() ? 'Guardando…' : 'Confirmar' }}
+          </button>
+        </div>
       </app-bottom-sheet>
     }

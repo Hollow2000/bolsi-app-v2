@@ -289,7 +289,7 @@
             @for (pocket of pockets(); track $index) {
               <li class="app-list-item">
                 <div class="app-list-item__icon" aria-hidden="true">
-                  <span>{{ pocket.emoji }}</span>
+                  <span class="material-symbols-outlined">{{ pocket.icon }}</span>
                 </div>
                 <div class="app-list-item__content">
                   <span class="app-list-item__title">{{ pocket.name }}</span>
@@ -332,12 +332,10 @@
                 [value]="pocketDraft().name"
                 (valueChange)="onPocketNameChange($event)"
               />
-              <app-text-input
-                label="Emoji"
-                placeholder="💼"
-                [value]="pocketDraft().emoji"
-                (valueChange)="onPocketEmojiChange($event)"
-              />
+              <div class="icon-field">
+                <label class="icon-label">Icono</label>
+                <app-icon-picker [icons]="materialIcons" [value]="pocketDraft().icon" (valueChange)="onPocketIconChange($event)" />
+              </div>
             </div>
 
             <app-number-input
@@ -425,7 +423,7 @@
               @for (pocket of pockets(); track $index) {
                 <li class="app-list-item summary-item--inline">
                   <div class="app-list-item__icon" aria-hidden="true">
-                    <span>{{ pocket.emoji }}</span>
+                    <span class="material-symbols-outlined">{{ pocket.icon }}</span>
                   </div>
                   <div class="app-list-item__content">
                     <span class="app-list-item__title">{{ pocket.name }}</span>

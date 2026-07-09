@@ -3,4 +3,5 @@ export interface AppSettings {
   userName: string;
   setupComplete: boolean;
   customExpenseCategories?: string[];
+  showHiddenMovements?: boolean;
 }

@@ -1,17 +1,15 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, input, output, signal } from '@angular/core';
 
+import { MATERIAL_ICONS } from '../../core/catalogs';
 import type { Pocket } from '../../core/models/pocket.model';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
+import { IconPickerComponent } from '../../shared/components/icon-picker/icon-picker.component';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
 import { TextInputComponent } from '../../shared/components/text-input/text-input.component';
 
-/**
- * Form for editing a pocket. Pure presentational: the parent owns
- * persistence.
- */
 @Component({
   selector: 'app-edit-pocket-modal',
-  imports: [ButtonDirective, NumberInputComponent, TextInputComponent],
+  imports: [ButtonDirective, IconPickerComponent, NumberInputComponent, TextInputComponent],
   templateUrl: './edit-pocket-modal.component.html',
   styleUrl: './edit-pocket-modal.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -21,16 +19,17 @@ export class EditPocketModalComponent implements OnInit {
   readonly cancel = output<void>();
   readonly saved = output<Pocket>();
 
+  protected readonly icons = MATERIAL_ICONS;
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly name = signal('');
-  protected readonly emoji = signal('');
+  protected readonly icon = signal('money_bag');
   protected readonly percentage = signal(0);
 
   ngOnInit(): void {
     const initial = this.pocket();
     this.name.set(initial.name);
-    this.emoji.set(initial.emoji);
+    this.icon.set(initial.icon || 'money_bag');
     this.percentage.set(initial.percentage);
   }
 
@@ -53,7 +52,7 @@ export class EditPocketModalComponent implements OnInit {
     const updated: Pocket = {
       ...this.pocket(),
       name,
-      emoji: this.emoji() || '💼',
+      icon: this.icon() || 'money_bag',
       percentage,
     };
     this.saved.emit(updated);

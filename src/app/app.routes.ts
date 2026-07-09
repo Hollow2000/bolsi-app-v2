@@ -91,5 +91,11 @@ export const routes: Routes = [
         (m) => m.MonthlyPaymentsListComponent,
       ),
   },
+  {
+    path: 'templates',
+    canActivate: [setupRequiredGuard],
+    loadComponent: () =>
+      import('./features/templates/templates-list.component').then((m) => m.TemplatesListComponent),
+  },
   { path: '**', redirectTo: 'onboarding' },
 ];

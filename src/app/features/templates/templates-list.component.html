@@ -1,0 +1,67 @@
+    <div class="app-screen">
+      <header class="app-screen-header">
+        <h1>Plantillas de gasto</h1>
+      </header>
+      <main class="app-screen-content">
+        @if (templates().length === 0) {
+          <app-card title="Sin plantillas">
+            <p class="empty-message">No tienes plantillas de gasto. Crea una para registrar gastos rápidamente.</p>
+          </app-card>
+        } @else {
+          <ul class="app-list" aria-label="Plantillas de gasto">
+            @for (template of templates(); track template.id) {
+              <li class="app-list-row">
+                <app-list-item
+                  [icon]="template.icon || 'star'"
+                  [title]="template.description"
+                  [subtitle]="methodName(template.paymentMethodId) + ' · ' + pocketName(template.pocketId)"
+                  [amount]="(template.amount | mexicanCurrency) ?? ''"
+                />
+                <div class="item-actions">
+                  <button
+                    appIconButton
+                    type="button"
+                    aria-label="Usar plantilla"
+                    (click)="useTemplate(template)"
+                  >
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">bolt</span>
+                  </button>
+                  <button
+                    appIconButton
+                    type="button"
+                    aria-label="Editar plantilla"
+                    (click)="openEdit(template)"
+                  >
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
+                  </button>
+                  <button
+                    appIconButton
+                    type="button"
+                    aria-label="Eliminar plantilla"
+                    (click)="deleteTemplate(template)"
+                  >
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
+                  </button>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </main>
+      <app-fab icon="add" ariaLabel="Crear nueva plantilla" (press)="openAdd()" />
+    </div>
+
+    @if (modalOpen()) {
+      <app-bottom-sheet
+        [title]="editingTemplate() ? 'Editar plantilla' : 'Nueva plantilla'"
+        (close)="closeModal()"
+      >
+        <app-template-form-modal
+          [paymentMethods]="paymentMethods()"
+          [pockets]="pockets()"
+          [template]="editingTemplate()"
+          (cancel)="closeModal()"
+          (saved)="onSaved($event)"
+        />
+      </app-bottom-sheet>
+    }

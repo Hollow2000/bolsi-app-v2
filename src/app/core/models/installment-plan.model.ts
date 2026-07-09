@@ -5,6 +5,7 @@ export interface InstallmentPlan {
   installmentNumber: number;
   totalInstallments: number;
   amount: number;
+  customAmount?: number;
   cutoffMonth: number;
   cutoffYear: number;
   paid: boolean;

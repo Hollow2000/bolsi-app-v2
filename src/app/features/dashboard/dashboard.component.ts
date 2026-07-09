@@ -8,6 +8,7 @@ import type { PaymentMethod } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';
 import type { Transfer } from '../../core/models/transfer.model';
 import { BalanceService } from '../../core/services/balance.service';
+import { CreditCardStatementService } from '../../core/services/credit-card-statement.service';
 import { IncomeService } from '../../core/services/income.service';
 import { MonthlyPaymentService } from '../../core/services/monthly-payment.service';
 import { PaymentMethodService } from '../../core/services/payment-method.service';
@@ -45,6 +46,7 @@ import { TransferFormModalComponent } from '../transfers/transfer-form-modal.com
 })
 export class DashboardComponent {
   private readonly balanceService = inject(BalanceService);
+  private readonly creditCardStatement = inject(CreditCardStatementService);
   private readonly settingsService = inject(SettingsService);
   private readonly paymentMethodService = inject(PaymentMethodService);
   private readonly pocketService = inject(PocketService);
@@ -84,7 +86,7 @@ export class DashboardComponent {
       return {
         id: pocket.id ?? 0,
         name: pocket.name,
-        emoji: pocket.emoji,
+        icon: pocket.icon,
         percentage: pocket.percentage,
         assigned,
         used,
@@ -123,6 +125,7 @@ export class DashboardComponent {
         incomes,
         expenses,
         installmentPlans,
+        allTransfers,
       ] = await Promise.all([
         this.balanceService.calculate(month, year),
         this.pocketService.getAll(),
@@ -131,6 +134,7 @@ export class DashboardComponent {
         this.incomeService.getByMonth(month, year),
         database.expenses.toArray(),
         database.installmentPlans.toArray(),
+        database.transfers.toArray(),
       ]);
       this.balance.set(balance);
       this.pockets.set(pockets);
@@ -149,7 +153,7 @@ export class DashboardComponent {
       );
       this.expensesByPocket.set(this.buildExpensesByPocket(expenses, month, year));
       this.creditCardEntries.set(
-        this.buildCreditCardEntries(methods, expenses, installmentPlans, month, year),
+        this.buildCreditCardEntries(methods, expenses, installmentPlans, allTransfers, month, year),
       );
     } catch (error) {
       console.error('Dashboard load error', error);
@@ -188,7 +192,8 @@ export class DashboardComponent {
   private buildCreditCardEntries(
     methods: readonly PaymentMethod[],
     expenses: readonly Expense[],
-    installmentPlans: readonly { paymentMethodId: number; amount: number; cutoffMonth: number; cutoffYear: number }[],
+    installmentPlans: readonly { paymentMethodId: number; amount: number; customAmount?: number; cutoffMonth: number; cutoffYear: number; paid: boolean }[],
+    allTransfers: readonly Transfer[],
     month: number,
     year: number,
   ): CreditCardStatusEntry[] {
@@ -203,6 +208,7 @@ export class DashboardComponent {
             (expense) =>
               expense.paymentMethodId === cardId &&
               !expense.isInstallment &&
+              !expense.hidden &&
               expense.date >= range.startIso &&
               expense.date <= range.endIso,
           )
@@ -212,29 +218,30 @@ export class DashboardComponent {
             (plan) =>
               plan.paymentMethodId === cardId &&
               plan.cutoffYear === year &&
-              plan.cutoffMonth === month,
+              plan.cutoffMonth === month &&
+              !plan.paid,
           )
-          .reduce((sum, plan) => sum + plan.amount, 0);
-        const daysUntilClosing = this.daysUntilClosingDay(card.statementClosingDay, today);
+          .reduce((sum, plan) => sum + (plan.customAmount ?? plan.amount), 0);
+        const paymentDueDate = this.formatPaymentDate(
+          this.creditCardStatement.getPaymentDueDate(card),
+        );
+        const amountToPay = this.creditCardStatement.getAmountToPay(card, allTransfers);
         return {
           id: cardId,
           name: card.name,
           availableCredit: card.availableCredit ?? 0,
-          daysUntilClosing,
+          paymentDueDate,
           periodCharges: Math.round((directSum + installmentSum) * 100) / 100,
           statementClosingDay: card.statementClosingDay ?? 1,
+          amountToPay,
         };
       });
   }
 
-  private daysUntilClosingDay(closingDay: number | undefined, today: Date): number {
-    if (closingDay === undefined) return 0;
-    const next = new Date(today.getFullYear(), today.getMonth(), closingDay);
-    if (next.getTime() < today.getTime()) {
-      next.setMonth(next.getMonth() + 1);
-    }
-    const diff = next.getTime() - today.getTime();
-    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  private formatPaymentDate(iso: string): string {
+    if (!iso) return '—';
+    const [, mm, dd] = iso.split('-');
+    return `${dd}/${mm}`;
   }
 
   protected openTransfer(): void {

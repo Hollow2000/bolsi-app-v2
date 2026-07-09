@@ -9,6 +9,7 @@ import { BudgetService, type BudgetProgress } from '../../core/services/budget.s
 import { PocketService } from '../../core/services/pocket.service';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { CardComponent } from '../../shared/components/card/card.component';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { FabComponent } from '../../shared/components/fab/fab.component';
 import { IconButtonDirective } from '../../shared/components/icon-button/icon-button.directive';
 import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
@@ -23,6 +24,7 @@ import { BudgetFormModalComponent } from './budget-form-modal.component';
     BottomSheetComponent,
     BudgetFormModalComponent,
     CardComponent,
+    ConfirmDialogComponent,
     FabComponent,
     IconButtonDirective,
     ListItemComponent,
@@ -44,6 +46,9 @@ export class BudgetsListComponent {
   protected readonly currentYear = signal(new Date().getFullYear());
   protected readonly editingBudget = signal<Budget | null>(null);
   protected readonly modalOpen = signal(false);
+  protected readonly confirmOpen = signal(false);
+  protected readonly confirmMessage = signal('');
+  protected readonly confirmAction = signal<(() => void) | null>(null);
 
   protected readonly periodLabel = computed(() => {
     const monthNames = [
@@ -67,7 +72,7 @@ export class BudgetsListComponent {
       return 'Todos los bolsillos';
     }
     const pocket = this.pockets().find((p) => p.id === entry.budget.pocketId);
-    return pocket ? `${pocket.emoji} ${pocket.name}` : 'Bolsillo eliminado';
+    return pocket ? pocket.name : 'Bolsillo eliminado';
   }
 
   protected percentLabel(ratio: number): string {
@@ -106,20 +111,32 @@ export class BudgetsListComponent {
     }
   }
 
-  protected async confirmDelete(budget: Budget): Promise<void> {
-    const confirmed = window.confirm(
-      `¿Eliminar el presupuesto de "${budget.category}"? Esta acción no se puede deshacer.`,
-    );
-    if (!confirmed || budget.id === undefined) {
-      return;
-    }
-    try {
-      await this.service.delete(budget.id);
-      this.toast.show('Presupuesto eliminado.');
-      await this.loadProgress(this.currentMonth(), this.currentYear());
-    } catch (error) {
-      this.toast.show(error instanceof Error ? error.message : 'No se pudo eliminar el presupuesto.');
-    }
+  protected confirmDelete(budget: Budget): void {
+    this.confirmMessage.set(`¿Eliminar el presupuesto de "${budget.category}"? Esta acción no se puede deshacer.`);
+    this.confirmAction.set(() => {
+      if (budget.id === undefined) return;
+      void (async () => {
+        try {
+          await this.service.delete(budget.id!);
+          this.toast.show('Presupuesto eliminado.');
+          await this.loadProgress(this.currentMonth(), this.currentYear());
+        } catch (error) {
+          this.toast.show(error instanceof Error ? error.message : 'No se pudo eliminar el presupuesto.');
+        }
+      })();
+    });
+    this.confirmOpen.set(true);
+  }
+
+  protected onConfirm(): void {
+    this.confirmAction()?.();
+    this.confirmOpen.set(false);
+    this.confirmAction.set(null);
+  }
+
+  protected onCancelConfirm(): void {
+    this.confirmOpen.set(false);
+    this.confirmAction.set(null);
   }
 
   private async load(): Promise<void> {

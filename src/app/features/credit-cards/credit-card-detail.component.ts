@@ -7,6 +7,8 @@ import { database } from '../../core/database/bolsi.database';
 import type { Expense } from '../../core/models/expense.model';
 import type { InstallmentPlan } from '../../core/models/installment-plan.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
+import type { Transfer } from '../../core/models/transfer.model';
+import { CreditCardStatementService } from '../../core/services/credit-card-statement.service';
 import { ExpenseService } from '../../core/services/expense.service';
 import { InstallmentPlanService } from '../../core/services/installment-plan.service';
 import { MonthlyPaymentService } from '../../core/services/monthly-payment.service';
@@ -63,6 +65,7 @@ interface PeriodRange {
 export class CreditCardDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly creditCardStatement = inject(CreditCardStatementService);
   private readonly expenseService = inject(ExpenseService);
   private readonly installmentService = inject(InstallmentPlanService);
   private readonly monthlyPaymentService = inject(MonthlyPaymentService);
@@ -82,9 +85,20 @@ export class CreditCardDetailComponent {
   protected readonly upcomingInstallments = signal<InstallmentPlan[]>([]);
   protected readonly expensesById = signal<Map<number, Expense>>(new Map());
   protected readonly recentExpenses = signal<Expense[]>([]);
+  protected readonly hiddenExpenses = signal<Expense[]>([]);
+  protected readonly allTransfers = signal<Transfer[]>([]);
   protected readonly transfersReceived = signal(0);
   protected readonly currentMonth = signal(new Date().getMonth() + 1);
   protected readonly currentYear = signal(new Date().getFullYear());
+
+  protected readonly showHidden = signal(false);
+  protected readonly editingInstallment = signal<InstallmentPlan | null>(null);
+  protected readonly editingInstallmentAmount = signal(0);
+  protected readonly replicateAmount = signal(false);
+  protected readonly editingError = signal<string | null>(null);
+
+  protected readonly needsCutoff = signal(false);
+  protected readonly cutoffAmount = signal(0);
 
   protected readonly payingCard = signal(false);
   protected readonly savingPayment = signal(false);
@@ -110,6 +124,31 @@ export class CreditCardDetailComponent {
   });
 
   protected readonly periodCharges = computed(() => this.periodDirectCharges());
+
+  protected readonly periodChargesTotal = computed(() => {
+    const direct = this.periodDirectCharges().reduce((sum, charge) => sum + charge.amount, 0);
+    const installments = this.periodInstallments()
+      .filter((plan) => !plan.paid)
+      .reduce((sum, plan) => sum + (plan.customAmount ?? plan.amount), 0);
+    return Math.round((direct + installments) * 100) / 100;
+  });
+
+  protected readonly amountToPay = computed(() => {
+    const card = this.card();
+    if (!card) return 0;
+    return this.creditCardStatement.getAmountToPay(card, this.allTransfers());
+  });
+
+  protected readonly canPay = computed(() => {
+    const card = this.card();
+    if (!card) return false;
+    return this.creditCardStatement.canPay(card, this.allTransfers());
+  });
+
+  protected readonly availableCredit = computed(() => {
+    const card = this.card();
+    return card?.availableCredit ?? 0;
+  });
 
   protected readonly periodTotal = computed(() => {
     const direct = this.periodDirectCharges().reduce((sum, charge) => sum + charge.amount, 0);
@@ -175,19 +214,17 @@ export class CreditCardDetailComponent {
     void this.load();
   }
 
-  protected daysUntilClosing(): number {
+  protected paymentDueDate(): string {
     const method = this.card();
-    if (!method || method.statementClosingDay === undefined) {
-      return 0;
-    }
-    const today = new Date();
-    const closingDay = method.statementClosingDay;
-    const next = new Date(today.getFullYear(), today.getMonth(), closingDay);
-    if (next.getTime() < today.getTime()) {
-      next.setMonth(next.getMonth() + 1);
-    }
-    const diffMs = next.getTime() - today.getTime();
-    return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    if (!method) return '';
+    return this.creditCardStatement.getPaymentDueDate(method);
+  }
+
+  protected paymentDueDateLabel(): string {
+    const iso = this.paymentDueDate();
+    if (!iso) return '—';
+    const [, mm, dd] = iso.split('-');
+    return `${dd}/${mm}`;
   }
 
   protected monthLabel(month: number, year: number): string {
@@ -203,11 +240,11 @@ export class CreditCardDetailComponent {
     if (!method) {
       return;
     }
-    const range = this.periodRange();
+    const dueDate = this.creditCardStatement.getPaymentDueDate(method);
     this.paymentDraft.set({
       name: `Pago ${method.name}`,
-      amount: this.periodTotal(),
-      dueDate: this.addDaysToIso(range.endIso, 20),
+      amount: this.amountToPay(),
+      dueDate: dueDate || this.todayIso(),
     });
     this.sourcePaymentMethodId.set(this.sourcePaymentMethods()[0]?.id ?? 0);
     this.paymentError.set(null);
@@ -237,32 +274,35 @@ export class CreditCardDetailComponent {
       this.paymentError.set('Selecciona una cuenta para pagar.');
       return;
     }
+    const amount = this.roundCurrency(draft.amount);
+    if (amount <= 0) {
+      this.paymentError.set('El monto debe ser mayor a 0.');
+      return;
+    }
+    const maxPay = this.amountToPay();
+    if (amount > maxPay) {
+      this.paymentError.set(`El monto máximo a pagar es ${maxPay}.`);
+      return;
+    }
     this.savingPayment.set(true);
     this.paymentError.set(null);
     try {
-      const parts = draft.dueDate.split('-').map((segment) => Number(segment));
-      if (parts.length !== 3 || parts.some((segment) => !Number.isInteger(segment))) {
-        throw new Error('Fecha de vencimiento inválida.');
-      }
-      const [year, month] = parts;
-      const paymentId = await this.monthlyPaymentService.create({
-        name: draft.name.trim() || `Pago ${method.name}`,
-        amount: this.roundCurrency(draft.amount),
-        paid: false,
-        amountPaid: 0,
-        dueDate: draft.dueDate,
-        paymentMethodId: method.id,
-        expenseCategory: 'Other',
-        pocketId: undefined,
-        priority: 0,
-        isRecurring: true,
-        month,
-        year,
+      const today = new Date();
+      const closingDay = method.statementClosingDay ?? 1;
+      const billingPeriod = this.getCutoffPeriod(closingDay, today);
+
+      await this.transferService.create({
+        fromPaymentMethodId: sourceId,
+        toPaymentMethodId: method.id!,
+        amount,
+        date: this.todayIso(),
+        description: draft.name.trim() || `Pago ${method.name}`,
+        month: today.getMonth() + 1,
+        year: today.getFullYear(),
+        isCreditCardPayment: true,
+        billingPeriodMonth: billingPeriod.month,
+        billingPeriodYear: billingPeriod.year,
       });
-      const saved = await this.monthlyPaymentService.getById(paymentId);
-      if (saved) {
-        await this.monthlyPaymentService.markAsPaid(saved, draft.amount, sourceId);
-      }
       this.toast.show('Pago registrado. Se descontó de la cuenta seleccionada.');
       this.closePay();
       await this.load();
@@ -273,27 +313,94 @@ export class CreditCardDetailComponent {
     }
   }
 
+  protected async closePeriod(): Promise<void> {
+    const method = this.card();
+    if (!method) return;
+    try {
+      const today = new Date();
+      const statementBalance = await this.creditCardStatement.processCutoff(method, today);
+      this.toast.show(`Período cerrado. Saldo al corte: ${new MexicanCurrencyPipe().transform(statementBalance)}`);
+      await this.load();
+    } catch (error) {
+      this.toast.show(error instanceof Error ? error.message : 'No se pudo cerrar el período.');
+    }
+  }
+
+  protected editInstallment(plan: InstallmentPlan): void {
+    this.editingInstallment.set(plan);
+    this.editingInstallmentAmount.set(plan.customAmount ?? plan.amount);
+    this.replicateAmount.set(false);
+    this.editingError.set(null);
+  }
+
+  protected closeEditInstallment(): void {
+    this.editingInstallment.set(null);
+    this.editingError.set(null);
+  }
+
+  protected async saveInstallmentEdit(): Promise<void> {
+    const plan = this.editingInstallment();
+    if (!plan || plan.id === undefined) return;
+    const amount = this.roundCurrency(this.editingInstallmentAmount());
+    if (amount <= 0) {
+      this.editingError.set('El monto debe ser mayor a 0.');
+      return;
+    }
+    try {
+      if (this.replicateAmount()) {
+        await this.installmentService.replicateAmount(plan.expenseOriginId, amount);
+        this.toast.show('Monto replicado a todas las cuotas pendientes.');
+      } else {
+        await this.installmentService.updateAmount(plan.id, amount);
+        this.toast.show('Cuota actualizada.');
+      }
+      this.closeEditInstallment();
+      await this.load();
+    } catch (error) {
+      this.editingError.set(error instanceof Error ? error.message : 'No se pudo actualizar la cuota.');
+    }
+  }
+
+  protected toggleHidden(): void {
+    this.showHidden.set(!this.showHidden());
+  }
+
+  protected get displayExpenses(): Expense[] {
+    return this.showHidden()
+      ? [...this.recentExpenses(), ...this.hiddenExpenses()].sort((a, b) => b.date.localeCompare(a.date))
+      : this.recentExpenses();
+  }
+
   private async load(): Promise<void> {
     const id = this.cardId();
     if (id === 0) {
       return;
     }
-    const [method, allMethods] = await Promise.all([
+    const [method, allMethods, allTransfersData] = await Promise.all([
       this.paymentMethodService.getById(id),
       this.paymentMethodService.getAll(),
+      database.transfers.toArray(),
     ]);
     if (!method) {
       return;
     }
     this.card.set(method);
     this.paymentMethods.set(allMethods);
+    this.allTransfers.set(allTransfersData);
 
+    const today = new Date();
     const range = this.periodRange();
     const allCardExpenses = await database.expenses
       .where('paymentMethodId').equals(id)
       .toArray();
+
+    // Filter hidden expenses
+    const hidden = allCardExpenses.filter((expense) => expense.hidden);
+    this.hiddenExpenses.set(hidden.sort((a, b) => b.date.localeCompare(a.date)));
+
+    // Non-hidden direct charges in period
     const inRange = allCardExpenses.filter(
-      (expense) => !expense.isInstallment && expense.date >= range.startIso && expense.date <= range.endIso,
+      (expense) => !expense.isInstallment && !expense.hidden && expense.date >= range.startIso && expense.date <= range.endIso,
     );
     this.periodDirectCharges.set(inRange);
 
@@ -301,7 +408,7 @@ export class CreditCardDetailComponent {
     const year = this.currentYear();
     this.recentExpenses.set(
       allCardExpenses
-        .filter((expense) => expense.month === month && expense.year === year)
+        .filter((expense) => expense.month === month && expense.year === year && !expense.hidden)
         .sort((a, b) => b.date.localeCompare(a.date)),
     );
 
@@ -337,6 +444,29 @@ export class CreditCardDetailComponent {
       }
       this.expensesById.set(map);
     }
+
+    // Check if cutoff is needed (don't auto-process, just show button)
+    if (this.creditCardStatement.needsCutoff(method, today)) {
+      this.needsCutoff.set(true);
+      const closingDay = method.statementClosingDay ?? 1;
+      const previousPeriod = this.creditCardStatement.getPreviousCutoffPeriod(closingDay, today);
+      const charges = await this.creditCardStatement.calculatePeriodCharges(method, previousPeriod, today);
+      this.cutoffAmount.set(Math.round(charges * 100) / 100);
+    } else {
+      this.needsCutoff.set(false);
+      this.cutoffAmount.set(0);
+    }
+  }
+
+  private getCutoffPeriod(closingDay: number, today: Date): { month: number; year: number } {
+    if (today.getDate() >= closingDay) {
+      const nextMonth = today.getMonth() + 2;
+      if (nextMonth > 12) {
+        return { month: nextMonth - 12, year: today.getFullYear() + 1 };
+      }
+      return { month: nextMonth, year: today.getFullYear() };
+    }
+    return { month: today.getMonth() + 1, year: today.getFullYear() };
   }
 
   private calculatePeriodRange(): PeriodRange {

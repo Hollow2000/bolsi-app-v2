@@ -12,6 +12,7 @@ import { SettingsService } from '../../core/services/settings.service';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { CardComponent } from '../../shared/components/card/card.component';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { EditPaymentMethodModalComponent } from '../credit-cards/edit-payment-method-modal.component';
 import { EditPocketModalComponent } from '../pockets/edit-pocket-modal.component';
 import { IconButtonDirective } from '../../shared/components/icon-button/icon-button.directive';
@@ -25,6 +26,7 @@ import { ToastService } from '../../shared/services/toast.service';
     BottomSheetComponent,
     ButtonDirective,
     CardComponent,
+    ConfirmDialogComponent,
     EditPaymentMethodModalComponent,
     EditPocketModalComponent,
     IconButtonDirective,
@@ -87,7 +89,7 @@ import { ToastService } from '../../shared/services/toast.service';
             @for (pocket of pockets(); track pocket.id) {
               <li>
                 <app-list-item
-                  [icon]="pocket.emoji || 'wallet'"
+                  [icon]="pocket.icon || 'money_bag'"
                   [title]="pocket.name"
                   [subtitle]="pocket.percentage + '%'"
                 >
@@ -226,6 +228,17 @@ import { ToastService } from '../../shared/services/toast.service';
         />
       </app-bottom-sheet>
     }
+
+    @if (confirmOpen()) {
+      <app-bottom-sheet title="Confirmar" (close)="onCancelConfirm()">
+        <app-confirm-dialog
+          [message]="confirmMessage()"
+          [confirmTone]="confirmTone()"
+          (confirmed)="onConfirm()"
+          (cancelled)="onCancelConfirm()"
+        />
+      </app-bottom-sheet>
+    }
   `,
   styles: [
     `
@@ -300,6 +313,10 @@ export class SettingsComponent {
   protected readonly newCategory = signal('');
   protected readonly editingMethod = signal<PaymentMethod | null>(null);
   protected readonly editingPocket = signal<Pocket | null>(null);
+  protected readonly confirmOpen = signal(false);
+  protected readonly confirmMessage = signal('');
+  protected readonly confirmTone = signal<'primary' | 'destructive'>('destructive');
+  protected readonly confirmAction = signal<(() => void) | null>(null);
 
   protected readonly pocketTotal = computed(() =>
     Math.round(this.pockets().reduce((sum, p) => sum + p.percentage, 0)),
@@ -318,6 +335,7 @@ export class SettingsComponent {
   protected iconFor(type: PaymentMethod['type']): string {
     if (type === 'cash') return 'payments';
     if (type === 'debit') return 'account_balance';
+    if (type === 'savings') return 'savings';
     return 'credit_card';
   }
 
@@ -365,23 +383,28 @@ export class SettingsComponent {
     }
   }
 
-  protected async confirmDeleteMethod(method: PaymentMethod): Promise<void> {
-    if (!window.confirm(`¿Eliminar "${method.name}"?`) || method.id === undefined) {
-      return;
-    }
-    try {
-      await this.paymentMethodService.delete(method.id);
-      this.toast.show('Método de pago eliminado.');
-      await this.loadPaymentMethods();
-    } catch (error) {
-      this.toast.show(error instanceof Error ? error.message : 'No se pudo eliminar.');
-    }
+  protected confirmDeleteMethod(method: PaymentMethod): void {
+    this.confirmMessage.set(`¿Eliminar "${method.name}"?`);
+    this.confirmTone.set('destructive');
+    this.confirmAction.set(() => {
+      if (method.id === undefined) return;
+      void (async () => {
+        try {
+          await this.paymentMethodService.delete(method.id!);
+          this.toast.show('Método de pago eliminado.');
+          await this.loadPaymentMethods();
+        } catch (error) {
+          this.toast.show(error instanceof Error ? error.message : 'No se pudo eliminar.');
+        }
+      })();
+    });
+    this.confirmOpen.set(true);
   }
 
   protected openAddPocket(): void {
     this.editingPocket.set({
       name: '',
-      emoji: '💼',
+      icon: 'money_bag',
       percentage: 0,
       sortOrder: this.pockets().length,
     });
@@ -412,17 +435,22 @@ export class SettingsComponent {
     }
   }
 
-  protected async confirmDeletePocket(pocket: Pocket): Promise<void> {
-    if (!window.confirm(`¿Eliminar "${pocket.name}"?`) || pocket.id === undefined) {
-      return;
-    }
-    try {
-      await this.pocketService.delete(pocket.id);
-      this.toast.show('Bolsillo eliminado.');
-      await this.loadPockets();
-    } catch (error) {
-      this.toast.show(error instanceof Error ? error.message : 'No se pudo eliminar.');
-    }
+  protected confirmDeletePocket(pocket: Pocket): void {
+    this.confirmMessage.set(`¿Eliminar "${pocket.name}"?`);
+    this.confirmTone.set('destructive');
+    this.confirmAction.set(() => {
+      if (pocket.id === undefined) return;
+      void (async () => {
+        try {
+          await this.pocketService.delete(pocket.id!);
+          this.toast.show('Bolsillo eliminado.');
+          await this.loadPockets();
+        } catch (error) {
+          this.toast.show(error instanceof Error ? error.message : 'No se pudo eliminar.');
+        }
+      })();
+    });
+    this.confirmOpen.set(true);
   }
 
   protected async addCategory(): Promise<void> {
@@ -439,31 +467,39 @@ export class SettingsComponent {
     this.toast.show('Categoría agregada.');
   }
 
-  protected async removeCategory(category: string): Promise<void> {
-    if (!window.confirm(`¿Eliminar la categoría "${category}"?`)) {
-      return;
-    }
-    const next = this.customCategories().filter((c) => c !== category);
-    this.customCategories.set(next);
-    await this.persistCustomCategories(next);
-    this.toast.show('Categoría eliminada.');
+  protected removeCategory(category: string): void {
+    this.confirmMessage.set(`¿Eliminar la categoría "${category}"?`);
+    this.confirmTone.set('destructive');
+    this.confirmAction.set(() => {
+      void (async () => {
+        const next = this.customCategories().filter((c) => c !== category);
+        this.customCategories.set(next);
+        await this.persistCustomCategories(next);
+        this.toast.show('Categoría eliminada.');
+      })();
+    });
+    this.confirmOpen.set(true);
   }
 
-  protected async closeMonth(): Promise<void> {
-    if (!window.confirm('¿Cerrar el mes actual? Los pagos recurrentes se replicarán al siguiente.')) {
-      return;
-    }
-    const today = new Date();
-    const month = today.getMonth() + 1;
-    const year = today.getFullYear();
-    const nextMonth = month === 12 ? 1 : month + 1;
-    const nextYear = month === 12 ? year + 1 : year;
-    try {
-      const count = await this.monthlyPaymentService.replicateRecurring(month, year, nextMonth, nextYear);
-      this.toast.show(`${count} pago(s) recurrente(s) replicado(s) al siguiente mes.`);
-    } catch (error) {
-      this.toast.show(error instanceof Error ? error.message : 'No se pudo cerrar el mes.');
-    }
+  protected closeMonth(): void {
+    this.confirmMessage.set('¿Cerrar el mes actual? Los pagos recurrentes se replicarán al siguiente.');
+    this.confirmTone.set('destructive');
+    this.confirmAction.set(() => {
+      void (async () => {
+        const today = new Date();
+        const month = today.getMonth() + 1;
+        const year = today.getFullYear();
+        const nextMonth = month === 12 ? 1 : month + 1;
+        const nextYear = month === 12 ? year + 1 : year;
+        try {
+          const count = await this.monthlyPaymentService.replicateRecurring(month, year, nextMonth, nextYear);
+          this.toast.show(`${count} pago(s) recurrente(s) replicado(s) al siguiente mes.`);
+        } catch (error) {
+          this.toast.show(error instanceof Error ? error.message : 'No se pudo cerrar el mes.');
+        }
+      })();
+    });
+    this.confirmOpen.set(true);
   }
 
   protected async exportData(): Promise<void> {
@@ -479,19 +515,33 @@ export class SettingsComponent {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
-    if (!window.confirm('¿Importar este archivo? Reemplazará todos los datos actuales.')) {
-      input.value = '';
-      return;
-    }
-    try {
-      await this.dataPortability.importFromFile(file);
-      this.toast.show('Datos importados. Recargando…');
-      setTimeout(() => window.location.reload(), 800);
-    } catch (error) {
-      this.toast.show(error instanceof Error ? error.message : 'No se pudo importar.');
-    } finally {
-      input.value = '';
-    }
+    this.confirmMessage.set('¿Importar este archivo? Reemplazará todos los datos actuales.');
+    this.confirmTone.set('primary');
+    this.confirmAction.set(() => {
+      void (async () => {
+        try {
+          await this.dataPortability.importFromFile(file);
+          this.toast.show('Datos importados. Recargando…');
+          setTimeout(() => window.location.reload(), 800);
+        } catch (error) {
+          this.toast.show(error instanceof Error ? error.message : 'No se pudo importar.');
+        } finally {
+          input.value = '';
+        }
+      })();
+    });
+    this.confirmOpen.set(true);
+  }
+
+  protected onConfirm(): void {
+    this.confirmAction()?.();
+    this.confirmOpen.set(false);
+    this.confirmAction.set(null);
+  }
+
+  protected onCancelConfirm(): void {
+    this.confirmOpen.set(false);
+    this.confirmAction.set(null);
   }
 
   private async load(): Promise<void> {

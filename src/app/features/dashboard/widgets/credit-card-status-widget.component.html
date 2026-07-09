@@ -12,11 +12,16 @@
               icon="credit_card"
               [title]="card.name"
               [subtitle]="subtitleFor(card)"
-              [amount]="(card.availableCredit | mexicanCurrency) ?? ''"
+              [amount]="((card.amountToPay > 0 ? card.amountToPay : card.periodCharges) | mexicanCurrency) ?? ''"
             />
             <div class="card-extra">
+              @if (card.amountToPay > 0) {
+                <span class="card-extra__amount-to-pay">
+                  Por pagar: {{ card.amountToPay | mexicanCurrency }}
+                </span>
+              }
               <span class="card-extra__charges">
-                Cargo del período: {{ card.periodCharges | mexicanCurrency }}
+                Usado: {{ card.periodCharges | mexicanCurrency }}
               </span>
             </div>
           </a>

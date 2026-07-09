@@ -53,3 +53,13 @@
         />
       </app-bottom-sheet>
     }
+
+    @if (confirmOpen()) {
+      <app-bottom-sheet title="Confirmar" (close)="onCancelConfirm()">
+        <app-confirm-dialog
+          [message]="confirmMessage()"
+          (confirmed)="onConfirm()"
+          (cancelled)="onCancelConfirm()"
+        />
+      </app-bottom-sheet>
+    }

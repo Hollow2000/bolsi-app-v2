@@ -75,18 +75,17 @@ export class BalanceService {
   }
 
   /**
-   * BR-04: "Direct expenses (isInstallment === false) in the active
-   * billing period of each credit card this month" plus "sum of
-   * installmentPlans where cutoffYear === currentYear AND cutoffMonth
-   * === currentMonth". The card's MSI charge is never added in full.
+   * Calculates billable debt for all credit cards.
    *
-   * After a credit card payment (transfer to the card), the amount
-   * paid is subtracted so the remaining debt reflects reality.
+   * For each card:
+   * - If statementBalance > 0 (after cutoff): use statementBalance minus
+   *   credit card payments made for this billing period.
+   * - Otherwise (before cutoff): direct charges + installments - transfers.
    */
   private async sumBillableDebt(
     methods: readonly PaymentMethod[],
-    allExpenses: readonly { paymentMethodId: number; amount: number; date: string; isInstallment: boolean }[],
-    allTransfers: readonly { toPaymentMethodId: number; amount: number; month: number; year: number }[],
+    allExpenses: readonly { paymentMethodId: number; amount: number; date: string; isInstallment: boolean; hidden?: boolean }[],
+    allTransfers: readonly { toPaymentMethodId: number; amount: number; month: number; year: number; isCreditCardPayment?: boolean; billingPeriodMonth?: number; billingPeriodYear?: number }[],
     month: number,
     year: number,
   ): Promise<number> {
@@ -95,34 +94,55 @@ export class BalanceService {
     let total = 0;
     for (const card of creditCards) {
       if (card.id === undefined) continue;
-      const range = this.calculateActivePeriod(card, today);
-      const directSum = allExpenses
-        .filter(
-          (expense) =>
-            expense.paymentMethodId === card.id &&
-            !expense.isInstallment &&
-            expense.date >= range.startIso &&
-            expense.date <= range.endIso,
-        )
-        .reduce((sum, expense) => sum + expense.amount, 0);
-      const installmentPlans = await database.installmentPlans
-        .where('paymentMethodId').equals(card.id)
-        .toArray();
-      const installmentSum = installmentPlans
-        .filter(
-          (plan) => plan.cutoffYear === year && plan.cutoffMonth === month && !plan.paid,
-        )
-        .reduce((sum, plan) => sum + plan.amount, 0);
-      const transfersReceived = allTransfers
-        .filter(
-          (transfer) =>
-            transfer.toPaymentMethodId === card.id &&
-            transfer.month === month &&
-            transfer.year === year,
-        )
-        .reduce((sum, transfer) => sum + transfer.amount, 0);
-      const cardDebt = Math.max(0, directSum + installmentSum - transfersReceived);
-      total += cardDebt;
+      const closingDay = card.statementClosingDay ?? 1;
+
+      if (today.getDate() >= closingDay && (card.statementBalance ?? 0) > 0) {
+        // After cutoff: use statementBalance - credit card payments for this billing period
+        const billingPeriod = this.getCutoffPeriod(closingDay, today);
+        const creditCardPayments = allTransfers
+          .filter(
+            (transfer) =>
+              transfer.toPaymentMethodId === card.id &&
+              transfer.isCreditCardPayment &&
+              transfer.billingPeriodMonth === billingPeriod.month &&
+              transfer.billingPeriodYear === billingPeriod.year,
+          )
+          .reduce((sum, transfer) => sum + transfer.amount, 0);
+        const cardDebt = Math.max(0, (card.statementBalance ?? 0) - creditCardPayments);
+        total += cardDebt;
+      } else {
+        // Before cutoff: direct charges + installments - transfers
+        const range = this.calculateActivePeriod(card, today);
+        const directSum = allExpenses
+          .filter(
+            (expense) =>
+              expense.paymentMethodId === card.id &&
+              !expense.isInstallment &&
+              !expense.hidden &&
+              expense.date >= range.startIso &&
+              expense.date <= range.endIso,
+          )
+          .reduce((sum, expense) => sum + expense.amount, 0);
+        const installmentPlans = await database.installmentPlans
+          .where('paymentMethodId').equals(card.id)
+          .toArray();
+        const installmentSum = installmentPlans
+          .filter(
+            (plan) => plan.cutoffYear === year && plan.cutoffMonth === month && !plan.paid,
+          )
+          .reduce((sum, plan) => sum + (plan.customAmount ?? plan.amount), 0);
+        const transfersReceived = allTransfers
+          .filter(
+            (transfer) =>
+              transfer.toPaymentMethodId === card.id &&
+              transfer.month === month &&
+              transfer.year === year &&
+              !transfer.isCreditCardPayment,
+          )
+          .reduce((sum, transfer) => sum + transfer.amount, 0);
+        const cardDebt = Math.max(0, directSum + installmentSum - transfersReceived);
+        total += cardDebt;
+      }
     }
     return this.round(total);
   }
@@ -199,5 +219,16 @@ export class BalanceService {
 
   private round(value: number): number {
     return Math.round(value * 100) / 100;
+  }
+
+  private getCutoffPeriod(closingDay: number, today: Date): { month: number; year: number } {
+    if (today.getDate() >= closingDay) {
+      const nextMonth = today.getMonth() + 2;
+      if (nextMonth > 12) {
+        return { month: nextMonth - 12, year: today.getFullYear() + 1 };
+      }
+      return { month: nextMonth, year: today.getFullYear() };
+    }
+    return { month: today.getMonth() + 1, year: today.getFullYear() };
   }
 }

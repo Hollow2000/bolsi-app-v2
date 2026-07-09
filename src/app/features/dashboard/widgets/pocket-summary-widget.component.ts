@@ -7,7 +7,7 @@ import { MexicanCurrencyPipe } from '../../../shared/pipes/mexican-currency.pipe
 export interface PocketSummaryEntry {
   readonly id: number;
   readonly name: string;
-  readonly emoji: string;
+  readonly icon: string;
   readonly percentage: number;
   readonly assigned: number;
   readonly used: number;

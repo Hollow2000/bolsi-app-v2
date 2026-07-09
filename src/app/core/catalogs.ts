@@ -25,14 +25,56 @@ export const INCOME_CATEGORIES = [
   'Otro',
 ] as const;
 
-export const INSTALLMENT_OPTIONS = [3, 6, 9, 12, 18, 24] as const;
+export const INSTALLMENT_MIN = 2;
+export const INSTALLMENT_MAX = 48;
+
+export const MATERIAL_ICONS = [
+  'money_bag',
+  'star',
+  'coffee',
+  'restaurant',
+  'shopping_cart',
+  'directions_car',
+  'home',
+  'fitness_center',
+  'school',
+  'pets',
+  'local_hospital',
+  'flight',
+  'movie',
+  'phone',
+  'wifi',
+  'bolt',
+  'savings',
+  'account_balance',
+  'payments',
+  'credit_card',
+  'trending_up',
+  'calendar_month',
+  'work',
+  'sports_esports',
+  'music_note',
+  'palette',
+  'brush',
+  'local_grocery_store',
+  'self_improvement',
+  'commute',
+  'luggage',
+  'celebration',
+  'emoji_emotions',
+  'child_care',
+  'spa',
+  'local_cafe',
+  'local_bar',
+  'fastfood',
+  'cake',
+] as const;
 
 export const DEFAULT_POCKETS = [
-  { name: 'Necesidades', emoji: '🏠', percentage: 60, sortOrder: 0 },
-  { name: 'Prescindibles', emoji: '🎬', percentage: 20, sortOrder: 1 },
-  { name: 'Ahorros', emoji: '💰', percentage: 20, sortOrder: 2 },
+  { name: 'Necesidades', icon: 'home', percentage: 60, sortOrder: 0 },
+  { name: 'Prescindibles', icon: 'movie', percentage: 20, sortOrder: 1 },
+  { name: 'Ahorros', icon: 'money_bag', percentage: 20, sortOrder: 2 },
 ] as const;
 
 export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
 export type IncomeCategory = (typeof INCOME_CATEGORIES)[number];
-export type InstallmentOption = (typeof INSTALLMENT_OPTIONS)[number];

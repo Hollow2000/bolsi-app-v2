@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { DEFAULT_POCKETS, INCOME_CATEGORIES, type IncomeCategory } from '../../core/catalogs';
+import { DEFAULT_POCKETS, INCOME_CATEGORIES, MATERIAL_ICONS, type IncomeCategory } from '../../core/catalogs';
 import type { Income, IncomeFrequency, IncomeStatus } from '../../core/models/income.model';
 import type { PaymentMethod, PaymentMethodType } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';
@@ -14,6 +14,7 @@ import { ButtonDirective } from '../../shared/components/button/button.directive
 import { CardComponent } from '../../shared/components/card/card.component';
 import { DateInputComponent } from '../../shared/components/date-input/date-input.component';
 import { IconButtonDirective } from '../../shared/components/icon-button/icon-button.directive';
+import { IconPickerComponent } from '../../shared/components/icon-picker/icon-picker.component';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
 import { SegmentedControlComponent, type SegmentedOption } from '../../shared/components/segmented-control/segmented-control.component';
 import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
@@ -46,13 +47,14 @@ interface IncomeDraft {
 
 interface PocketDraft {
   name: string;
-  emoji: string;
+  icon: string;
   percentage: number;
 }
 
 const PAYMENT_METHOD_TYPE_OPTIONS: readonly SegmentedOption<PaymentMethodType>[] = [
   { value: 'cash', label: 'Efectivo' },
   { value: 'debit', label: 'Débito' },
+  { value: 'savings', label: 'Ahorro' },
   { value: 'credit', label: 'Crédito' },
 ];
 
@@ -78,6 +80,7 @@ const STATUS_OPTIONS: readonly SegmentedOption<IncomeStatus>[] = [
     EditIncomeModalComponent,
     EditPocketModalComponent,
     IconButtonDirective,
+    IconPickerComponent,
     MexicanCurrencyPipe,
     NumberInputComponent,
     SegmentedControlComponent,
@@ -99,6 +102,7 @@ export class OnboardingComponent {
   protected readonly frequencyOptions = FREQUENCY_OPTIONS;
   protected readonly statusOptions = STATUS_OPTIONS;
   protected readonly incomeCategories = INCOME_CATEGORIES;
+  protected readonly materialIcons = MATERIAL_ICONS;
 
   protected readonly currentStep = signal<WizardStep>(1);
   protected readonly userName = signal('');
@@ -142,7 +146,7 @@ export class OnboardingComponent {
 
   protected readonly pocketDraft = signal<PocketDraft>({
     name: '',
-    emoji: '💼',
+    icon: 'money_bag',
     percentage: 0,
   });
 
@@ -420,8 +424,8 @@ export class OnboardingComponent {
     this.onPocketDraftChange('name', value);
   }
 
-  protected onPocketEmojiChange(value: string): void {
-    this.onPocketDraftChange('emoji', value);
+  protected onPocketIconChange(value: string): void {
+    this.onPocketDraftChange('icon', value);
   }
 
   protected onPocketPercentageChange(value: number): void {
@@ -437,12 +441,12 @@ export class OnboardingComponent {
       ...pockets,
       {
         name: draft.name.trim(),
-        emoji: draft.emoji || '💼',
+        icon: draft.icon || 'money_bag',
         percentage: this.roundCurrency(draft.percentage),
         sortOrder: pockets.length,
       },
     ]);
-    this.pocketDraft.set({ name: '', emoji: '💼', percentage: 0 });
+    this.pocketDraft.set({ name: '', icon: 'money_bag', percentage: 0 });
   }
 
   protected removePocket(index: number): void {

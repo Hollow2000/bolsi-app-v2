@@ -9,6 +9,7 @@ import { PaymentMethodService } from '../../core/services/payment-method.service
 import { PocketService } from '../../core/services/pocket.service';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { CardComponent } from '../../shared/components/card/card.component';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { FabComponent } from '../../shared/components/fab/fab.component';
 import { IconButtonDirective } from '../../shared/components/icon-button/icon-button.directive';
 import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
@@ -29,6 +30,7 @@ interface PaymentWithUrgency extends MonthlyPayment {
   imports: [
     BottomSheetComponent,
     CardComponent,
+    ConfirmDialogComponent,
     FabComponent,
     IconButtonDirective,
     ListItemComponent,
@@ -55,6 +57,9 @@ export class MonthlyPaymentsListComponent {
   protected readonly currentYear = signal(new Date().getFullYear());
   protected readonly editingPayment = signal<MonthlyPayment | null>(null);
   protected readonly modalOpen = signal(false);
+  protected readonly confirmOpen = signal(false);
+  protected readonly confirmMessage = signal('');
+  protected readonly confirmAction = signal<(() => void) | null>(null);
 
   protected readonly markingAsPaid = signal<MonthlyPayment | null>(null);
   protected readonly amountToPay = signal(0);
@@ -119,6 +124,13 @@ export class MonthlyPaymentsListComponent {
     return `urgency-${payment.urgency}`;
   }
 
+  protected typeLabel(type: PaymentMethod['type']): string {
+    if (type === 'cash') return 'Efectivo';
+    if (type === 'debit') return 'Débito';
+    if (type === 'savings') return 'Ahorro';
+    return 'Crédito';
+  }
+
   protected openAdd(): void {
     this.editingPayment.set(null);
     this.modalOpen.set(true);
@@ -155,7 +167,13 @@ export class MonthlyPaymentsListComponent {
   protected openMarkAsPaid(payment: MonthlyPayment): void {
     this.markingAsPaid.set(payment);
     this.amountToPay.set(payment.amount - payment.amountPaid);
-    this.sourcePaymentMethodId.set(this.sourcePaymentMethods()[0]?.id ?? 0);
+    // Pre-select the payment's configured method if it's non-credit
+    const configured = this.sourcePaymentMethods().find(
+      (m) => m.id === payment.paymentMethodId,
+    );
+    this.sourcePaymentMethodId.set(
+      configured?.id ?? this.sourcePaymentMethods()[0]?.id ?? 0,
+    );
     this.markAsPaidError.set(null);
   }
 
@@ -193,21 +211,33 @@ export class MonthlyPaymentsListComponent {
     }
   }
 
-  protected async confirmDelete(payment: MonthlyPayment): Promise<void> {
-    const confirmed = window.confirm(
-      `¿Eliminar el pago "${payment.name}"? Esta acción no se puede deshacer.`,
-    );
-    if (!confirmed || payment.id === undefined) {
-      return;
-    }
-    try {
-      await this.service.delete(payment.id);
-      this.toast.show('Pago eliminado.');
-      await this.loadPayments(this.currentMonth(), this.currentYear());
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'No se pudo eliminar el pago.';
-      this.toast.show(message);
-    }
+  protected confirmDelete(payment: MonthlyPayment): void {
+    this.confirmMessage.set(`¿Eliminar el pago "${payment.name}"? Esta acción no se puede deshacer.`);
+    this.confirmAction.set(() => {
+      if (payment.id === undefined) return;
+      void (async () => {
+        try {
+          await this.service.delete(payment.id!);
+          this.toast.show('Pago eliminado.');
+          await this.loadPayments(this.currentMonth(), this.currentYear());
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'No se pudo eliminar el pago.';
+          this.toast.show(message);
+        }
+      })();
+    });
+    this.confirmOpen.set(true);
+  }
+
+  protected onConfirm(): void {
+    this.confirmAction()?.();
+    this.confirmOpen.set(false);
+    this.confirmAction.set(null);
+  }
+
+  protected onCancelConfirm(): void {
+    this.confirmOpen.set(false);
+    this.confirmAction.set(null);
   }
 
   private async load(): Promise<void> {

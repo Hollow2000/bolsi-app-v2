@@ -60,7 +60,7 @@ export function assertCanReceiveIncome(
   }
   if (paymentMethod.type === 'credit') {
     throw new Error(
-      'Los ingresos no pueden asignarse a tarjetas de crédito. Solo efectivo o débito.',
+      'Los ingresos no pueden asignarse a tarjetas de crédito. Solo efectivo, débito o ahorro.',
     );
   }
 }

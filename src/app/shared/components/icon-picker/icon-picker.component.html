@@ -1,0 +1,15 @@
+<div class="icon-grid" role="listbox" aria-label="Seleccionar icono">
+  @for (icon of icons(); track icon) {
+    <button
+      class="icon-option"
+      [class.icon-option--selected]="icon === value()"
+      type="button"
+      role="option"
+      [attr.aria-selected]="icon === value()"
+      [attr.aria-label]="icon"
+      (click)="value.set(icon)"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true">{{ icon }}</span>
+    </button>
+  }
+</div>

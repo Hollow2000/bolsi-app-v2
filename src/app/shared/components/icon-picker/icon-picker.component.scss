@@ -1,0 +1,32 @@
+:host { display: block; }
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: var(--space-2);
+}
+.icon-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--border-default);
+  border-radius: var(--radius-medium);
+  background: var(--surface);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.icon-option:hover {
+  border-color: var(--color-primary);
+  background: var(--surface-alternate);
+}
+.icon-option--selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle, rgba(6, 181, 241, 0.1));
+  color: var(--color-primary);
+}
+.icon-option:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}

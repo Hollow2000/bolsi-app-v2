@@ -5,10 +5,12 @@ import type { Expense } from '../../core/models/expense.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';
 import { ExpenseService } from '../../core/services/expense.service';
+import { ExpenseTemplateService } from '../../core/services/expense-template.service';
 import { PaymentMethodService } from '../../core/services/payment-method.service';
 import { PocketService } from '../../core/services/pocket.service';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { CardComponent } from '../../shared/components/card/card.component';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { FabComponent } from '../../shared/components/fab/fab.component';
 import { IconButtonDirective } from '../../shared/components/icon-button/icon-button.directive';
 import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
@@ -31,6 +33,7 @@ const NO_CATEGORY = '';
   imports: [
     BottomSheetComponent,
     CardComponent,
+    ConfirmDialogComponent,
     ExpenseFormModalComponent,
     FabComponent,
     IconButtonDirective,
@@ -44,6 +47,7 @@ const NO_CATEGORY = '';
 })
 export class ExpensesListComponent {
   private readonly expenseService = inject(ExpenseService);
+  private readonly templateService = inject(ExpenseTemplateService);
   private readonly paymentMethodService = inject(PaymentMethodService);
   private readonly pocketService = inject(PocketService);
   private readonly toast = inject(ToastService);
@@ -64,6 +68,9 @@ export class ExpensesListComponent {
 
   protected readonly modalOpen = signal(false);
   protected readonly editingExpense = signal<Expense | null>(null);
+  protected readonly confirmOpen = signal(false);
+  protected readonly confirmMessage = signal('');
+  protected readonly confirmAction = signal<(() => void) | null>(null);
 
   protected readonly filteredExpenses = computed(() => {
     const filter = this.filters();
@@ -113,7 +120,7 @@ export class ExpensesListComponent {
     const method = this.paymentMethods().find((method) => method.id === expense.paymentMethodId);
     const pocket = this.pockets().find((pocket) => pocket.id === expense.pocketId);
     const methodName = method?.name ?? '—';
-    const pocketName = pocket ? `${pocket.emoji} ${pocket.name}` : '—';
+    const pocketName = pocket ? pocket.name : '—';
     return `${pocketName} · ${methodName} · ${expense.category}`;
   }
 
@@ -150,19 +157,40 @@ export class ExpensesListComponent {
     }
   }
 
-  protected async confirmDelete(expense: Expense): Promise<void> {
-    const confirmed = window.confirm(
-      `¿Eliminar el gasto "${expense.description}"? El saldo del método de pago se restaurará.`,
-    );
-    if (!confirmed) {
-      return;
-    }
+  protected confirmDelete(expense: Expense): void {
+    this.confirmMessage.set(`¿Eliminar el gasto "${expense.description}"? El saldo del método de pago se restaurará.`);
+    this.confirmAction.set(() => {
+      void (async () => {
+        try {
+          await this.expenseService.delete(expense);
+          this.toast.show('Gasto eliminado.');
+          await this.loadExpenses(this.currentMonth(), this.currentYear());
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'No se pudo eliminar el gasto.';
+          this.toast.show(message);
+        }
+      })();
+    });
+    this.confirmOpen.set(true);
+  }
+
+  protected onConfirm(): void {
+    this.confirmAction()?.();
+    this.confirmOpen.set(false);
+    this.confirmAction.set(null);
+  }
+
+  protected onCancelConfirm(): void {
+    this.confirmOpen.set(false);
+    this.confirmAction.set(null);
+  }
+
+  protected async saveAsTemplate(expense: Expense): Promise<void> {
     try {
-      await this.expenseService.delete(expense);
-      this.toast.show('Gasto eliminado.');
-      await this.loadExpenses(this.currentMonth(), this.currentYear());
+      await this.templateService.saveFromExpense(expense, 'star');
+      this.toast.show(`Plantilla "${expense.description}" creada.`);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'No se pudo eliminar el gasto.';
+      const message = error instanceof Error ? error.message : 'No se pudo crear la plantilla.';
       this.toast.show(message);
     }
   }

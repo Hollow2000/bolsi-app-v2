@@ -16,14 +16,11 @@ export class TransferService {
   }
 
   /**
-   * Moves money from one payment method to another. Both balances are
-   * updated atomically and a Transfer record is persisted for history.
+   * Moves money from one payment method to another.
    *
-   * When the destination is a credit card the transfer is a payment:
-   *   1. `availableCredit` increases (paying off the card frees credit).
-   *   2. Every `InstallmentPlan` whose cutoff matches the transfer's
-   *      month and year is marked `paid = true` so the balance widget
-   *      no longer counts it as billable debt (BR-04).
+   * When the destination is a credit card:
+   * - Before cutoff: normal transfer, marks installments for current month as paid
+   * - After cutoff: splits into payment (reduces statementBalance) + surplus
    */
   async create(transfer: Transfer): Promise<number> {
     this.validate(transfer);
@@ -38,9 +35,62 @@ export class TransferService {
     await this.paymentMethods.deductBalance(transfer.fromPaymentMethodId, transfer.amount);
     await this.paymentMethods.addBalance(transfer.toPaymentMethodId, transfer.amount);
 
-    // Credit-card payment: mark current-month installments as paid.
-    if (to.type === 'credit') {
-      await this.markInstallmentsPaid(transfer.toPaymentMethodId, transfer.month, transfer.year);
+    if (to.type === 'credit' && to.statementClosingDay !== undefined) {
+      const today = new Date();
+      const closingDay = to.statementClosingDay;
+
+      if (today.getDate() >= closingDay && (to.statementBalance ?? 0) > 0) {
+        // After cutoff: handle as payment + possible surplus
+        const billingPeriod = this.getCutoffPeriod(closingDay, today);
+        const existingPayments = await this.getCreditCardPayments(
+          to.id!,
+          billingPeriod.month,
+          billingPeriod.year,
+        );
+        const remainingToPay = Math.max(0, (to.statementBalance ?? 0) - existingPayments);
+
+        if (remainingToPay > 0) {
+          const paymentAmount = Math.min(transfer.amount, remainingToPay);
+          const surplus = transfer.amount - paymentAmount;
+
+          // Create credit card payment record
+          const paymentTransfer: Transfer = {
+            fromPaymentMethodId: transfer.fromPaymentMethodId,
+            toPaymentMethodId: transfer.toPaymentMethodId,
+            amount: paymentAmount,
+            date: transfer.date,
+            description: transfer.description,
+            month: transfer.month,
+            year: transfer.year,
+            isCreditCardPayment: true,
+            billingPeriodMonth: billingPeriod.month,
+            billingPeriodYear: billingPeriod.year,
+          };
+          await database.transfers.add(paymentTransfer);
+
+          // If surplus, create a normal transfer for it
+          if (surplus > 0) {
+            const surplusTransfer: Transfer = {
+              fromPaymentMethodId: transfer.fromPaymentMethodId,
+              toPaymentMethodId: transfer.toPaymentMethodId,
+              amount: surplus,
+              date: transfer.date,
+              description: `${transfer.description} (sobrante)`,
+              month: transfer.month,
+              year: transfer.year,
+            };
+            await database.transfers.add(surplusTransfer);
+          }
+
+          // Mark installments for the billing period as paid
+          await this.markInstallmentsPaid(to.id!, billingPeriod.month, billingPeriod.year);
+
+          return paymentAmount;
+        }
+      }
+
+      // Before cutoff or no statementBalance: normal transfer
+      await this.markInstallmentsPaid(to.id!, transfer.month, transfer.year);
     }
 
     const id = await database.transfers.add(transfer);
@@ -78,6 +128,26 @@ export class TransferService {
     ) / 100;
   }
 
+  /**
+   * Returns credit card payment transfers for a specific billing period.
+   */
+  async getCreditCardPayments(
+    cardId: number,
+    billingPeriodMonth: number,
+    billingPeriodYear: number,
+  ): Promise<number> {
+    const all = await database.transfers.toArray();
+    return all
+      .filter(
+        (transfer) =>
+          transfer.toPaymentMethodId === cardId &&
+          transfer.isCreditCardPayment &&
+          transfer.billingPeriodMonth === billingPeriodMonth &&
+          transfer.billingPeriodYear === billingPeriodYear,
+      )
+      .reduce((sum, transfer) => sum + transfer.amount, 0);
+  }
+
   private async markInstallmentsPaid(
     cardId: number,
     month: number,
@@ -95,6 +165,17 @@ export class TransferService {
     for (const plan of toMark) {
       await database.installmentPlans.put({ ...plan, paid: true });
     }
+  }
+
+  private getCutoffPeriod(closingDay: number, today: Date): { month: number; year: number } {
+    if (today.getDate() >= closingDay) {
+      const nextMonth = today.getMonth() + 2;
+      if (nextMonth > 12) {
+        return { month: nextMonth - 12, year: today.getFullYear() + 1 };
+      }
+      return { month: nextMonth, year: today.getFullYear() };
+    }
+    return { month: today.getMonth() + 1, year: today.getFullYear() };
   }
 
   private validate(transfer: Transfer): void {

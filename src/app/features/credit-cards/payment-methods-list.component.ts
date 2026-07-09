@@ -5,6 +5,7 @@ import type { PaymentMethod, PaymentMethodType } from '../../core/models/payment
 import { PaymentMethodService } from '../../core/services/payment-method.service';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { CardComponent } from '../../shared/components/card/card.component';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { IconButtonDirective } from '../../shared/components/icon-button/icon-button.directive';
 import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
 import { formatMexicanCurrency } from '../../shared/pipes/mexican-currency.pipe';
@@ -16,6 +17,7 @@ import { EditPaymentMethodModalComponent } from './edit-payment-method-modal.com
   imports: [
     BottomSheetComponent,
     CardComponent,
+    ConfirmDialogComponent,
     EditPaymentMethodModalComponent,
     IconButtonDirective,
     ListItemComponent,
@@ -32,6 +34,9 @@ export class PaymentMethodsListComponent {
 
   protected readonly paymentMethods = signal<PaymentMethod[]>([]);
   protected readonly editing = signal<PaymentMethod | null>(null);
+  protected readonly confirmOpen = signal(false);
+  protected readonly confirmMessage = signal('');
+  protected readonly confirmAction = signal<(() => void) | null>(null);
 
   protected readonly creditCards = computed(() =>
     this.paymentMethods().filter((method) => method.type === 'credit'),
@@ -57,6 +62,7 @@ export class PaymentMethodsListComponent {
   protected iconFor(type: PaymentMethodType): string {
     if (type === 'cash') return 'payments';
     if (type === 'debit') return 'account_balance';
+    if (type === 'savings') return 'savings';
     return 'credit_card';
   }
 
@@ -87,21 +93,33 @@ export class PaymentMethodsListComponent {
     }
   }
 
-  protected async confirmDelete(method: PaymentMethod): Promise<void> {
-    const confirmed = window.confirm(
-      `¿Eliminar el método de pago "${method.name}"? Esta acción no se puede deshacer.`,
-    );
-    if (!confirmed || method.id === undefined) {
-      return;
-    }
-    try {
-      await this.service.delete(method.id);
-      this.toast.show('Método de pago eliminado.');
-      await this.load();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'No se pudo eliminar el método de pago.';
-      this.toast.show(message);
-    }
+  protected confirmDelete(method: PaymentMethod): void {
+    this.confirmMessage.set(`¿Eliminar el método de pago "${method.name}"? Esta acción no se puede deshacer.`);
+    this.confirmAction.set(() => {
+      if (method.id === undefined) return;
+      void (async () => {
+        try {
+          await this.service.delete(method.id!);
+          this.toast.show('Método de pago eliminado.');
+          await this.load();
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'No se pudo eliminar el método de pago.';
+          this.toast.show(message);
+        }
+      })();
+    });
+    this.confirmOpen.set(true);
+  }
+
+  protected onConfirm(): void {
+    this.confirmAction()?.();
+    this.confirmOpen.set(false);
+    this.confirmAction.set(null);
+  }
+
+  protected onCancelConfirm(): void {
+    this.confirmOpen.set(false);
+    this.confirmAction.set(null);
   }
 
   private async load(): Promise<void> {

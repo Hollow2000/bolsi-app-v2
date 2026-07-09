@@ -38,6 +38,7 @@ export class PaymentMethodDetailComponent {
   protected typeLabel(type: PaymentMethod['type']): string {
     if (type === 'cash') return 'Efectivo';
     if (type === 'debit') return 'Débito';
+    if (type === 'savings') return 'Ahorro';
     return 'Crédito';
   }
 

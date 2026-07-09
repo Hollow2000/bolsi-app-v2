@@ -10,6 +10,7 @@ import { TextInputComponent } from '../../shared/components/text-input/text-inpu
 const TYPE_OPTIONS: readonly SegmentedOption<PaymentMethodType>[] = [
   { value: 'cash', label: 'Efectivo' },
   { value: 'debit', label: 'Débito' },
+  { value: 'savings', label: 'Ahorro' },
   { value: 'credit', label: 'Crédito' },
 ];
 
@@ -45,6 +46,7 @@ export class EditPaymentMethodModalComponent implements OnInit {
   protected readonly creditLimit = signal(0);
   protected readonly closingDay = signal(1);
   protected readonly creditDays = signal(20);
+  protected readonly skipHolidays = signal(false);
 
   protected readonly isCredit = computed(() => this.type() === 'credit');
 
@@ -56,6 +58,7 @@ export class EditPaymentMethodModalComponent implements OnInit {
     this.creditLimit.set(initial.creditLimit ?? 0);
     this.closingDay.set(initial.statementClosingDay ?? 1);
     this.creditDays.set(initial.creditDays ?? 20);
+    this.skipHolidays.set(initial.skipHolidays ?? false);
   }
 
   protected onTypeChange(type: PaymentMethodType): void {
@@ -90,6 +93,7 @@ export class EditPaymentMethodModalComponent implements OnInit {
         availableCredit: this.round(this.creditLimit()),
         statementClosingDay: Math.min(31, Math.max(1, Math.trunc(this.closingDay()) || 1)),
         creditDays: Math.max(1, Math.trunc(this.creditDays()) || 1),
+        skipHolidays: this.skipHolidays(),
         currentBalance: undefined,
       };
     }

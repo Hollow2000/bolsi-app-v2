@@ -19,7 +19,7 @@
             <option [value]="0" [selected]="filters().pocketId === 0">Todos los bolsillos</option>
             @for (pocket of pockets(); track pocket.id) {
               <option [value]="pocket.id" [selected]="filters().pocketId === pocket.id">
-                {{ pocket.emoji }} {{ pocket.name }}
+                {{ pocket.name }}
               </option>
             }
           </app-select-input>
@@ -78,6 +78,14 @@
                   <button
                     appIconButton
                     type="button"
+                    aria-label="Guardar como plantilla"
+                    (click)="saveAsTemplate(expense)"
+                  >
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">bookmark_add</span>
+                  </button>
+                  <button
+                    appIconButton
+                    type="button"
                     aria-label="Editar gasto"
                     (click)="openEdit(expense)"
                   >
@@ -111,6 +119,16 @@
           [expense]="editingExpense()"
           (cancel)="closeModal()"
           (saved)="onSaved($event)"
+        />
+      </app-bottom-sheet>
+    }
+
+    @if (confirmOpen()) {
+      <app-bottom-sheet title="Confirmar" (close)="onCancelConfirm()">
+        <app-confirm-dialog
+          [message]="confirmMessage()"
+          (confirmed)="onConfirm()"
+          (cancelled)="onCancelConfirm()"
         />
       </app-bottom-sheet>
     }

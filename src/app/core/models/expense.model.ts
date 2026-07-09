@@ -11,4 +11,5 @@ export interface Expense {
   isInstallment: boolean;
   installmentMonths?: number;
   monthlyInstallmentAmount?: number;
+  hidden?: boolean;
 }

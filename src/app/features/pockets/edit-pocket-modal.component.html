@@ -1,14 +1,12 @@
-    <div class="modal-row">
-      <app-text-input
-        label="Nombre"
-        [value]="name()"
-        (valueChange)="name.set($event)"
-      />
-      <app-text-input
-        label="Emoji"
-        [value]="emoji()"
-        (valueChange)="emoji.set($event)"
-      />
+    <app-text-input
+      label="Nombre"
+      [value]="name()"
+      (valueChange)="name.set($event)"
+    />
+
+    <div class="icon-field">
+      <label class="icon-label">Icono</label>
+      <app-icon-picker [icons]="icons" [value]="icon()" (valueChange)="icon.set($event)" />
     </div>
 
     <app-number-input

@@ -42,7 +42,7 @@
       <option value="0" disabled [selected]="pocketId() === 0">Selecciona un bolsillo</option>
       @for (pocket of pockets(); track pocket.id) {
         <option [value]="pocket.id" [selected]="pocket.id === pocketId()">
-          {{ pocket.emoji }} {{ pocket.name }} ({{ pocket.percentage }}%)
+          {{ pocket.name }} ({{ pocket.percentage }}%)
         </option>
       }
     </app-select-input>
@@ -66,19 +66,22 @@
             [checked]="isInstallment()"
             (change)="onInstallmentToggle($event)"
           />
-          <span>A meses sin intereses (MSI)</span>
+          <span>Pagar a cuotas</span>
         </label>
       </div>
 
       @if (isInstallment()) {
-        <app-segmented-control
-          ariaLabel="Número de meses sin intereses"
-          [options]="installmentOptions"
+        <app-number-input
+          label="Número de cuotas"
+          placeholder="2"
+          [min]="2"
+          [max]="48"
+          [step]="1"
           [value]="installmentMonths()"
-          (valueChange)="installmentMonths.set($any($event))"
+          (valueChange)="installmentMonths.set($event)"
         />
         <p class="msi-preview">
-          {{ installmentCount() }} pagos de
+          {{ installmentMonths() }} pagos de
           <strong>{{ monthlyInstallment() | mexicanCurrency }}</strong>
           cada uno. Se descuenta el total ({{ amount() | mexicanCurrency }}) del crédito disponible de la tarjeta al registrar.
         </p>

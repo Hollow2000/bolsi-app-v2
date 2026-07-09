@@ -5,10 +5,13 @@ import type { PaymentMethod } from '../../core/models/payment-method.model';
 import { IncomeService } from '../../core/services/income.service';
 import { PaymentMethodService } from '../../core/services/payment-method.service';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
+import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { CardComponent } from '../../shared/components/card/card.component';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { FabComponent } from '../../shared/components/fab/fab.component';
 import { IconButtonDirective } from '../../shared/components/icon-button/icon-button.directive';
 import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
+import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
 import { MexicanCurrencyPipe, formatMexicanCurrency } from '../../shared/pipes/mexican-currency.pipe';
 import { ToastService } from '../../shared/services/toast.service';
 import { EditIncomeModalComponent } from './edit-income-modal.component';
@@ -17,12 +20,15 @@ import { EditIncomeModalComponent } from './edit-income-modal.component';
   selector: 'app-income-list',
   imports: [
     BottomSheetComponent,
+    ButtonDirective,
     CardComponent,
+    ConfirmDialogComponent,
     EditIncomeModalComponent,
     FabComponent,
     IconButtonDirective,
     ListItemComponent,
     MexicanCurrencyPipe,
+    NumberInputComponent,
   ],
   templateUrl: './income-list.component.html',
   styleUrl: './income-list.component.scss',
@@ -37,8 +43,16 @@ export class IncomeListComponent {
   protected readonly paymentMethods = signal<PaymentMethod[]>([]);
   protected readonly editing = signal<Income | null>(null);
   protected readonly modalOpen = signal(false);
+  protected readonly confirmOpen = signal(false);
+  protected readonly confirmMessage = signal('');
+  protected readonly confirmAction = signal<(() => void) | null>(null);
   protected readonly currentMonth = signal(new Date().getMonth() + 1);
   protected readonly currentYear = signal(new Date().getFullYear());
+
+  protected readonly confirmingIncome = signal<Income | null>(null);
+  protected readonly receivedAmount = signal(0);
+  protected readonly receiveError = signal<string | null>(null);
+  protected readonly savingReceive = signal(false);
 
   protected readonly totalReceived = computed(() =>
     this.incomes()
@@ -102,32 +116,66 @@ export class IncomeListComponent {
     }
   }
 
-  protected async markAsReceived(id: number): Promise<void> {
+  protected openReceiveConfirm(income: Income): void {
+    this.confirmingIncome.set(income);
+    this.receivedAmount.set(income.amount);
+    this.receiveError.set(null);
+    this.savingReceive.set(false);
+  }
+
+  protected closeReceiveConfirm(): void {
+    this.confirmingIncome.set(null);
+    this.receiveError.set(null);
+  }
+
+  protected async confirmReceive(): Promise<void> {
+    const income = this.confirmingIncome();
+    if (!income || income.id === undefined) return;
+    const amount = Math.round(this.receivedAmount() * 100) / 100;
+    if (!Number.isFinite(amount) || amount <= 0) {
+      this.receiveError.set('El monto debe ser mayor a 0.');
+      return;
+    }
+    this.savingReceive.set(true);
+    this.receiveError.set(null);
     try {
-      await this.incomeService.markAsReceived(id);
+      await this.incomeService.markAsReceived(income.id, amount);
       this.toast.show('Ingreso marcado como recibido.');
+      this.closeReceiveConfirm();
       await this.load();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'No se pudo marcar como recibido.';
-      this.toast.show(message);
+      this.receiveError.set(error instanceof Error ? error.message : 'No se pudo marcar como recibido.');
+    } finally {
+      this.savingReceive.set(false);
     }
   }
 
-  protected async confirmDelete(income: Income): Promise<void> {
-    const confirmed = window.confirm(
-      `¿Eliminar el ingreso "${income.description}"? Esta acción no se puede deshacer.`,
-    );
-    if (!confirmed) {
-      return;
-    }
-    try {
-      await this.incomeService.delete(income);
-      this.toast.show('Ingreso eliminado.');
-      await this.load();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'No se pudo eliminar el ingreso.';
-      this.toast.show(message);
-    }
+  protected confirmDelete(income: Income): void {
+    this.confirmMessage.set(`¿Eliminar el ingreso "${income.description}"? Esta acción no se puede deshacer.`);
+    this.confirmAction.set(() => {
+      void (async () => {
+        try {
+          await this.incomeService.delete(income);
+          this.toast.show('Ingreso eliminado.');
+          await this.load();
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'No se pudo eliminar el ingreso.';
+          this.toast.show(message);
+        }
+      })();
+    });
+    this.confirmOpen.set(true);
+  }
+
+  protected onConfirm(): void {
+    this.confirmAction()?.();
+    this.confirmOpen.set(false);
+    this.confirmAction.set(null);
+  }
+
+  protected onCancelConfirm(): void {
+    this.confirmOpen.set(false);
+    this.confirmAction.set(null);
   }
 
   private async load(): Promise<void> {

@@ -1,5 +1,6 @@
-    <div class="app-modal-overlay" (click)="onClose()">
+    <div class="app-modal-overlay" (click)="onClose()" (keydown)="onOverlayKeydown($event)">
       <div
+        #sheetRef
         class="app-modal-sheet"
         role="dialog"
         aria-modal="true"

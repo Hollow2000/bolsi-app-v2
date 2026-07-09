@@ -1,13 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 
-import { EXPENSE_CATEGORIES, INSTALLMENT_OPTIONS, type ExpenseCategory } from '../../core/catalogs';
+import { EXPENSE_CATEGORIES, INSTALLMENT_MIN, type ExpenseCategory } from '../../core/catalogs';
 import type { Expense } from '../../core/models/expense.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { DateInputComponent } from '../../shared/components/date-input/date-input.component';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
-import { SegmentedControlComponent, type SegmentedOption } from '../../shared/components/segmented-control/segmented-control.component';
 import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
 import { TextInputComponent } from '../../shared/components/text-input/text-input.component';
 import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
@@ -26,7 +25,6 @@ import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
     DateInputComponent,
     MexicanCurrencyPipe,
     NumberInputComponent,
-    SegmentedControlComponent,
     SelectInputComponent,
     TextInputComponent,
   ],
@@ -42,9 +40,6 @@ export class ExpenseFormModalComponent implements OnInit {
   readonly saved = output<Expense>();
 
   protected readonly categories = EXPENSE_CATEGORIES;
-  protected readonly installmentOptions: readonly SegmentedOption<number>[] = INSTALLMENT_OPTIONS.map(
-    (value) => ({ value, label: `${value} MSI` }),
-  );
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly description = signal('');
@@ -54,7 +49,7 @@ export class ExpenseFormModalComponent implements OnInit {
   protected readonly pocketId = signal<number>(0);
   protected readonly category = signal<ExpenseCategory>(EXPENSE_CATEGORIES[0]);
   protected readonly isInstallment = signal(false);
-  protected readonly installmentMonths = signal<number>(INSTALLMENT_OPTIONS[1]);
+  protected readonly installmentMonths = signal<number>(INSTALLMENT_MIN);
 
   protected readonly selectedPaymentMethod = computed<PaymentMethod | null>(() => {
     const id = this.paymentMethodId();
@@ -62,8 +57,6 @@ export class ExpenseFormModalComponent implements OnInit {
   });
 
   protected readonly isCreditSelected = computed(() => this.selectedPaymentMethod()?.type === 'credit');
-
-  protected readonly installmentCount = computed(() => this.installmentMonths());
 
   protected readonly monthlyInstallment = computed(() => {
     const months = this.installmentMonths();
@@ -94,6 +87,7 @@ export class ExpenseFormModalComponent implements OnInit {
   protected typeLabel(type: PaymentMethod['type']): string {
     if (type === 'cash') return 'Efectivo';
     if (type === 'debit') return 'Débito';
+    if (type === 'savings') return 'Ahorro';
     return 'Crédito';
   }
 

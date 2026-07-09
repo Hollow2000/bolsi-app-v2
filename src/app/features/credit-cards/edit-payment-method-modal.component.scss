@@ -19,3 +19,18 @@
         color: var(--color-danger);
         margin: 0;
       }
+      .skip-holidays-label {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        cursor: pointer;
+        font-size: var(--text-size-small);
+        color: var(--text-secondary);
+
+        input[type="checkbox"] {
+          width: 18px;
+          height: 18px;
+          accent-color: var(--color-primary);
+          cursor: pointer;
+        }
+      }

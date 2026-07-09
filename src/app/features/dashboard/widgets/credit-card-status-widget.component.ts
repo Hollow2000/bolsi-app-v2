@@ -10,9 +10,10 @@ export interface CreditCardStatusEntry {
   readonly id: number;
   readonly name: string;
   readonly availableCredit: number;
-  readonly daysUntilClosing: number;
+  readonly paymentDueDate: string;
   readonly periodCharges: number;
   readonly statementClosingDay: number;
+  readonly amountToPay: number;
 }
 
 @Component({
@@ -26,6 +27,6 @@ export class CreditCardStatusWidgetComponent {
   readonly items = input.required<readonly CreditCardStatusEntry[]>();
 
   protected subtitleFor(card: CreditCardStatusEntry): string {
-    return `Cierre día ${card.statementClosingDay} · ${card.daysUntilClosing} día(s) al próximo corte`;
+    return `Cierre día ${card.statementClosingDay} · Pago ${card.paymentDueDate}`;
   }
 }

@@ -10,22 +10,46 @@
           <app-card title="Resumen">
             <div class="card-summary">
               <p class="summary-line">
-                <span class="summary-label">Crédito disponible</span>
-                <span class="summary-value">{{ method.availableCredit ?? 0 | mexicanCurrency }}</span>
+                <span class="summary-label">Límite de crédito</span>
+                <span class="summary-value">{{ method.creditLimit ?? 0 | mexicanCurrency }}</span>
               </p>
               <p class="summary-line">
-                <span class="summary-label">Límite</span>
-                <span class="summary-value">{{ method.creditLimit ?? 0 | mexicanCurrency }}</span>
+                <span class="summary-label">Crédito disponible</span>
+                <span class="summary-value summary-value--primary">{{ availableCredit() | mexicanCurrency }}</span>
+              </p>
+              <p class="summary-line">
+                <span class="summary-label">Usado este mes</span>
+                <span class="summary-value">{{ periodChargesTotal() | mexicanCurrency }}</span>
+              </p>
+              <p class="summary-line">
+                <span class="summary-label">Cantidad a pagar</span>
+                <span class="summary-value" [class.summary-value--danger]="amountToPay() > 0">{{ amountToPay() | mexicanCurrency }}</span>
               </p>
               <p class="summary-line">
                 <span class="summary-label">Día de corte</span>
                 <span class="summary-value">día {{ method.statementClosingDay }}</span>
               </p>
               <p class="summary-line">
-                <span class="summary-label">Próximo corte</span>
-                <span class="summary-value">{{ daysUntilClosing() }} días</span>
+                <span class="summary-label">Fecha de pago</span>
+                <span class="summary-value">{{ paymentDueDateLabel() }}</span>
               </p>
             </div>
+            @if (amountToPay() > 0) {
+              <div class="section-actions">
+                <button appButton variant="primary" type="button" (click)="openPay()">
+                  <span class="material-symbols-outlined icon icon--small" aria-hidden="true">payments</span>
+                  Pagar {{ amountToPay() | mexicanCurrency }}
+                </button>
+              </div>
+            }
+            @if (needsCutoff()) {
+              <div class="section-actions">
+                <button appButton variant="secondary" type="button" (click)="closePeriod()">
+                  <span class="material-symbols-outlined icon icon--small" aria-hidden="true">event_available</span>
+                  Cerrar período ({{ cutoffAmount() | mexicanCurrency }})
+                </button>
+              </div>
+            }
           </app-card>
 
           <section>
@@ -35,8 +59,8 @@
             </header>
             <app-card>
               <p class="period-total">
-                <span class="period-total__label">Total a pagar este corte</span>
-                <span class="period-total__amount">{{ periodTotal() | mexicanCurrency }}</span>
+                <span class="period-total__label">Total del período</span>
+                <span class="period-total__amount">{{ periodChargesTotal() | mexicanCurrency }}</span>
               </p>
               @if (periodCharges().length === 0) {
                 <p class="empty">No hay cargos directos en este período.</p>
@@ -55,23 +79,17 @@
                   }
                 </ul>
               }
-              <div class="section-actions">
-                <button appButton variant="primary" type="button" (click)="openPay()">
-                  <span class="material-symbols-outlined icon icon--small" aria-hidden="true">payments</span>
-                  Registrar pago de tarjeta
-                </button>
-              </div>
             </app-card>
           </section>
 
           <section>
             <header class="section-header">
-              <h2 class="section-title">Cuotas MSI</h2>
+              <h2 class="section-title">Cuotas</h2>
               <app-badge [label]="installmentCount() + ' planes activos'" />
             </header>
             @if (groupedInstallments().length === 0) {
               <app-card>
-                <p class="empty">Esta tarjeta no tiene compras a meses sin intereses.</p>
+                <p class="empty">Esta tarjeta no tiene compras a cuotas.</p>
               </app-card>
             } @else {
               @for (group of groupedInstallments(); track group.expenseOriginId) {
@@ -89,14 +107,17 @@
                   </summary>
                   <ul class="app-list msi-plans">
                     @for (plan of group.plans; track plan.id) {
-                      <li class="app-list-item msi-plan">
+                      <li class="app-list-item msi-plan" (click)="editInstallment(plan)">
                         <app-list-item
                           [icon]="plan.paid ? 'check_circle' : 'schedule'"
                           [title]="'Cuota ' + plan.installmentNumber + ' de ' + plan.totalInstallments"
                           [subtitle]="monthLabel(plan.cutoffMonth, plan.cutoffYear)"
-                          [amount]="(plan.amount | mexicanCurrency) ?? ''"
+                          [amount]="((plan.customAmount ?? plan.amount) | mexicanCurrency) ?? ''"
                           [tone]="plan.paid ? 'income' : 'expense'"
                         />
+                        @if (!plan.paid) {
+                          <span class="material-symbols-outlined icon icon--small edit-icon" aria-hidden="true">edit</span>
+                        }
                       </li>
                     }
                   </ul>
@@ -121,7 +142,7 @@
                       icon="event_upcoming"
                       [title]="entry.label"
                       [subtitle]="monthLabel(entry.plan.cutoffMonth, entry.plan.cutoffYear)"
-                      [amount]="(entry.plan.amount | mexicanCurrency) ?? ''"
+                      [amount]="((entry.plan.customAmount ?? entry.plan.amount) | mexicanCurrency) ?? ''"
                     />
                   </li>
                 }
@@ -132,21 +153,24 @@
           <section>
             <header class="section-header">
               <h2 class="section-title">Gastos recientes</h2>
+              <button class="toggle-hidden-btn" type="button" (click)="toggleHidden()">
+                {{ showHidden() ? 'Ocultar movimientos ocultos' : 'Mostrar movimientos ocultos' }}
+              </button>
             </header>
-            @if (recentExpenses().length === 0) {
+            @if (displayExpenses.length === 0) {
               <app-card>
                 <p class="empty">Sin gastos registrados este mes.</p>
               </app-card>
             } @else {
               <ul class="app-list" aria-label="Gastos recientes">
-                @for (expense of recentExpenses(); track expense.id) {
+                @for (expense of displayExpenses; track expense.id) {
                   <li>
                     <app-list-item
-                      icon="shopping_bag"
+                      [icon]="expense.hidden ? 'visibility_off' : 'shopping_bag'"
                       [title]="expense.description"
                       [subtitle]="expense.date + ' · ' + expense.category"
                       [amount]="(expense.amount | mexicanCurrency) ?? ''"
-                      tone="expense"
+                      [tone]="expense.hidden ? 'default' : 'expense'"
                     />
                   </li>
                 }
@@ -167,9 +191,15 @@
             label="Monto a pagar"
             placeholder="0.00"
             [min]="0"
+            [max]="amountToPay()"
             [value]="paymentDraft().amount"
             (valueChange)="onPaymentFieldChange('amount', $event)"
           />
+          @if (paymentDraft().amount < amountToPay()) {
+            <p class="partial-info">
+              Pago parcial. Restante: {{ amountToPay() - paymentDraft().amount | mexicanCurrency }}
+            </p>
+          }
           <app-date-input
             label="Fecha de vencimiento"
             [value]="paymentDraft().dueDate"
@@ -197,6 +227,37 @@
             </button>
             <button appButton variant="primary" type="button" [disabled]="savingPayment()" (click)="onSavePayment()">
               {{ savingPayment() ? 'Guardando…' : 'Registrar pago' }}
+            </button>
+          </div>
+        </app-bottom-sheet>
+      }
+
+      @if (editingInstallment(); as plan) {
+        <app-bottom-sheet [title]="'Editar cuota ' + plan.installmentNumber" (close)="closeEditInstallment()">
+          <app-number-input
+            label="Monto de la cuota"
+            placeholder="0.00"
+            [min]="0"
+            [value]="editingInstallmentAmount()"
+            (valueChange)="editingInstallmentAmount.set($event)"
+          />
+          <label class="replicate-label">
+            <input
+              type="checkbox"
+              [checked]="replicateAmount()"
+              (change)="replicateAmount.set(!replicateAmount())"
+            />
+            <span>Replicar monto a todas las cuotas pendientes</span>
+          </label>
+          @if (editingError(); as message) {
+            <p class="modal-error" role="alert">{{ message }}</p>
+          }
+          <div class="modal-actions">
+            <button appButton variant="secondary" type="button" (click)="closeEditInstallment()">
+              Cancelar
+            </button>
+            <button appButton variant="primary" type="button" (click)="saveInstallmentEdit()">
+              Guardar
             </button>
           </div>
         </app-bottom-sheet>

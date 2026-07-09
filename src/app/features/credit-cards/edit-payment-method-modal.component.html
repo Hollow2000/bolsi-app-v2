@@ -38,6 +38,14 @@
           (valueChange)="creditDays.set($event)"
         />
       </div>
+      <label class="skip-holidays-label">
+        <input
+          type="checkbox"
+          [checked]="skipHolidays()"
+          (change)="skipHolidays.set(!skipHolidays())"
+        />
+        <span>No considerar días inhábiles en fecha de pago</span>
+      </label>
     } @else {
       <app-number-input
         label="Saldo actual"

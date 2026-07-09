@@ -23,10 +23,10 @@ export class InstallmentPlanService {
       throw new Error('El gasto debe estar guardado antes de generar cuotas.');
     }
     if (!expense.isInstallment || !expense.installmentMonths || expense.installmentMonths < 2) {
-      throw new Error('El gasto no es a meses sin intereses.');
+      throw new Error('El gasto no es a cuotas.');
     }
     if (card.type !== 'credit') {
-      throw new Error('Las MSI solo aplican a tarjetas de crédito.');
+      throw new Error('Las cuotas solo aplican a tarjetas de crédito.');
     }
     if (card.statementClosingDay === undefined || card.id === undefined) {
       throw new Error('La tarjeta no tiene día de corte definido.');
@@ -100,6 +100,41 @@ export class InstallmentPlanService {
       .where('expenseOriginId')
       .equals(expenseOriginId)
       .delete();
+  }
+
+  async markPastAsPaid(plans: InstallmentPlan[], purchaseDate: Date): Promise<void> {
+    const currentMonth = purchaseDate.getMonth() + 1;
+    const currentYear = purchaseDate.getFullYear();
+    for (const plan of plans) {
+      if (plan.cutoffYear < currentYear || (plan.cutoffYear === currentYear && plan.cutoffMonth < currentMonth)) {
+        if (plan.id !== undefined) {
+          await database.installmentPlans.put({ ...plan, paid: true });
+        }
+      }
+    }
+  }
+
+  async getById(id: number): Promise<InstallmentPlan | undefined> {
+    return database.installmentPlans.get(id);
+  }
+
+  async updateAmount(id: number, newAmount: number): Promise<void> {
+    const plan = await database.installmentPlans.get(id);
+    if (!plan) {
+      throw new Error('La cuota no existe.');
+    }
+    await database.installmentPlans.put({ ...plan, customAmount: this.roundCurrency(newAmount) });
+  }
+
+  async replicateAmount(expenseOriginId: number, newAmount: number): Promise<void> {
+    const all = await database.installmentPlans
+      .where('expenseOriginId')
+      .equals(expenseOriginId)
+      .toArray();
+    const pending = all.filter((plan) => !plan.paid);
+    for (const plan of pending) {
+      await database.installmentPlans.put({ ...plan, customAmount: this.roundCurrency(newAmount) });
+    }
   }
 
   private calculateFirstCutoff(purchaseDate: Date, closingDay: number): { month: number; year: number } {

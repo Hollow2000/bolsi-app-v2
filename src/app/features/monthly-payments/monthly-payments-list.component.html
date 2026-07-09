@@ -104,7 +104,7 @@
           <option value="0" disabled [selected]="sourcePaymentMethodId() === 0">Selecciona una cuenta</option>
           @for (method of sourcePaymentMethods(); track method.id) {
             <option [value]="method.id" [selected]="method.id === sourcePaymentMethodId()">
-              {{ method.name }} ({{ method.type === 'cash' ? 'Efectivo' : 'Débito' }})
+              {{ method.name }} ({{ typeLabel(method.type) }})
             </option>
           }
         </app-select-input>
@@ -119,5 +119,15 @@
             {{ savingPayment() ? 'Guardando…' : 'Confirmar pago' }}
           </button>
         </div>
+      </app-bottom-sheet>
+    }
+
+    @if (confirmOpen()) {
+      <app-bottom-sheet title="Confirmar" (close)="onCancelConfirm()">
+        <app-confirm-dialog
+          [message]="confirmMessage()"
+          (confirmed)="onConfirm()"
+          (cancelled)="onCancelConfirm()"
+        />
       </app-bottom-sheet>
     }

@@ -7,4 +7,7 @@ export interface Transfer {
   description: string;
   month: number;
   year: number;
+  isCreditCardPayment?: boolean;
+  billingPeriodMonth?: number;
+  billingPeriodYear?: number;
 }

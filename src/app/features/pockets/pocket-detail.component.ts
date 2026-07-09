@@ -33,7 +33,7 @@ import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
             <span class="material-symbols-outlined icon" aria-hidden="true">chevron_left</span>
           </a>
           <h1>
-            <span aria-hidden="true">{{ p.emoji }}</span>
+            <span class="material-symbols-outlined" aria-hidden="true">{{ p.icon }}</span>
             {{ p.name }}
           </h1>
         </header>

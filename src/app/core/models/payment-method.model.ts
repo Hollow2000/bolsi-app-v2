@@ -1,4 +1,4 @@
-export type PaymentMethodType = 'cash' | 'debit' | 'credit';
+export type PaymentMethodType = 'cash' | 'debit' | 'credit' | 'savings';
 
 export interface PaymentMethod {
   id?: number;
@@ -9,4 +9,8 @@ export interface PaymentMethod {
   availableCredit?: number;
   statementClosingDay?: number;
   creditDays?: number;
+  statementBalance?: number;
+  lastCutoffMonth?: number;
+  lastCutoffYear?: number;
+  skipHolidays?: boolean;
 }
