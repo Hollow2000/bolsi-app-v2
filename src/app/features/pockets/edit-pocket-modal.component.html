@@ -1,0 +1,35 @@
+    <div class="modal-row">
+      <app-text-input
+        label="Nombre"
+        [value]="name()"
+        (valueChange)="name.set($event)"
+      />
+      <app-text-input
+        label="Emoji"
+        [value]="emoji()"
+        (valueChange)="emoji.set($event)"
+      />
+    </div>
+
+    <app-number-input
+      label="Porcentaje"
+      placeholder="0"
+      [min]="0"
+      [max]="100"
+      [step]="0.5"
+      [value]="percentage()"
+      (valueChange)="percentage.set($event)"
+    />
+
+    @if (errorMessage(); as message) {
+      <p class="modal-error" role="alert">{{ message }}</p>
+    }
+
+    <div class="modal-actions">
+      <button appButton variant="secondary" type="button" (click)="onCancel()">
+        Cancelar
+      </button>
+      <button appButton variant="primary" type="button" (click)="onSave()">
+        Guardar cambios
+      </button>
+    </div>

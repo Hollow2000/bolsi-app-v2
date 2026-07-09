@@ -1,0 +1,116 @@
+    <div class="app-screen">
+      <header class="app-screen-header">
+        <h1>Gastos</h1>
+        <span class="screen-period">{{ periodLabel() }}</span>
+      </header>
+      <main class="app-screen-content">
+        <app-card title="Total del mes">
+          <p class="total-amount">{{ totalSpent() | mexicanCurrency }}</p>
+          <p class="total-subtitle">{{ filteredExpenses().length }} gasto(s) con los filtros actuales</p>
+        </app-card>
+
+        <section class="filters" aria-label="Filtros de gastos">
+          <app-select-input
+            label="Bolsillo"
+            [valueType]="'number'"
+            [value]="filters().pocketId"
+            (valueChange)="setPocketFilter($any($event))"
+          >
+            <option [value]="0" [selected]="filters().pocketId === 0">Todos los bolsillos</option>
+            @for (pocket of pockets(); track pocket.id) {
+              <option [value]="pocket.id" [selected]="filters().pocketId === pocket.id">
+                {{ pocket.emoji }} {{ pocket.name }}
+              </option>
+            }
+          </app-select-input>
+
+          <app-select-input
+            label="Método de pago"
+            [valueType]="'number'"
+            [value]="filters().paymentMethodId"
+            (valueChange)="setPaymentMethodFilter($any($event))"
+          >
+            <option [value]="0" [selected]="filters().paymentMethodId === 0">Todos los métodos</option>
+            @for (method of paymentMethods(); track method.id) {
+              <option [value]="method.id" [selected]="filters().paymentMethodId === method.id">
+                {{ method.name }}
+              </option>
+            }
+          </app-select-input>
+
+          <app-select-input
+            label="Categoría"
+            [valueType]="'string'"
+            [value]="filters().category"
+            (valueChange)="setCategoryFilter($any($event))"
+          >
+            <option [value]="''" [selected]="filters().category === ''">Todas las categorías</option>
+            @for (category of allCategories; track category) {
+              <option [value]="category" [selected]="filters().category === category">
+                {{ category }}
+              </option>
+            }
+          </app-select-input>
+        </section>
+
+        @if (filteredExpenses().length === 0) {
+          <app-card title="Sin gastos">
+            <p class="empty-message">
+              @if (expenses().length === 0) {
+                Aún no has registrado gastos este mes.
+              } @else {
+                Ningún gasto coincide con los filtros aplicados.
+              }
+            </p>
+          </app-card>
+        } @else {
+          <ul class="app-list" aria-label="Gastos del mes">
+            @for (expense of filteredExpenses(); track expense.id) {
+              <li class="app-list-row">
+                <app-list-item
+                  icon="shopping_bag"
+                  [title]="expense.description"
+                  [subtitle]="subtitleFor(expense)"
+                  [amount]="(expense.amount | mexicanCurrency) ?? ''"
+                  tone="expense"
+                />
+                <div class="item-actions">
+                  <button
+                    appIconButton
+                    type="button"
+                    aria-label="Editar gasto"
+                    (click)="openEdit(expense)"
+                  >
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
+                  </button>
+                  <button
+                    appIconButton
+                    type="button"
+                    aria-label="Eliminar gasto"
+                    (click)="confirmDelete(expense)"
+                  >
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
+                  </button>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </main>
+      <app-fab icon="add" ariaLabel="Registrar nuevo gasto" (press)="openAdd()" />
+    </div>
+
+    @if (modalOpen()) {
+      <app-bottom-sheet
+        [title]="editingExpense() ? 'Editar gasto' : 'Nuevo gasto'"
+        (close)="closeModal()"
+      >
+        <app-expense-form-modal
+          [paymentMethods]="paymentMethods()"
+          [pockets]="pockets()"
+          [expense]="editingExpense()"
+          (cancel)="closeModal()"
+          (saved)="onSaved($event)"
+        />
+      </app-bottom-sheet>
+    }

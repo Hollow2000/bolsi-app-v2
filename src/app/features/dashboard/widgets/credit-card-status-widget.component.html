@@ -1,0 +1,28 @@
+@if (items().length === 0) {
+  <app-card title="Tarjetas de crédito">
+    <p class="empty-message">No tienes tarjetas de crédito registradas.</p>
+  </app-card>
+} @else {
+  <app-card title="Tarjetas de crédito">
+    <ul class="card-list" aria-label="Estado de tarjetas">
+      @for (card of items(); track card.id) {
+        <li class="card-row">
+          <a class="card-link" [routerLink]="['/credit-cards', card.id]">
+            <app-list-item
+              icon="credit_card"
+              [title]="card.name"
+              [subtitle]="subtitleFor(card)"
+              [amount]="(card.availableCredit | mexicanCurrency) ?? ''"
+            />
+            <div class="card-extra">
+              <span class="card-extra__charges">
+                Cargo del período: {{ card.periodCharges | mexicanCurrency }}
+              </span>
+            </div>
+          </a>
+        </li>
+      }
+    </ul>
+    <a routerLink="/credit-cards" class="see-all">Ver todas las tarjetas</a>
+  </app-card>
+}

@@ -1,0 +1,61 @@
+    <app-text-input
+      label="Nombre"
+      [value]="name()"
+      (valueChange)="name.set($event)"
+    />
+
+    <app-segmented-control
+      ariaLabel="Tipo de método de pago"
+      [options]="typeOptions"
+      [value]="type()"
+      (valueChange)="onTypeChange($event)"
+    />
+
+    @if (isCredit()) {
+      <app-number-input
+        label="Límite de crédito"
+        placeholder="0.00"
+        [min]="0"
+        [value]="creditLimit()"
+        (valueChange)="creditLimit.set($event)"
+      />
+      <div class="modal-row">
+        <app-number-input
+          label="Día de corte"
+          placeholder="1"
+          [min]="1"
+          [max]="31"
+          [step]="1"
+          [value]="closingDay()"
+          (valueChange)="closingDay.set($event)"
+        />
+        <app-number-input
+          label="Días de crédito"
+          placeholder="20"
+          [min]="1"
+          [step]="1"
+          [value]="creditDays()"
+          (valueChange)="creditDays.set($event)"
+        />
+      </div>
+    } @else {
+      <app-number-input
+        label="Saldo actual"
+        placeholder="0.00"
+        [value]="currentBalance()"
+        (valueChange)="currentBalance.set($event)"
+      />
+    }
+
+    @if (errorMessage(); as message) {
+      <p class="modal-error" role="alert">{{ message }}</p>
+    }
+
+    <div class="modal-actions">
+      <button appButton variant="secondary" type="button" (click)="onCancel()">
+        Cancelar
+      </button>
+      <button appButton variant="primary" type="button" (click)="onSave()">
+        Guardar cambios
+      </button>
+    </div>

@@ -1,0 +1,22 @@
+      :host { display: block; }
+      .empty-message {
+        margin: 0;
+        color: var(--text-secondary);
+        text-align: center;
+        padding: var(--space-4) 0;
+      }
+      .item-link {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex: 1;
+        min-width: 0;
+        text-decoration: none;
+        color: inherit;
+        padding: var(--space-3) var(--space-4);
+      }
+      .item-link:hover { background: var(--surface-alternate); }
+      .chevron {
+        color: var(--text-secondary);
+        flex-shrink: 0;
+      }

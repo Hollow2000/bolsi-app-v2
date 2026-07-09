@@ -15,28 +15,7 @@ function nextTextInputId(): string {
  */
 @Component({
   selector: 'app-text-input',
-  template: `
-    <label class="app-form-field__label"
-           [class.app-form-field__label--required]="required()"
-           [attr.for]="fieldId()">
-      {{ label() }}
-    </label>
-    <input
-      [id]="fieldId()"
-      type="text"
-      class="app-form-input"
-      [class.app-form-input--error]="!!error()"
-      [placeholder]="placeholder()"
-      [value]="value()"
-      [disabled]="disabled()"
-      [attr.autocomplete]="autocomplete()"
-      [attr.inputmode]="inputmode() || null"
-      (input)="onInput($event)"
-    />
-    @if (error(); as message) {
-      <p class="app-form-field__error" role="alert">{{ message }}</p>
-    }
-  `,
+  templateUrl: './text-input.component.html',
   host: {
     class: 'app-form-field',
   },

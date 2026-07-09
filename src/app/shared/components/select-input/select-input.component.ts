@@ -27,26 +27,7 @@ function nextSelectInputId(): string {
  */
 @Component({
   selector: 'app-select-input',
-  template: `
-    <label class="app-form-field__label"
-           [class.app-form-field__label--required]="required()"
-           [attr.for]="fieldId()">
-      {{ label() }}
-    </label>
-    <select
-      [id]="fieldId()"
-      class="app-form-input"
-      [class.app-form-input--error]="!!error()"
-      [disabled]="disabled()"
-      [value]="stringValue()"
-      (change)="onChange($event)"
-    >
-      <ng-content></ng-content>
-    </select>
-    @if (error(); as message) {
-      <p class="app-form-field__error" role="alert">{{ message }}</p>
-    }
-  `,
+  templateUrl: './select-input.component.html',
   host: {
     class: 'app-form-field',
   },

@@ -19,51 +19,8 @@ export interface UrgentPayment {
 @Component({
   selector: 'app-urgent-payments-widget',
   imports: [CardComponent, ListItemComponent, MexicanCurrencyPipe, RouterLink],
-  template: `
-    <app-card title="Pagos urgentes">
-      @if (items().length === 0) {
-        <p class="empty-message">No tienes pagos urgentes este mes. 🎉</p>
-      } @else {
-        <ul class="app-list" aria-label="Pagos urgentes">
-          @for (payment of items(); track payment.id) {
-            <li class="urgent-row" [attr.data-urgency]="payment.urgency">
-              <app-list-item
-                [icon]="iconFor(payment)"
-                [title]="payment.name"
-                [subtitle]="subtitleFor(payment)"
-                [amount]="(payment.amount | mexicanCurrency) ?? ''"
-                tone="expense"
-              />
-            </li>
-          }
-        </ul>
-        <a routerLink="/monthly-payments" class="see-all">Ver todos los pagos</a>
-      }
-    </app-card>
-  `,
-  styles: [
-    `
-      :host { display: block; }
-      .empty-message {
-        margin: 0;
-        color: var(--text-secondary);
-        text-align: center;
-        padding: var(--space-2) 0;
-      }
-      .urgent-row[data-urgency='overdue'] { background: var(--color-danger-subtle); }
-      .urgent-row[data-urgency='soon'] { background: var(--color-warning-subtle); }
-      .see-all {
-        display: block;
-        text-align: center;
-        margin-top: var(--space-3);
-        font-size: var(--text-size-small);
-        color: var(--color-primary);
-        text-decoration: none;
-        font-weight: 500;
-      }
-      .see-all:hover { text-decoration: underline; }
-    `,
-  ],
+  templateUrl: './urgent-payments-widget.component.html',
+  styleUrl: './urgent-payments-widget.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UrgentPaymentsWidgetComponent {

@@ -20,69 +20,8 @@ import { SelectInputComponent } from '../../shared/components/select-input/selec
     NumberInputComponent,
     SelectInputComponent,
   ],
-  template: `
-    <app-select-input
-      label="Categoría"
-      [valueType]="'string'"
-      [value]="category()"
-      (valueChange)="category.set($any($event))"
-    >
-      @for (item of categories; track item) {
-        <option [value]="item" [selected]="item === category()">{{ item }}</option>
-      }
-    </app-select-input>
-
-    <app-select-input
-      label="Bolsillo"
-      [valueType]="'number'"
-      [value]="pocketId()"
-      (valueChange)="pocketId.set($any($event))"
-    >
-      <option [value]="0" [selected]="pocketId() === 0">Todos los bolsillos</option>
-      @for (pocket of pockets(); track pocket.id) {
-        <option [value]="pocket.id" [selected]="pocket.id === pocketId()">
-          {{ pocket.emoji }} {{ pocket.name }}
-        </option>
-      }
-    </app-select-input>
-
-    <app-number-input
-      label="Monto estimado"
-      placeholder="0.00"
-      [min]="0"
-      [value]="estimatedAmount()"
-      (valueChange)="estimatedAmount.set($event)"
-    />
-
-    @if (errorMessage(); as message) {
-      <p class="modal-error" role="alert">{{ message }}</p>
-    }
-
-    <div class="modal-actions">
-      <button appButton variant="secondary" type="button" (click)="onCancel()">
-        Cancelar
-      </button>
-      <button appButton variant="primary" type="button" (click)="onSave()">
-        {{ submitLabel() }}
-      </button>
-    </div>
-  `,
-  styles: [
-    `
-      :host { display: flex; flex-direction: column; gap: var(--space-3); }
-      .modal-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: var(--space-2);
-        margin-top: var(--space-2);
-      }
-      .modal-error {
-        font-size: var(--text-size-extra-small);
-        color: var(--color-danger);
-        margin: 0;
-      }
-    `,
-  ],
+  templateUrl: './budget-form-modal.component.html',
+  styleUrl: './budget-form-modal.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BudgetFormModalComponent implements OnInit {

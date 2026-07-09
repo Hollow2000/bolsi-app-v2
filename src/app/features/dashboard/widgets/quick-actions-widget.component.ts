@@ -12,61 +12,8 @@ interface QuickAction {
 @Component({
   selector: 'app-quick-actions-widget',
   imports: [CardComponent, RouterLink],
-  template: `
-    <app-card title="Acciones rápidas">
-      <ul class="quick-grid" aria-label="Acciones rápidas">
-        @for (action of actions; track action.path) {
-          <li>
-            <a class="quick-link" [routerLink]="action.path">
-              <span class="material-symbols-outlined icon" aria-hidden="true">{{ action.icon }}</span>
-              <span class="quick-link__label">{{ action.label }}</span>
-            </a>
-          </li>
-        }
-        <li>
-          <button class="quick-link" type="button" (click)="transferPress.emit()">
-            <span class="material-symbols-outlined icon" aria-hidden="true">swap_horiz</span>
-            <span class="quick-link__label">Transferir</span>
-          </button>
-        </li>
-      </ul>
-    </app-card>
-  `,
-  styles: [
-    `
-      :host { display: block; }
-      .quick-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: var(--space-2);
-        list-style: none;
-        margin: 0;
-        padding: 0;
-      }
-      .quick-link {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: var(--space-1);
-        padding: var(--space-3);
-        border-radius: var(--radius-medium);
-        background: var(--surface-alternate);
-        color: var(--color-primary);
-        text-decoration: none;
-        min-height: 64px;
-        font-size: var(--text-size-small);
-        font-weight: 500;
-        transition: background 0.15s ease;
-        cursor: pointer;
-        width: 100%;
-        border: none;
-        font-family: inherit;
-      }
-      .quick-link:hover { background: var(--color-primary-muted); }
-      .quick-link__label { color: var(--text-primary); }
-    `,
-  ],
+  templateUrl: './quick-actions-widget.component.html',
+  styleUrl: './quick-actions-widget.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QuickActionsWidgetComponent {

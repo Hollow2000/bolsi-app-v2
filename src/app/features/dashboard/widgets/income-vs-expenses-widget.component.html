@@ -1,0 +1,28 @@
+<app-card title="Ingresos vs gastos del mes">
+  <p class="ie-line">
+    <span class="ie-label">Ingresos recibidos</span>
+    <span class="ie-value ie-value--success">+{{ data().income | mexicanCurrency }}</span>
+  </p>
+  <p class="ie-line">
+    <span class="ie-label">Gastos del mes</span>
+    <span class="ie-value ie-value--expense">−{{ data().expenses | mexicanCurrency }}</span>
+  </p>
+  <p class="ie-net" [class.ie-net--negative]="net() < 0">
+    <span class="ie-label">Balance</span>
+    <span class="ie-value">{{ net() | mexicanCurrency }}</span>
+  </p>
+  <div class="ie-bars" aria-hidden="true">
+    <div class="ie-bars__row">
+      <span class="ie-bars__label">Ingresos</span>
+      <div class="ie-bars__track">
+        <div class="ie-bars__fill ie-bars__fill--success" [style.width.%]="incomePercent()"></div>
+      </div>
+    </div>
+    <div class="ie-bars__row">
+      <span class="ie-bars__label">Gastos</span>
+      <div class="ie-bars__track">
+        <div class="ie-bars__fill ie-bars__fill--expense" [style.width.%]="expensePercent()"></div>
+      </div>
+    </div>
+  </div>
+</app-card>

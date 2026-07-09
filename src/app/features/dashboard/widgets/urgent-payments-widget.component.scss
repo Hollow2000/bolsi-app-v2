@@ -1,0 +1,19 @@
+:host { display: block; }
+.empty-message {
+  margin: 0;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: var(--space-2) 0;
+}
+.urgent-row[data-urgency='overdue'] { background: var(--color-danger-subtle); }
+.urgent-row[data-urgency='soon'] { background: var(--color-warning-subtle); }
+.see-all {
+  display: block;
+  text-align: center;
+  margin-top: var(--space-3);
+  font-size: var(--text-size-small);
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+.see-all:hover { text-decoration: underline; }

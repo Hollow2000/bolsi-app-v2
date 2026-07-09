@@ -1,0 +1,47 @@
+:host { display: block; }
+.empty-message {
+  margin: 0;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: var(--space-2) 0;
+}
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+}
+.card-row {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-medium);
+  background: var(--surface);
+  overflow: hidden;
+}
+.card-link {
+  display: block;
+  padding: var(--space-3);
+  text-decoration: none;
+  color: inherit;
+}
+.card-link:hover { background: var(--surface-alternate); }
+.card-extra {
+  margin-top: var(--space-1);
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--border-default);
+}
+.card-extra__charges {
+  font-size: var(--text-size-extra-small);
+  color: var(--text-secondary);
+}
+.see-all {
+  display: block;
+  text-align: center;
+  margin-top: var(--space-3);
+  font-size: var(--text-size-small);
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+.see-all:hover { text-decoration: underline; }

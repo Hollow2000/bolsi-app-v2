@@ -15,27 +15,7 @@ function nextDateInputId(): string {
  */
 @Component({
   selector: 'app-date-input',
-  template: `
-    <label class="app-form-field__label"
-           [class.app-form-field__label--required]="required()"
-           [attr.for]="fieldId()">
-      {{ label() }}
-    </label>
-    <input
-      [id]="fieldId()"
-      type="date"
-      class="app-form-input"
-      [class.app-form-input--error]="!!error()"
-      [value]="value()"
-      [min]="min()"
-      [max]="max()"
-      [disabled]="disabled()"
-      (input)="onInput($event)"
-    />
-    @if (error(); as message) {
-      <p class="app-form-field__error" role="alert">{{ message }}</p>
-    }
-  `,
+  templateUrl: './date-input.component.html',
   host: {
     class: 'app-form-field',
   },

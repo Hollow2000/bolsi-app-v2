@@ -1,0 +1,23 @@
+      :host { display: block; }
+      .screen-period {
+        font-size: var(--text-size-small);
+        color: var(--text-secondary);
+      }
+      .total-amount {
+        margin: 0;
+        font-size: var(--text-size-extra-large);
+        font-weight: 700;
+        color: var(--color-success);
+        font-family: var(--font-family-mono);
+      }
+      .total-subtitle {
+        margin: 0;
+        font-size: var(--text-size-small);
+        color: var(--text-secondary);
+      }
+      .empty-message {
+        margin: 0;
+        color: var(--text-secondary);
+        text-align: center;
+        padding: var(--space-2) 0;
+      }

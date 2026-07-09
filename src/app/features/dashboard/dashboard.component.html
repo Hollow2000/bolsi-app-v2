@@ -1,0 +1,70 @@
+    <div class="app-screen">
+      <header class="app-screen-header">
+        <h1>Hola, {{ userName() }} 👋</h1>
+        <span class="screen-period">{{ periodLabel() }}</span>
+      </header>
+      <main class="app-screen-content">
+        <app-card title="Balance del mes">
+          @if (balance(); as data) {
+            <div class="balance-hero" [class.balance-hero--danger]="data.endOfMonthProjection < 0">
+              <p class="balance-hero__label">Proyección a fin de mes</p>
+              <p class="balance-hero__amount">{{ data.endOfMonthProjection | mexicanCurrency }}</p>
+              <p class="balance-hero__sublabel">
+                @if (data.endOfMonthProjection < 0) {
+                  Saldo en rojo. Te faltarían
+                  <strong>{{ -data.endOfMonthProjection | mexicanCurrency }}</strong>.
+                } @else {
+                  Saldo positivo este mes.
+                }
+              </p>
+            </div>
+            <ul class="balance-breakdown" aria-label="Desglose del balance">
+              <li>
+                <span class="breakdown-label">Disponible</span>
+                <span class="breakdown-value breakdown-value--primary">{{ data.totalAvailable | mexicanCurrency }}</span>
+              </li>
+              <li>
+                <span class="breakdown-label">Deuda exigible (tarjetas)</span>
+                <span class="breakdown-value breakdown-value--expense">−{{ data.billableDebtThisMonth | mexicanCurrency }}</span>
+              </li>
+              <li>
+                <span class="breakdown-label">Pagos fijos pendientes</span>
+                <span class="breakdown-value breakdown-value--expense">−{{ data.pendingFixedPayments | mexicanCurrency }}</span>
+              </li>
+              <li class="breakdown-row--net">
+                <span class="breakdown-label">Saldo neto del mes</span>
+                <span class="breakdown-value" [class.breakdown-value--danger]="data.netBalanceThisMonth < 0">
+                  {{ data.netBalanceThisMonth | mexicanCurrency }}
+                </span>
+              </li>
+              <li>
+                <span class="breakdown-label">Ingreso esperado</span>
+                <span class="breakdown-value breakdown-value--success">+{{ data.pendingIncome | mexicanCurrency }}</span>
+              </li>
+            </ul>
+          } @else {
+            <p class="balance-loading">Cargando balance…</p>
+          }
+        </app-card>
+
+        <app-pocket-summary-widget [entries]="pocketEntries()" />
+
+        <app-urgent-payments-widget [payments]="monthlyPayments()" />
+
+        <app-credit-card-status-widget [items]="creditCardEntries()" />
+
+        <app-income-vs-expenses-widget [data]="incomeVsExpenses()" />
+
+        <app-quick-actions-widget (transferPress)="openTransfer()" />
+      </main>
+    </div>
+
+    @if (transferOpen()) {
+      <app-bottom-sheet title="Transferir entre cuentas" (close)="closeTransfer()">
+        <app-transfer-form-modal
+          [paymentMethods]="paymentMethods()"
+          (cancel)="closeTransfer()"
+          (saved)="onTransferSaved($event)"
+        />
+      </app-bottom-sheet>
+    }

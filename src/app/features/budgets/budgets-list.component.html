@@ -1,0 +1,65 @@
+    <div class="app-screen">
+      <header class="app-screen-header">
+        <h1>Presupuestos</h1>
+        <span class="screen-period">{{ periodLabel() }}</span>
+      </header>
+      <main class="app-screen-content">
+        @if (progress().length === 0) {
+          <app-card title="Sin presupuestos">
+            <p class="empty">No tienes presupuestos este mes. Toca + para agregar uno.</p>
+          </app-card>
+        } @else {
+          <ul class="budget-list" aria-label="Presupuestos del mes">
+            @for (entry of progress(); track entry.budget.id) {
+              <li class="budget-item">
+                <app-list-item
+                  icon="savings"
+                  [title]="entry.budget.category"
+                  [subtitle]="subtitleFor(entry)"
+                />
+                <button
+                  appIconButton
+                  type="button"
+                  aria-label="Editar presupuesto"
+                  (click)="openEdit(entry.budget)"
+                >
+                  <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
+                </button>
+                <button
+                  appIconButton
+                  type="button"
+                  aria-label="Eliminar presupuesto"
+                  (click)="confirmDelete(entry.budget)"
+                >
+                  <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
+                </button>
+                <div class="budget-progress">
+                  <app-progress-bar [value]="entry.actual" [max]="entry.budget.estimatedAmount" />
+                  <p class="budget-numbers" [class.budget-numbers--over]="entry.ratio > 1">
+                    <span>{{ entry.actual | mexicanCurrency }} de {{ entry.budget.estimatedAmount | mexicanCurrency }}</span>
+                    <span class="budget-percent">{{ percentLabel(entry.ratio) }}</span>
+                  </p>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </main>
+      <app-fab icon="add" ariaLabel="Agregar presupuesto" (press)="openAdd()" />
+    </div>
+
+    @if (modalOpen()) {
+      <app-bottom-sheet
+        [title]="editingBudget() ? 'Editar presupuesto' : 'Nuevo presupuesto'"
+        (close)="closeModal()"
+      >
+        <app-budget-form-modal
+          [budget]="editingBudget()"
+          [pockets]="pockets()"
+          [month]="currentMonth()"
+          [year]="currentYear()"
+          (cancel)="closeModal()"
+          (saved)="onSaved($event)"
+        />
+      </app-bottom-sheet>
+    }

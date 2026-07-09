@@ -1,0 +1,61 @@
+    <app-text-input
+      label="Descripción"
+      placeholder="Ej. Pago de tarjeta, traspaso a ahorro"
+      [value]="description()"
+      (valueChange)="description.set($event)"
+    />
+
+    <app-number-input
+      label="Monto"
+      placeholder="0.00"
+      [min]="0"
+      [value]="amount()"
+      (valueChange)="amount.set($event)"
+    />
+
+    <app-date-input
+      label="Fecha"
+      [value]="date()"
+      (valueChange)="date.set($event)"
+    />
+
+    <app-select-input
+      label="Desde"
+      [valueType]="'number'"
+      [value]="fromPaymentMethodId()"
+      (valueChange)="fromPaymentMethodId.set($any($event))"
+    >
+      <option value="0" disabled [selected]="fromPaymentMethodId() === 0">Selecciona origen</option>
+      @for (method of paymentMethods(); track method.id) {
+        <option [value]="method.id" [selected]="method.id === fromPaymentMethodId()">
+          {{ method.name }} ({{ typeLabel(method.type) }})
+        </option>
+      }
+    </app-select-input>
+
+    <app-select-input
+      label="Hacia"
+      [valueType]="'number'"
+      [value]="toPaymentMethodId()"
+      (valueChange)="toPaymentMethodId.set($any($event))"
+    >
+      <option value="0" disabled [selected]="toPaymentMethodId() === 0">Selecciona destino</option>
+      @for (method of paymentMethods(); track method.id) {
+        <option [value]="method.id" [selected]="method.id === toPaymentMethodId()">
+          {{ method.name }} ({{ typeLabel(method.type) }})
+        </option>
+      }
+    </app-select-input>
+
+    @if (errorMessage(); as message) {
+      <p class="modal-error" role="alert">{{ message }}</p>
+    }
+
+    <div class="modal-actions">
+      <button appButton variant="secondary" type="button" (click)="cancel.emit()">
+        Cancelar
+      </button>
+      <button appButton variant="primary" type="button" (click)="onSubmit()">
+        Transferir
+      </button>
+    </div>

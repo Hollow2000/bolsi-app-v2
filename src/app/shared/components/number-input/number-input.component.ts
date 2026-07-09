@@ -18,30 +18,7 @@ function nextNumberInputId(): string {
  */
 @Component({
   selector: 'app-number-input',
-  template: `
-    <label class="app-form-field__label"
-           [class.app-form-field__label--required]="required()"
-           [attr.for]="fieldId()">
-      {{ label() }}
-    </label>
-    <input
-      [id]="fieldId()"
-      type="number"
-      inputmode="decimal"
-      class="app-form-input"
-      [class.app-form-input--error]="!!error()"
-      [placeholder]="placeholder()"
-      [value]="displayValue()"
-      [min]="min() ?? null"
-      [max]="max() ?? null"
-      [step]="step()"
-      [disabled]="disabled()"
-      (input)="onInput($event)"
-    />
-    @if (error(); as message) {
-      <p class="app-form-field__error" role="alert">{{ message }}</p>
-    }
-  `,
+  templateUrl: './number-input.component.html',
   host: {
     class: 'app-form-field',
   },

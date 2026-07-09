@@ -12,68 +12,8 @@ import { TextInputComponent } from '../../shared/components/text-input/text-inpu
 @Component({
   selector: 'app-edit-pocket-modal',
   imports: [ButtonDirective, NumberInputComponent, TextInputComponent],
-  template: `
-    <div class="modal-row">
-      <app-text-input
-        label="Nombre"
-        [value]="name()"
-        (valueChange)="name.set($event)"
-      />
-      <app-text-input
-        label="Emoji"
-        [value]="emoji()"
-        (valueChange)="emoji.set($event)"
-      />
-    </div>
-
-    <app-number-input
-      label="Porcentaje"
-      placeholder="0"
-      [min]="0"
-      [max]="100"
-      [step]="0.5"
-      [value]="percentage()"
-      (valueChange)="percentage.set($event)"
-    />
-
-    @if (errorMessage(); as message) {
-      <p class="modal-error" role="alert">{{ message }}</p>
-    }
-
-    <div class="modal-actions">
-      <button appButton variant="secondary" type="button" (click)="onCancel()">
-        Cancelar
-      </button>
-      <button appButton variant="primary" type="button" (click)="onSave()">
-        Guardar cambios
-      </button>
-    </div>
-  `,
-  styles: [
-    `
-      :host {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-3);
-      }
-      .modal-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: var(--space-3);
-      }
-      .modal-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: var(--space-2);
-        margin-top: var(--space-2);
-      }
-      .modal-error {
-        font-size: var(--text-size-extra-small);
-        color: var(--color-danger);
-        margin: 0;
-      }
-    `,
-  ],
+  templateUrl: './edit-pocket-modal.component.html',
+  styleUrl: './edit-pocket-modal.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditPocketModalComponent implements OnInit {

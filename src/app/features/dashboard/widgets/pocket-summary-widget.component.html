@@ -1,0 +1,28 @@
+@if (entries().length === 0) {
+  <app-card title="Bolsillos">
+    <p class="empty-message">No tienes bolsillos configurados.</p>
+  </app-card>
+} @else {
+  <app-card title="Bolsillos del mes">
+    <ul class="pocket-list" aria-label="Estado de los bolsillos">
+      @for (pocket of entries(); track pocket.id) {
+        <li class="pocket-summary">
+          <div class="pocket-summary__head">
+            <span class="pocket-summary__name">
+              <span aria-hidden="true">{{ pocket.emoji }}</span>
+              {{ pocket.name }}
+            </span>
+            <span class="pocket-summary__percent">{{ pocket.percentage }}%</span>
+          </div>
+          <app-progress-bar [value]="pocket.used" [max]="pocket.assigned || 1" />
+          <p class="pocket-summary__numbers">
+            <span>{{ pocket.used | mexicanCurrency }} de {{ pocket.assigned | mexicanCurrency }}</span>
+            <span [class.pocket-summary__available--over]="pocket.used > pocket.assigned">
+              {{ (pocket.assigned - pocket.used) | mexicanCurrency }} libre
+            </span>
+          </p>
+        </li>
+      }
+    </ul>
+  </app-card>
+}

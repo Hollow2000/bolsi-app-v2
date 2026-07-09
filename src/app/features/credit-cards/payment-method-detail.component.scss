@@ -1,0 +1,35 @@
+      :host { display: block; }
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        margin-left: calc(-1 * var(--space-2));
+        color: var(--text-primary);
+        text-decoration: none;
+      }
+      .detail-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin: 0 0 var(--space-2);
+        gap: var(--space-3);
+      }
+      .detail-line:last-child { margin-bottom: 0; }
+      .detail-label {
+        font-size: var(--text-size-small);
+        color: var(--text-secondary);
+      }
+      .detail-value {
+        font-size: var(--text-size-base);
+        font-weight: 600;
+        font-family: var(--font-family-mono);
+        color: var(--text-primary);
+      }
+      .empty {
+        margin: 0;
+        color: var(--text-secondary);
+        text-align: center;
+        padding: var(--space-2) 0;
+      }

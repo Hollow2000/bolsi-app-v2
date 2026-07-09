@@ -1,0 +1,81 @@
+    <app-text-input
+      label="Nombre"
+      [value]="name()"
+      (valueChange)="name.set($event)"
+    />
+
+    <div class="modal-row">
+      <app-number-input
+        label="Monto"
+        placeholder="0.00"
+        [min]="0"
+        [value]="amount()"
+        (valueChange)="amount.set($event)"
+      />
+      <app-date-input
+        label="Vencimiento"
+        [value]="dueDate()"
+        (valueChange)="dueDate.set($event)"
+      />
+    </div>
+
+    <app-select-input
+      label="Método de pago"
+      [valueType]="'number'"
+      [value]="paymentMethodId()"
+      (valueChange)="paymentMethodId.set($any($event))"
+    >
+      <option value="0" disabled [selected]="paymentMethodId() === 0">Selecciona un método</option>
+      @for (method of paymentMethods(); track method.id) {
+        <option [value]="method.id" [selected]="method.id === paymentMethodId()">
+          {{ method.name }} ({{ typeLabel(method.type) }})
+        </option>
+      }
+    </app-select-input>
+
+    <app-select-input
+      label="Bolsillo (opcional)"
+      [valueType]="'number'"
+      [value]="pocketId()"
+      (valueChange)="pocketId.set($any($event))"
+    >
+      <option [value]="0" [selected]="pocketId() === 0">Sin bolsillo</option>
+      @for (pocket of pockets(); track pocket.id) {
+        <option [value]="pocket.id" [selected]="pocket.id === pocketId()">
+          {{ pocket.emoji }} {{ pocket.name }} ({{ pocket.percentage }}%)
+        </option>
+      }
+    </app-select-input>
+
+    <app-select-input
+      label="Categoría"
+      [valueType]="'string'"
+      [value]="category()"
+      (valueChange)="category.set($any($event))"
+    >
+      @for (item of categories; track item) {
+        <option [value]="item" [selected]="item === category()">{{ item }}</option>
+      }
+    </app-select-input>
+
+    <label class="recurring-toggle">
+      <input
+        type="checkbox"
+        [checked]="isRecurring()"
+        (change)="onRecurringToggle($event)"
+      />
+      <span>Se repite cada mes</span>
+    </label>
+
+    @if (errorMessage(); as message) {
+      <p class="modal-error" role="alert">{{ message }}</p>
+    }
+
+    <div class="modal-actions">
+      <button appButton variant="secondary" type="button" (click)="onCancel()">
+        Cancelar
+      </button>
+      <button appButton variant="primary" type="button" (click)="onSave()">
+        {{ submitLabel() }}
+      </button>
+    </div>

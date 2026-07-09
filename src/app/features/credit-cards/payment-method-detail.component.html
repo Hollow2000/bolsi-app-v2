@@ -1,0 +1,75 @@
+    @if (method(); as m) {
+      <div class="app-screen">
+        <header class="app-screen-header">
+          <a routerLink="/credit-cards" class="back-link" aria-label="Volver a métodos de pago">
+            <span class="material-symbols-outlined icon" aria-hidden="true">chevron_left</span>
+          </a>
+          <h1>{{ m.name }}</h1>
+        </header>
+        <main class="app-screen-content">
+          <app-card title="Resumen">
+            <p class="detail-line">
+              <span class="detail-label">Tipo</span>
+              <span class="detail-value">{{ typeLabel(m.type) }}</span>
+            </p>
+            @if (m.type === 'credit') {
+              <p class="detail-line">
+                <span class="detail-label">Crédito disponible</span>
+                <span class="detail-value">{{ m.availableCredit ?? 0 | mexicanCurrency }}</span>
+              </p>
+              <p class="detail-line">
+                <span class="detail-label">Límite</span>
+                <span class="detail-value">{{ m.creditLimit ?? 0 | mexicanCurrency }}</span>
+              </p>
+              <p class="detail-line">
+                <span class="detail-label">Día de corte</span>
+                <span class="detail-value">{{ m.statementClosingDay }}</span>
+              </p>
+              <p class="detail-line">
+                <span class="detail-label">Días de crédito</span>
+                <span class="detail-value">{{ m.creditDays }}</span>
+              </p>
+            } @else {
+              <p class="detail-line">
+                <span class="detail-label">Saldo actual</span>
+                <span class="detail-value">{{ m.currentBalance ?? 0 | mexicanCurrency }}</span>
+              </p>
+            }
+          </app-card>
+
+          <app-card title="Gastos recientes">
+            @if (expenses().length === 0) {
+              <p class="empty">Sin gastos registrados este mes.</p>
+            } @else {
+              <ul class="app-list" aria-label="Gastos recientes">
+                @for (expense of expenses(); track expense.id) {
+                  <li>
+                    <app-list-item
+                      icon="shopping_bag"
+                      [title]="expense.description"
+                      [subtitle]="expense.date + ' · ' + expense.category"
+                      [amount]="format(expense.amount)"
+                      tone="expense"
+                    />
+                  </li>
+                }
+              </ul>
+            }
+          </app-card>
+        </main>
+      </div>
+    } @else {
+      <div class="app-screen">
+        <header class="app-screen-header">
+          <a routerLink="/credit-cards" class="back-link" aria-label="Volver">
+            <span class="material-symbols-outlined icon" aria-hidden="true">chevron_left</span>
+          </a>
+          <h1>Método de pago</h1>
+        </header>
+        <main class="app-screen-content">
+          <app-card title="Sin datos">
+            <p class="empty">No se encontró el método de pago.</p>
+          </app-card>
+        </main>
+      </div>
+    }

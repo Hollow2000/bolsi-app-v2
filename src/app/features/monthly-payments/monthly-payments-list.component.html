@@ -1,0 +1,123 @@
+    <div class="app-screen">
+      <header class="app-screen-header">
+        <h1>Pagos mensuales</h1>
+        <span class="screen-period">{{ periodLabel() }}</span>
+      </header>
+      <main class="app-screen-content">
+        <app-card title="Resumen del mes">
+          <p class="summary-line">
+            <span class="summary-label">Pendientes</span>
+            <span class="summary-value">{{ totals().pending | mexicanCurrency }}</span>
+          </p>
+          <p class="summary-line">
+            <span class="summary-label">Pagados</span>
+            <span class="summary-value summary-value--success">{{ totals().paid | mexicanCurrency }}</span>
+          </p>
+        </app-card>
+
+        @if (payments().length === 0) {
+          <app-card title="Sin pagos">
+            <p class="empty-message">No tienes pagos registrados este mes.</p>
+          </app-card>
+        } @else {
+          <ul class="app-list" aria-label="Pagos del mes">
+            @for (payment of payments(); track payment.id) {
+              <li class="app-list-row payment-row" [class]="urgencyClass(payment)">
+                <app-list-item
+                  [icon]="payment.paid ? 'check_circle' : iconFor(payment)"
+                  [title]="payment.name"
+                  [subtitle]="subtitleFor(payment)"
+                  [amount]="(payment.amount | mexicanCurrency) ?? ''"
+                  [tone]="payment.paid ? 'income' : 'expense'"
+                />
+                <div class="item-actions">
+                  @if (!payment.paid && payment.id !== undefined) {
+                    <button
+                      appIconButton
+                      type="button"
+                      aria-label="Marcar como pagado"
+                      (click)="openMarkAsPaid(payment)"
+                    >
+                      <span class="material-symbols-outlined icon icon--small" aria-hidden="true">check_circle</span>
+                    </button>
+                  }
+                  <button
+                    appIconButton
+                    type="button"
+                    aria-label="Editar pago"
+                    (click)="openEdit(payment)"
+                  >
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
+                  </button>
+                  <button
+                    appIconButton
+                    type="button"
+                    aria-label="Eliminar pago"
+                    (click)="confirmDelete(payment)"
+                  >
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
+                  </button>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </main>
+      <app-fab icon="add" ariaLabel="Registrar nuevo pago" (press)="openAdd()" />
+    </div>
+
+    @if (modalOpen()) {
+      <app-bottom-sheet
+        [title]="editingPayment() ? 'Editar pago' : 'Nuevo pago'"
+        (close)="closeModal()"
+      >
+        <app-monthly-payment-form-modal
+          [payment]="editingPayment()"
+          [paymentMethods]="paymentMethods()"
+          [pockets]="pockets()"
+          [month]="currentMonth()"
+          [year]="currentYear()"
+          (cancel)="closeModal()"
+          (saved)="onSaved($event)"
+        />
+      </app-bottom-sheet>
+    }
+
+    @if (markingAsPaid(); as payment) {
+      <app-bottom-sheet title="Marcar como pagado" (close)="closeMarkAsPaid()">
+        <app-text-input
+          label="Pago"
+          [value]="payment.name"
+        />
+        <app-number-input
+          label="Monto a pagar"
+          [min]="0"
+          [value]="amountToPay()"
+          (valueChange)="amountToPay.set($event)"
+        />
+        <app-select-input
+          label="Pagar con"
+          [valueType]="'number'"
+          [value]="sourcePaymentMethodId()"
+          (valueChange)="sourcePaymentMethodId.set($any($event))"
+        >
+          <option value="0" disabled [selected]="sourcePaymentMethodId() === 0">Selecciona una cuenta</option>
+          @for (method of sourcePaymentMethods(); track method.id) {
+            <option [value]="method.id" [selected]="method.id === sourcePaymentMethodId()">
+              {{ method.name }} ({{ method.type === 'cash' ? 'Efectivo' : 'Débito' }})
+            </option>
+          }
+        </app-select-input>
+        @if (markAsPaidError(); as message) {
+          <p class="modal-error" role="alert">{{ message }}</p>
+        }
+        <div class="modal-actions">
+          <button appButton variant="secondary" type="button" (click)="closeMarkAsPaid()">
+            Cancelar
+          </button>
+          <button appButton variant="primary" type="button" [disabled]="savingPayment()" (click)="confirmMarkAsPaid()">
+            {{ savingPayment() ? 'Guardando…' : 'Confirmar pago' }}
+          </button>
+        </div>
+      </app-bottom-sheet>
+    }

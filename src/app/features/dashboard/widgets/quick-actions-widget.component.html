@@ -1,0 +1,18 @@
+<app-card title="Acciones rápidas">
+  <ul class="quick-grid" aria-label="Acciones rápidas">
+    @for (action of actions; track action.path) {
+      <li>
+        <a class="quick-link" [routerLink]="action.path">
+          <span class="material-symbols-outlined icon" aria-hidden="true">{{ action.icon }}</span>
+          <span class="quick-link__label">{{ action.label }}</span>
+        </a>
+      </li>
+    }
+    <li>
+      <button class="quick-link" type="button" (click)="transferPress.emit()">
+        <span class="material-symbols-outlined icon" aria-hidden="true">swap_horiz</span>
+        <span class="quick-link__label">Transferir</span>
+      </button>
+    </li>
+  </ul>
+</app-card>

@@ -1,0 +1,75 @@
+    <div class="app-screen">
+      <header class="app-screen-header">
+        <h1>Ingresos</h1>
+        <span class="screen-period">{{ periodLabel() }}</span>
+      </header>
+      <main class="app-screen-content">
+        <app-card title="Total del mes">
+          <p class="total-amount">{{ totalReceived() | mexicanCurrency }}</p>
+          <p class="total-subtitle">Recibido este mes</p>
+        </app-card>
+
+        @if (incomes().length === 0) {
+          <app-card title="Sin ingresos">
+            <p class="empty-message">No hay ingresos registrados este mes.</p>
+          </app-card>
+        } @else {
+          <ul class="app-list" aria-label="Ingresos del mes">
+            @for (income of incomes(); track income.id) {
+              <li class="app-list-row">
+                <app-list-item
+                  [icon]="income.status === 'received' ? 'arrow_downward' : 'schedule'"
+                  [title]="income.description"
+                  [subtitle]="subtitleFor(income)"
+                  [amount]="(income.amount | mexicanCurrency) ?? ''"
+                  [tone]="income.status === 'received' ? 'income' : 'default'"
+                />
+                <div class="item-actions">
+                  @if (income.status === 'expected' && income.id !== undefined) {
+                    <button
+                      appIconButton
+                      type="button"
+                      aria-label="Marcar ingreso como recibido"
+                      (click)="markAsReceived(income.id!)"
+                    >
+                      <span class="material-symbols-outlined icon icon--small" aria-hidden="true">check_circle</span>
+                    </button>
+                  }
+                  <button
+                    appIconButton
+                    type="button"
+                    aria-label="Editar ingreso"
+                    (click)="openEdit(income)"
+                  >
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
+                  </button>
+                  <button
+                    appIconButton
+                    type="button"
+                    aria-label="Eliminar ingreso"
+                    (click)="confirmDelete(income)"
+                  >
+                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
+                  </button>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </main>
+      <app-fab icon="add" ariaLabel="Registrar nuevo ingreso" (press)="openAdd()" />
+    </div>
+
+    @if (modalOpen()) {
+      <app-bottom-sheet
+        [title]="editing() ? 'Editar ingreso' : 'Nuevo ingreso'"
+        (close)="closeEdit()"
+      >
+        <app-edit-income-modal
+          [income]="editing()"
+          [receivableMethods]="receivableMethods()"
+          (cancel)="closeEdit()"
+          (saved)="onSaved($event)"
+        />
+      </app-bottom-sheet>
+    }

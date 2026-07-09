@@ -10,35 +10,7 @@ import { IconButtonDirective } from '../icon-button/icon-button.directive';
  */
 @Component({
   selector: 'app-bottom-sheet',
-  template: `
-    <div class="app-modal-overlay" (click)="onClose()">
-      <div
-        class="app-modal-sheet"
-        role="dialog"
-        aria-modal="true"
-        [attr.aria-label]="title() || null"
-        (click)="$event.stopPropagation()"
-      >
-        <div class="app-modal-handle" aria-hidden="true"></div>
-        <header class="app-modal-header">
-          @if (title()) {
-            <h2 class="app-modal-title">{{ title() }}</h2>
-          }
-          <button
-            appIconButton
-            type="button"
-            aria-label="Cerrar"
-            (click)="onClose()"
-          >
-            <span class="material-symbols-outlined icon" aria-hidden="true">close</span>
-          </button>
-        </header>
-        <div class="app-modal-body">
-          <ng-content></ng-content>
-        </div>
-      </div>
-    </div>
-  `,
+  templateUrl: './bottom-sheet.component.html',
   imports: [IconButtonDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
