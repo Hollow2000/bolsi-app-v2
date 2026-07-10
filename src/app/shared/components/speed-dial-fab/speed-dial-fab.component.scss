@@ -4,38 +4,41 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.3);
-  z-index: 998;
+  z-index: 89;
 }
 
 .speed-dial-container {
   position: fixed;
   bottom: calc(var(--navigation-height) + var(--space-4) + var(--safe-area-bottom));
   right: var(--space-4);
-  z-index: 999;
+  z-index: 90;
 }
 
 .speed-dial-trigger {
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
   border-radius: var(--radius-full);
   background: var(--color-primary);
-  color: #ffffff;
+  color: var(--text-on-primary);
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: var(--shadow-large);
-  transition: transform 0.2s ease, background 0.15s ease;
+  box-shadow: var(--shadow-medium);
+  transition: transform 0.15s ease, background 0.15s ease;
   position: relative;
   z-index: 2;
 }
 .speed-dial-trigger:hover {
   background: var(--color-primary-hover);
 }
+.speed-dial-trigger:active {
+  transform: scale(0.94);
+}
 .speed-dial-trigger .icon {
   transition: transform 0.2s ease;
-  font-size: 28px;
+  font-size: 24px;
 }
 .speed-dial-trigger .icon--rotated {
   transform: rotate(45deg);
