@@ -22,8 +22,8 @@ import { MexicanCurrencyPipe } from './shared/pipes/mexican-currency.pipe';
     <router-outlet />
     @if (showNavigation()) {
       <app-bottom-navigation />
+      <app-install-prompt />
     }
-    <app-install-prompt />
     @if (toastMessage(); as message) {
       <app-toast>{{ message }}</app-toast>
     }

@@ -6,41 +6,44 @@ import { InstallPromptService } from '../../services/install-prompt.service';
   selector: 'app-install-prompt',
   template: `
     @if (installPrompt.canInstall() && !installPrompt.isInstalled()) {
-      <button class="install-button" type="button" (click)="installPrompt.prompt()" aria-label="Instalar aplicación">
-        <span class="material-symbols-outlined icon" aria-hidden="true">install</span>
-        <span class="install-button__label">Instalar app</span>
+      <button class="install-chip" type="button" (click)="installPrompt.prompt()" aria-label="Instalar aplicación">
+        <span class="material-symbols-outlined install-chip__icon" aria-hidden="true">download</span>
+        <span class="install-chip__label">Instalar</span>
       </button>
     }
   `,
   styles: `
     :host { display: contents; }
-    .install-button {
+    .install-chip {
       position: fixed;
-      bottom: calc(var(--navigation-height) + var(--space-4));
-      right: var(--space-4);
+      top: var(--space-3);
+      right: var(--space-3);
       display: flex;
       align-items: center;
-      gap: var(--space-2);
-      padding: var(--space-3) var(--space-4);
+      gap: var(--space-1);
+      padding: var(--space-1) var(--space-3);
       background: var(--color-primary);
       color: white;
       border: none;
       border-radius: var(--radius-full);
       box-shadow: var(--shadow-medium);
       cursor: pointer;
-      font-size: var(--text-size-small);
+      font-size: var(--text-size-extra-small);
       font-weight: 600;
       z-index: 100;
       transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
-    .install-button:hover {
-      transform: translateY(-2px);
+    .install-chip:hover {
+      transform: translateY(-1px);
       box-shadow: var(--shadow-large);
     }
-    .install-button:active {
+    .install-chip:active {
       transform: translateY(0);
     }
-    .install-button__label {
+    .install-chip__icon {
+      font-size: 16px;
+    }
+    .install-chip__label {
       font-family: var(--font-family);
     }
   `,
