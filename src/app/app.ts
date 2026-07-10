@@ -48,6 +48,19 @@ import { MexicanCurrencyPipe } from './shared/pipes/mexican-currency.pipe';
         </div>
       </app-bottom-sheet>
     }
+    @if (updateAvailable()) {
+      <app-bottom-sheet title="Nueva versión de Bolsi disponible" (close)="dismissUpdate()">
+        <p class="update-message">¿Desea actualizar ahora?</p>
+        <div class="modal-actions">
+          <button appButton variant="secondary" type="button" (click)="dismissUpdate()">
+            No, más tarde
+          </button>
+          <button appButton variant="primary" type="button" (click)="applyUpdate()">
+            Sí
+          </button>
+        </div>
+      </app-bottom-sheet>
+    }
   `,
   styleUrl: './app.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -76,6 +89,7 @@ export class App implements OnInit {
 
   protected readonly cutoffCard = signal<PaymentMethod | null>(null);
   protected readonly cutoffAmount = signal(0);
+  protected readonly updateAvailable = signal(false);
 
   async ngOnInit(): Promise<void> {
     await this.checkCutoffs();
@@ -86,12 +100,17 @@ export class App implements OnInit {
     if (!this.swUpdate.isEnabled) return;
     this.swUpdate.versionUpdates.subscribe((event) => {
       if (event.type === 'VERSION_READY') {
-        this.toast.show('Nueva versión disponible. Recargando…');
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
+        this.updateAvailable.set(true);
       }
     });
+  }
+
+  protected applyUpdate(): void {
+    window.location.reload();
+  }
+
+  protected dismissUpdate(): void {
+    this.updateAvailable.set(false);
   }
 
   private async checkCutoffs(): Promise<void> {
