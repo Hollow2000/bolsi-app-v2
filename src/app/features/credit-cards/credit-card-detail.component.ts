@@ -25,6 +25,7 @@ import { TextInputComponent } from '../../shared/components/text-input/text-inpu
 import { DateInputComponent } from '../../shared/components/date-input/date-input.component';
 import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
 import { ToastService } from '../../shared/services/toast.service';
+import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
 
 interface GroupedInstallments {
   readonly expenseOriginId: number;
@@ -57,6 +58,7 @@ interface PeriodRange {
     RouterLink,
     SelectInputComponent,
     TextInputComponent,
+    InstallPromptComponent,
   ],
   templateUrl: './credit-card-detail.component.html',
   styleUrl: './credit-card-detail.component.scss',

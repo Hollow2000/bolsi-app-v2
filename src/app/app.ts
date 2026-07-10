@@ -10,18 +10,14 @@ import { PaymentMethodService } from './core/services/payment-method.service';
 import { BottomSheetComponent } from './shared/components/bottom-sheet/bottom-sheet.component';
 import { ButtonDirective } from './shared/components/button/button.directive';
 import { BottomNavigationComponent } from './shared/components/bottom-navigation/bottom-navigation.component';
-import { InstallPromptComponent } from './shared/components/install-prompt/install-prompt.component';
 import { ToastComponent } from './shared/components/toast/toast.component';
 import { ToastService } from './shared/services/toast.service';
 import { MexicanCurrencyPipe } from './shared/pipes/mexican-currency.pipe';
 
 @Component({
   selector: 'app-root',
-  imports: [BottomNavigationComponent, BottomSheetComponent, ButtonDirective, InstallPromptComponent, MexicanCurrencyPipe, RouterOutlet, ToastComponent],
+  imports: [BottomNavigationComponent, BottomSheetComponent, ButtonDirective, MexicanCurrencyPipe, RouterOutlet, ToastComponent],
   template: `
-    @if (showNavigation()) {
-      <app-install-prompt />
-    }
     <router-outlet />
     @if (showNavigation()) {
       <app-bottom-navigation />

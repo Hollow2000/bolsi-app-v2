@@ -2,6 +2,7 @@
       <header class="app-screen-header">
         <h1>Métodos de pago</h1>
       </header>
+      <app-install-prompt />
       <main class="app-screen-content">
         @if (paymentMethods().length === 0) {
           <app-card title="Sin métodos de pago">

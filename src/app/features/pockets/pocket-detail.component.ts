@@ -14,6 +14,7 @@ import { PocketService } from '../../core/services/pocket.service';
 import { CardComponent } from '../../shared/components/card/card.component';
 import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
 import { ProgressBarComponent } from '../../shared/components/progress-bar/progress-bar.component';
+import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
 import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
 
 @Component({
@@ -24,6 +25,7 @@ import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
     MexicanCurrencyPipe,
     ProgressBarComponent,
     RouterLink,
+    InstallPromptComponent,
   ],
   template: `
     @if (pocket(); as p) {
@@ -37,6 +39,7 @@ import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
             {{ p.name }}
           </h1>
         </header>
+        <app-install-prompt />
         <main class="app-screen-content">
           <app-card title="Resumen del mes">
             <p class="assigned-line">

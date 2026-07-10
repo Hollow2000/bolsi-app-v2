@@ -3,6 +3,7 @@
         <h1>Presupuestos</h1>
         <span class="screen-period">{{ periodLabel() }}</span>
       </header>
+      <app-install-prompt />
       <main class="app-screen-content">
         @if (progress().length === 0) {
           <app-card title="Sin presupuestos">

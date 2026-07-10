@@ -16,16 +16,7 @@ import { InstallPromptService } from '../../services/install-prompt.service';
     }
   `,
   styles: `
-    :host {
-      display: block;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
-      max-width: var(--max-content-width);
-      margin: 0 auto;
-    }
+    :host { display: block; }
     .install-banner {
       display: flex;
       align-items: center;
@@ -35,6 +26,9 @@ import { InstallPromptService } from '../../services/install-prompt.service';
       border-bottom: 1px solid var(--color-primary-muted);
       font-size: var(--text-size-small);
       color: var(--text-primary);
+      position: sticky;
+      top: 0;
+      z-index: 5;
     }
     .install-banner__icon {
       font-size: 18px;

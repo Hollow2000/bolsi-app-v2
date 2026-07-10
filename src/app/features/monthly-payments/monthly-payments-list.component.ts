@@ -19,6 +19,7 @@ import { TextInputComponent } from '../../shared/components/text-input/text-inpu
 import { MexicanCurrencyPipe, formatMexicanCurrency } from '../../shared/pipes/mexican-currency.pipe';
 import { ToastService } from '../../shared/services/toast.service';
 import { MonthlyPaymentFormModalComponent } from './monthly-payment-form-modal.component';
+import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
 
 interface PaymentWithUrgency extends MonthlyPayment {
   readonly urgency: 'overdue' | 'soon' | 'this-week' | 'later' | 'paid';
@@ -39,6 +40,7 @@ interface PaymentWithUrgency extends MonthlyPayment {
     NumberInputComponent,
     SelectInputComponent,
     TextInputComponent,
+    InstallPromptComponent,
   ],
   templateUrl: './monthly-payments-list.component.html',
   styleUrl: './monthly-payments-list.component.scss',

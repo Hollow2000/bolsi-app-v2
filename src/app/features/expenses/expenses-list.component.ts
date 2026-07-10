@@ -18,6 +18,7 @@ import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
 import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
 import { ToastService } from '../../shared/services/toast.service';
 import { ExpenseFormModalComponent } from './expense-form-modal.component';
+import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
 
 interface FilterState {
   readonly pocketId: number;
@@ -40,6 +41,7 @@ const NO_CATEGORY = '';
     ListItemComponent,
     MexicanCurrencyPipe,
     SelectInputComponent,
+    InstallPromptComponent,
   ],
   templateUrl: './expenses-list.component.html',
   styleUrl: './expenses-list.component.scss',

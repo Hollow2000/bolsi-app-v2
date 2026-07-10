@@ -9,10 +9,11 @@ import { CardComponent } from '../../shared/components/card/card.component';
 import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
 import { MexicanCurrencyPipe, formatMexicanCurrency } from '../../shared/pipes/mexican-currency.pipe';
 import { ToastService } from '../../shared/services/toast.service';
+import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
 
 @Component({
   selector: 'app-payment-method-detail',
-  imports: [CardComponent, ListItemComponent, MexicanCurrencyPipe, RouterLink],
+  imports: [CardComponent, InstallPromptComponent, ListItemComponent, MexicanCurrencyPipe, RouterLink],
   templateUrl: './payment-method-detail.component.html',
   styleUrl: './payment-method-detail.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

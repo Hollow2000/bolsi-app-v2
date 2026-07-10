@@ -3,6 +3,7 @@
         <h1>Hola, {{ userName() }} 👋</h1>
         <span class="screen-period">{{ periodLabel() }}</span>
       </header>
+      <app-install-prompt />
       <main class="app-screen-content">
         <app-card title="Balance del mes">
           @if (balance(); as data) {

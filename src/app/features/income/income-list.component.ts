@@ -15,6 +15,7 @@ import { NumberInputComponent } from '../../shared/components/number-input/numbe
 import { MexicanCurrencyPipe, formatMexicanCurrency } from '../../shared/pipes/mexican-currency.pipe';
 import { ToastService } from '../../shared/services/toast.service';
 import { EditIncomeModalComponent } from './edit-income-modal.component';
+import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
 
 @Component({
   selector: 'app-income-list',
@@ -29,6 +30,7 @@ import { EditIncomeModalComponent } from './edit-income-modal.component';
     ListItemComponent,
     MexicanCurrencyPipe,
     NumberInputComponent,
+    InstallPromptComponent,
   ],
   templateUrl: './income-list.component.html',
   styleUrl: './income-list.component.scss',

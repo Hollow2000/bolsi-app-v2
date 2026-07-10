@@ -14,6 +14,7 @@ import { ListItemComponent } from '../../shared/components/list-item/list-item.c
 import { ToastService } from '../../shared/services/toast.service';
 import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
 import { TemplateFormModalComponent } from './template-form-modal.component';
+import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
 
 @Component({
   selector: 'app-templates-list',
@@ -25,6 +26,7 @@ import { TemplateFormModalComponent } from './template-form-modal.component';
     ListItemComponent,
     MexicanCurrencyPipe,
     TemplateFormModalComponent,
+    InstallPromptComponent,
   ],
   templateUrl: './templates-list.component.html',
   styleUrl: './templates-list.component.scss',

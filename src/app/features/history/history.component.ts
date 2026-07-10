@@ -8,6 +8,7 @@ import type { InstallmentPlan } from '../../core/models/installment-plan.model';
 import type { MonthlyPayment } from '../../core/models/monthly-payment.model';
 import { CardComponent } from '../../shared/components/card/card.component';
 import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
+import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
 
 interface MonthSummary {
   readonly month: number;
@@ -22,7 +23,7 @@ interface MonthSummary {
 
 @Component({
   selector: 'app-history',
-  imports: [CardComponent, MexicanCurrencyPipe, RouterLink],
+  imports: [CardComponent, InstallPromptComponent, MexicanCurrencyPipe, RouterLink],
   templateUrl: './history.component.html',
   styleUrl: './history.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

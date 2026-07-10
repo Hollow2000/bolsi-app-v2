@@ -11,6 +11,7 @@ import { ListItemComponent } from '../../shared/components/list-item/list-item.c
 import { formatMexicanCurrency } from '../../shared/pipes/mexican-currency.pipe';
 import { ToastService } from '../../shared/services/toast.service';
 import { EditPaymentMethodModalComponent } from './edit-payment-method-modal.component';
+import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
 
 @Component({
   selector: 'app-payment-methods-list',
@@ -22,6 +23,7 @@ import { EditPaymentMethodModalComponent } from './edit-payment-method-modal.com
     IconButtonDirective,
     ListItemComponent,
     RouterLink,
+    InstallPromptComponent,
   ],
   templateUrl: './payment-methods-list.component.html',
   styleUrl: './payment-methods-list.component.scss',

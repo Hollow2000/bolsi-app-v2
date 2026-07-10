@@ -10,6 +10,7 @@ import { IconButtonDirective } from '../../shared/components/icon-button/icon-bu
 import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
 import { ToastService } from '../../shared/services/toast.service';
 import { EditPocketModalComponent } from './edit-pocket-modal.component';
+import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
 
 @Component({
   selector: 'app-pockets-list',
@@ -21,6 +22,7 @@ import { EditPocketModalComponent } from './edit-pocket-modal.component';
     IconButtonDirective,
     ListItemComponent,
     RouterLink,
+    InstallPromptComponent,
   ],
   template: `
     <div class="app-screen">
@@ -28,6 +30,7 @@ import { EditPocketModalComponent } from './edit-pocket-modal.component';
         <h1>Bolsillos</h1>
         <span class="screen-period">{{ totalPercentage() }}% asignado</span>
       </header>
+      <app-install-prompt />
       <main class="app-screen-content">
         @if (pockets().length === 0) {
           <app-card title="Sin bolsillos">

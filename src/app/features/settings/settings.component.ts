@@ -19,6 +19,7 @@ import { IconButtonDirective } from '../../shared/components/icon-button/icon-bu
 import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
 import { TextInputComponent } from '../../shared/components/text-input/text-input.component';
 import { ToastService } from '../../shared/services/toast.service';
+import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
 
 @Component({
   selector: 'app-settings',
@@ -33,12 +34,14 @@ import { ToastService } from '../../shared/services/toast.service';
     ListItemComponent,
     RouterLink,
     TextInputComponent,
+    InstallPromptComponent,
   ],
   template: `
     <div class="app-screen">
       <header class="app-screen-header">
         <h1>Ajustes</h1>
       </header>
+      <app-install-prompt />
       <main class="app-screen-content">
         <app-card title="Métodos de pago">
           <ul class="app-list" aria-label="Métodos de pago">

@@ -33,6 +33,7 @@ import { UrgentPaymentsWidgetComponent } from './widgets/urgent-payments-widget.
 import { ExpenseFormModalComponent } from '../expenses/expense-form-modal.component';
 import { EditIncomeModalComponent } from '../income/edit-income-modal.component';
 import { TransferFormModalComponent } from '../transfers/transfer-form-modal.component';
+import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -49,6 +50,7 @@ import { TransferFormModalComponent } from '../transfers/transfer-form-modal.com
     TemplateSelectorComponent,
     TransferFormModalComponent,
     UrgentPaymentsWidgetComponent,
+    InstallPromptComponent,
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',

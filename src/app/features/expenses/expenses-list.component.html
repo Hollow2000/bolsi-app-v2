@@ -3,6 +3,7 @@
         <h1>Gastos</h1>
         <span class="screen-period">{{ periodLabel() }}</span>
       </header>
+      <app-install-prompt />
       <main class="app-screen-content">
         <app-card title="Total del mes">
           <p class="total-amount">{{ totalSpent() | mexicanCurrency }}</p>

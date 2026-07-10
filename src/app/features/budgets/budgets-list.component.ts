@@ -17,6 +17,7 @@ import { ProgressBarComponent } from '../../shared/components/progress-bar/progr
 import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
 import { ToastService } from '../../shared/services/toast.service';
 import { BudgetFormModalComponent } from './budget-form-modal.component';
+import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
 
 @Component({
   selector: 'app-budgets-list',
@@ -30,6 +31,7 @@ import { BudgetFormModalComponent } from './budget-form-modal.component';
     ListItemComponent,
     MexicanCurrencyPipe,
     ProgressBarComponent,
+    InstallPromptComponent,
   ],
   templateUrl: './budgets-list.component.html',
   styleUrl: './budgets-list.component.scss',
