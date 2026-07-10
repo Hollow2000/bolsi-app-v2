@@ -19,10 +19,12 @@ import { MexicanCurrencyPipe } from './shared/pipes/mexican-currency.pipe';
   selector: 'app-root',
   imports: [BottomNavigationComponent, BottomSheetComponent, ButtonDirective, InstallPromptComponent, MexicanCurrencyPipe, RouterOutlet, ToastComponent],
   template: `
+    @if (showNavigation()) {
+      <app-install-prompt />
+    }
     <router-outlet />
     @if (showNavigation()) {
       <app-bottom-navigation />
-      <app-install-prompt />
     }
     @if (toastMessage(); as message) {
       <app-toast>{{ message }}</app-toast>

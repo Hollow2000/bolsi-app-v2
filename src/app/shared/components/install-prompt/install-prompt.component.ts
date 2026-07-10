@@ -6,45 +6,59 @@ import { InstallPromptService } from '../../services/install-prompt.service';
   selector: 'app-install-prompt',
   template: `
     @if (installPrompt.canInstall() && !installPrompt.isInstalled()) {
-      <button class="install-chip" type="button" (click)="installPrompt.prompt()" aria-label="Instalar aplicación">
-        <span class="material-symbols-outlined install-chip__icon" aria-hidden="true">download</span>
-        <span class="install-chip__label">Instalar</span>
-      </button>
+      <div class="install-banner" role="status">
+        <span class="material-symbols-outlined install-banner__icon" aria-hidden="true">download</span>
+        <span class="install-banner__text">Instala Bolsi en tu dispositivo</span>
+        <button class="install-banner__action" type="button" (click)="installPrompt.prompt()" aria-label="Instalar aplicación">
+          Instalar
+        </button>
+      </div>
     }
   `,
   styles: `
-    :host { display: contents; }
-    .install-chip {
+    :host {
+      display: block;
       position: fixed;
-      top: var(--space-3);
-      right: var(--space-3);
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      max-width: var(--max-content-width);
+      margin: 0 auto;
+    }
+    .install-banner {
       display: flex;
       align-items: center;
-      gap: var(--space-1);
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-4);
+      background: var(--color-primary-subtle);
+      border-bottom: 1px solid var(--color-primary-muted);
+      font-size: var(--text-size-small);
+      color: var(--text-primary);
+    }
+    .install-banner__icon {
+      font-size: 18px;
+      color: var(--color-primary);
+      flex-shrink: 0;
+    }
+    .install-banner__text {
+      flex: 1;
+      font-weight: 500;
+    }
+    .install-banner__action {
+      flex-shrink: 0;
       padding: var(--space-1) var(--space-3);
       background: var(--color-primary);
       color: white;
       border: none;
       border-radius: var(--radius-full);
-      box-shadow: var(--shadow-medium);
-      cursor: pointer;
       font-size: var(--text-size-extra-small);
       font-weight: 600;
-      z-index: 100;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      cursor: pointer;
+      transition: background 0.15s ease;
     }
-    .install-chip:hover {
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-large);
-    }
-    .install-chip:active {
-      transform: translateY(0);
-    }
-    .install-chip__icon {
-      font-size: 16px;
-    }
-    .install-chip__label {
-      font-family: var(--font-family);
+    .install-banner__action:hover {
+      background: var(--color-primary-hover);
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
