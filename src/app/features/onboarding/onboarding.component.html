@@ -26,6 +26,23 @@
             [value]="userName()"
             (valueChange)="onUserNameChange($event)"
           />
+          <div class="import-section">
+            <p class="import-hint">¿Ya tienes un respaldo?</p>
+            <label class="import-button" [class.import-button--loading]="importing()">
+              <span class="material-symbols-outlined import-button__icon" aria-hidden="true">upload</span>
+              <span class="import-button__label">{{ importing() ? 'Importando…' : 'Restaurar respaldo' }}</span>
+              <input
+                type="file"
+                accept="application/json"
+                (change)="onImportFileSelected($event)"
+                [disabled]="importing()"
+                hidden
+              />
+            </label>
+            @if (importError(); as message) {
+              <p class="import-error" role="alert">{{ message }}</p>
+            }
+          </div>
         </section>
       }
 

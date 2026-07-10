@@ -6,6 +6,7 @@ import type { Income, IncomeFrequency, IncomeStatus } from '../../core/models/in
 import type { PaymentMethod, PaymentMethodType } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';
 import { IncomeService } from '../../core/services/income.service';
+import { DataPortabilityService } from '../../core/services/data-portability.service';
 import { PaymentMethodService } from '../../core/services/payment-method.service';
 import { PocketService } from '../../core/services/pocket.service';
 import { SettingsService } from '../../core/services/settings.service';
@@ -96,6 +97,7 @@ export class OnboardingComponent {
   private readonly paymentMethodService = inject(PaymentMethodService);
   private readonly pocketService = inject(PocketService);
   private readonly incomeService = inject(IncomeService);
+  private readonly dataPortability = inject(DataPortabilityService);
   private readonly router = inject(Router);
 
   protected readonly paymentMethodTypeOptions = PAYMENT_METHOD_TYPE_OPTIONS;
@@ -103,6 +105,8 @@ export class OnboardingComponent {
   protected readonly statusOptions = STATUS_OPTIONS;
   protected readonly incomeCategories = INCOME_CATEGORIES;
   protected readonly materialIcons = MATERIAL_ICONS;
+  protected readonly importError = signal<string | null>(null);
+  protected readonly importing = signal(false);
 
   protected readonly currentStep = signal<WizardStep>(1);
   protected readonly userName = signal('');
@@ -569,6 +573,23 @@ export class OnboardingComponent {
 
   protected statusLabel(status: IncomeStatus): string {
     return status === 'received' ? 'Recibido' : 'Esperado';
+  }
+
+  protected async onImportFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.importing.set(true);
+    this.importError.set(null);
+    try {
+      await this.dataPortability.importFromFile(file);
+      window.location.reload();
+    } catch (error) {
+      this.importError.set(error instanceof Error ? error.message : 'No se pudo importar el respaldo.');
+    } finally {
+      this.importing.set(false);
+      input.value = '';
+    }
   }
 
   private todayIsoDate(): string {
