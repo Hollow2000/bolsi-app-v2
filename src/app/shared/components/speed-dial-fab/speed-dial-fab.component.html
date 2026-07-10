@@ -1,0 +1,56 @@
+@if (isOpen()) {
+  <div class="speed-dial-overlay" (click)="close()" aria-hidden="true"></div>
+}
+<div class="speed-dial-container" [class.speed-dial-container--open]="isOpen()">
+  <div class="speed-dial-actions" role="menu" aria-label="Acciones rápidas">
+    <button
+      class="speed-dial-action"
+      type="button"
+      role="menuitem"
+      [attr.aria-hidden]="!isOpen()"
+      (click)="onAction(() => templatePress.emit())"
+    >
+      <span class="speed-dial-action__label">Gasto rápido</span>
+      <span class="speed-dial-action__icon material-symbols-outlined" aria-hidden="true">bolt</span>
+    </button>
+    <button
+      class="speed-dial-action"
+      type="button"
+      role="menuitem"
+      [attr.aria-hidden]="!isOpen()"
+      (click)="onAction(() => expensePress.emit())"
+    >
+      <span class="speed-dial-action__label">Nuevo gasto</span>
+      <span class="speed-dial-action__icon material-symbols-outlined" aria-hidden="true">shopping_cart</span>
+    </button>
+    <button
+      class="speed-dial-action"
+      type="button"
+      role="menuitem"
+      [attr.aria-hidden]="!isOpen()"
+      (click)="onAction(() => incomePress.emit())"
+    >
+      <span class="speed-dial-action__label">Nuevo ingreso</span>
+      <span class="speed-dial-action__icon material-symbols-outlined" aria-hidden="true">trending_up</span>
+    </button>
+    <button
+      class="speed-dial-action"
+      type="button"
+      role="menuitem"
+      [attr.aria-hidden]="!isOpen()"
+      (click)="onAction(() => transferPress.emit())"
+    >
+      <span class="speed-dial-action__label">Transferir</span>
+      <span class="speed-dial-action__icon material-symbols-outlined" aria-hidden="true">swap_horiz</span>
+    </button>
+  </div>
+  <button
+    class="speed-dial-trigger"
+    type="button"
+    [attr.aria-expanded]="isOpen()"
+    aria-label="Acciones rápidas"
+    (click)="toggle()"
+  >
+    <span class="material-symbols-outlined icon" aria-hidden="true" [class.icon--rotated]="isOpen()">add</span>
+  </button>
+</div>

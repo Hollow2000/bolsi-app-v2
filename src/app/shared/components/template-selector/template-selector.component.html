@@ -1,0 +1,25 @@
+@if (templates().length === 0) {
+  <p class="empty-message">No tienes plantillas. Crea una desde la sección de Gasto rápido.</p>
+} @else {
+  <ul class="template-list" aria-label="Plantillas de gasto">
+    @for (template of templates(); track template.id) {
+      <li class="template-item">
+        <app-list-item
+          [icon]="template.icon || 'star'"
+          [title]="template.description"
+          [subtitle]="methodName(template.paymentMethodId) + ' · ' + pocketName(template.pocketId)"
+          [amount]="(template.amount | mexicanCurrency) ?? ''"
+        />
+        <button
+          appButton
+          variant="primary"
+          type="button"
+          class="use-button"
+          (click)="selected.emit(template)"
+        >
+          Usar
+        </button>
+      </li>
+    }
+  </ul>
+}

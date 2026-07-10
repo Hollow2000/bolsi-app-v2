@@ -54,10 +54,52 @@
         <app-credit-card-status-widget [items]="creditCardEntries()" />
 
         <app-income-vs-expenses-widget [data]="incomeVsExpenses()" />
-
-        <app-quick-actions-widget (transferPress)="openTransfer()" />
       </main>
     </div>
+
+    <app-speed-dial-fab
+      (templatePress)="openTemplateList()"
+      (expensePress)="openExpenseForm()"
+      (incomePress)="openIncomeForm()"
+      (transferPress)="openTransfer()"
+    />
+
+    @if (templateListOpen()) {
+      <app-bottom-sheet title="Gasto rápido" (close)="closeTemplateList()">
+        <app-template-selector
+          [templates]="templates()"
+          [paymentMethods]="paymentMethods()"
+          [pockets]="pockets()"
+          (selected)="onTemplateSelected($event)"
+        />
+      </app-bottom-sheet>
+    }
+
+    @if (expenseFormOpen()) {
+      <app-bottom-sheet
+        [title]="editingExpense() ? 'Registrar gasto' : 'Nuevo gasto'"
+        (close)="closeExpenseForm()"
+      >
+        <app-expense-form-modal
+          [paymentMethods]="paymentMethods()"
+          [pockets]="pockets()"
+          [expense]="editingExpense()"
+          (cancel)="closeExpenseForm()"
+          (saved)="onExpenseSaved($event)"
+        />
+      </app-bottom-sheet>
+    }
+
+    @if (incomeFormOpen()) {
+      <app-bottom-sheet title="Nuevo ingreso" (close)="closeIncomeForm()">
+        <app-edit-income-modal
+          [receivableMethods]="receivableMethods()"
+          [income]="null"
+          (cancel)="closeIncomeForm()"
+          (saved)="onIncomeSaved($event)"
+        />
+      </app-bottom-sheet>
+    }
 
     @if (transferOpen()) {
       <app-bottom-sheet title="Transferir entre cuentas" (close)="closeTransfer()">

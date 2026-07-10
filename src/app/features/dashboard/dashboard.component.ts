@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } 
 
 import { database } from '../../core/database/bolsi.database';
 import type { Expense } from '../../core/models/expense.model';
+import type { ExpenseTemplate } from '../../core/models/expense-template.model';
+import type { Income } from '../../core/models/income.model';
 import type { MonthlyBalance } from '../../core/models/monthly-balance.model';
 import type { MonthlyPayment } from '../../core/models/monthly-payment.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
@@ -9,6 +11,8 @@ import type { Pocket } from '../../core/models/pocket.model';
 import type { Transfer } from '../../core/models/transfer.model';
 import { BalanceService } from '../../core/services/balance.service';
 import { CreditCardStatementService } from '../../core/services/credit-card-statement.service';
+import { ExpenseService } from '../../core/services/expense.service';
+import { ExpenseTemplateService } from '../../core/services/expense-template.service';
 import { IncomeService } from '../../core/services/income.service';
 import { MonthlyPaymentService } from '../../core/services/monthly-payment.service';
 import { PaymentMethodService } from '../../core/services/payment-method.service';
@@ -18,13 +22,16 @@ import { TransferService } from '../../core/services/transfer.service';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { CardComponent } from '../../shared/components/card/card.component';
+import { SpeedDialFabComponent } from '../../shared/components/speed-dial-fab/speed-dial-fab.component';
+import { TemplateSelectorComponent } from '../../shared/components/template-selector/template-selector.component';
 import { ToastService } from '../../shared/services/toast.service';
 import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
 import { CreditCardStatusWidgetComponent, type CreditCardStatusEntry } from './widgets/credit-card-status-widget.component';
 import { IncomeVsExpensesWidgetComponent } from './widgets/income-vs-expenses-widget.component';
 import { PocketSummaryWidgetComponent, type PocketSummaryEntry } from './widgets/pocket-summary-widget.component';
-import { QuickActionsWidgetComponent } from './widgets/quick-actions-widget.component';
 import { UrgentPaymentsWidgetComponent } from './widgets/urgent-payments-widget.component';
+import { ExpenseFormModalComponent } from '../expenses/expense-form-modal.component';
+import { EditIncomeModalComponent } from '../income/edit-income-modal.component';
 import { TransferFormModalComponent } from '../transfers/transfer-form-modal.component';
 
 @Component({
@@ -33,10 +40,13 @@ import { TransferFormModalComponent } from '../transfers/transfer-form-modal.com
     BottomSheetComponent,
     CardComponent,
     CreditCardStatusWidgetComponent,
+    EditIncomeModalComponent,
+    ExpenseFormModalComponent,
     IncomeVsExpensesWidgetComponent,
     MexicanCurrencyPipe,
     PocketSummaryWidgetComponent,
-    QuickActionsWidgetComponent,
+    SpeedDialFabComponent,
+    TemplateSelectorComponent,
     TransferFormModalComponent,
     UrgentPaymentsWidgetComponent,
   ],
@@ -52,6 +62,8 @@ export class DashboardComponent {
   private readonly pocketService = inject(PocketService);
   private readonly monthlyPaymentService = inject(MonthlyPaymentService);
   private readonly incomeService = inject(IncomeService);
+  private readonly expenseService = inject(ExpenseService);
+  private readonly expenseTemplateService = inject(ExpenseTemplateService);
   private readonly transferService = inject(TransferService);
   private readonly toast = inject(ToastService);
 
@@ -60,7 +72,12 @@ export class DashboardComponent {
   protected readonly pockets = signal<Pocket[]>([]);
   protected readonly paymentMethods = signal<PaymentMethod[]>([]);
   protected readonly monthlyPayments = signal<MonthlyPayment[]>([]);
+  protected readonly templates = signal<ExpenseTemplate[]>([]);
   protected readonly transferOpen = signal(false);
+  protected readonly expenseFormOpen = signal(false);
+  protected readonly incomeFormOpen = signal(false);
+  protected readonly templateListOpen = signal(false);
+  protected readonly editingExpense = signal<Expense | null>(null);
   protected readonly monthlyIncome = signal(0);
   protected readonly monthlyExpenses = signal(0);
   protected readonly pocketBaseIncome = signal(0);
@@ -101,6 +118,10 @@ export class DashboardComponent {
     expenses: this.monthlyExpenses(),
   }));
 
+  protected readonly receivableMethods = computed(() =>
+    this.paymentMethods().filter((method) => method.type !== 'credit'),
+  );
+
   constructor() {
     void this.loadUserName();
     effect(() => {
@@ -126,6 +147,7 @@ export class DashboardComponent {
         expenses,
         installmentPlans,
         allTransfers,
+        templates,
       ] = await Promise.all([
         this.balanceService.calculate(month, year),
         this.pocketService.getAll(),
@@ -135,11 +157,13 @@ export class DashboardComponent {
         database.expenses.toArray(),
         database.installmentPlans.toArray(),
         database.transfers.toArray(),
+        this.expenseTemplateService.getAll(),
       ]);
       this.balance.set(balance);
       this.pockets.set(pockets);
       this.paymentMethods.set(methods);
       this.monthlyPayments.set(payments);
+      this.templates.set(templates);
       this.monthlyIncome.set(
         incomes
           .filter((income) => income.status === 'received')
@@ -263,5 +287,76 @@ export class DashboardComponent {
     } catch (error) {
       this.toast.show(error instanceof Error ? error.message : 'No se pudo realizar el traspaso.');
     }
+  }
+
+  protected openExpenseForm(): void {
+    this.editingExpense.set(null);
+    this.expenseFormOpen.set(true);
+  }
+
+  protected closeExpenseForm(): void {
+    this.editingExpense.set(null);
+    this.expenseFormOpen.set(false);
+  }
+
+  protected async onExpenseSaved(expense: Expense): Promise<void> {
+    try {
+      await this.expenseService.create(expense);
+      this.toast.show('Gasto registrado.');
+      this.closeExpenseForm();
+      const month = this.currentMonth();
+      const year = this.currentYear();
+      await this.loadAll(month, year);
+    } catch (error) {
+      this.toast.show(error instanceof Error ? error.message : 'No se pudo registrar el gasto.');
+    }
+  }
+
+  protected openIncomeForm(): void {
+    this.incomeFormOpen.set(true);
+  }
+
+  protected closeIncomeForm(): void {
+    this.incomeFormOpen.set(false);
+  }
+
+  protected async onIncomeSaved(income: Income): Promise<void> {
+    try {
+      await this.incomeService.create(income);
+      this.toast.show('Ingreso registrado.');
+      this.closeIncomeForm();
+      const month = this.currentMonth();
+      const year = this.currentYear();
+      await this.loadAll(month, year);
+    } catch (error) {
+      this.toast.show(error instanceof Error ? error.message : 'No se pudo registrar el ingreso.');
+    }
+  }
+
+  protected openTemplateList(): void {
+    this.templateListOpen.set(true);
+  }
+
+  protected closeTemplateList(): void {
+    this.templateListOpen.set(false);
+  }
+
+  protected onTemplateSelected(template: ExpenseTemplate): void {
+    this.closeTemplateList();
+    // Open expense form pre-filled with template data
+    const now = new Date();
+    const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    this.editingExpense.set({
+      date: iso,
+      description: template.description,
+      amount: template.amount,
+      paymentMethodId: template.paymentMethodId,
+      pocketId: template.pocketId,
+      category: template.category,
+      month: now.getMonth() + 1,
+      year: now.getFullYear(),
+      isInstallment: false,
+    });
+    this.expenseFormOpen.set(true);
   }
 }
