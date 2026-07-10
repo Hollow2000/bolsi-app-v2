@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1783643493175,
+  "timestamp": 1783655404041,
   "index": "/bolsi-app-v2/index.html",
   "assetGroups": [
     {
@@ -31,6 +31,7 @@
         "/bolsi-app-v2/chunk-GGUCA6HZ.js",
         "/bolsi-app-v2/chunk-GWIYX6IS.js",
         "/bolsi-app-v2/chunk-HVIIXHLN.js",
+        "/bolsi-app-v2/chunk-I3EK65GV.js",
         "/bolsi-app-v2/chunk-KPG33TAV.js",
         "/bolsi-app-v2/chunk-KWHVCXOA.js",
         "/bolsi-app-v2/chunk-KZHJTF33.js",
@@ -52,12 +53,11 @@
         "/bolsi-app-v2/chunk-WZUXFPH6.js",
         "/bolsi-app-v2/chunk-YC3YE7UD.js",
         "/bolsi-app-v2/chunk-YWVSET7H.js",
-        "/bolsi-app-v2/chunk-Z56RSI6V.js",
         "/bolsi-app-v2/chunk-ZBWIPT4I.js",
         "/bolsi-app-v2/chunk-ZOXSOYKL.js",
         "/bolsi-app-v2/favicon.ico",
         "/bolsi-app-v2/index.html",
-        "/bolsi-app-v2/main-W6H4POCK.js",
+        "/bolsi-app-v2/main-KOCTNIJY.js",
         "/bolsi-app-v2/manifest.webmanifest",
         "/bolsi-app-v2/styles-ZRA6W42Y.css"
       ],
@@ -120,6 +120,7 @@
     "/bolsi-app-v2/chunk-GGUCA6HZ.js": "c9e31bbfcec89f35b2b8ae71fcd0fa40da48e856",
     "/bolsi-app-v2/chunk-GWIYX6IS.js": "ffa325fb0696a82961b38b17e0c8b01aed95fc68",
     "/bolsi-app-v2/chunk-HVIIXHLN.js": "42dc6b5a8ab18047e8ba0f8f0e17b68f0c9fd919",
+    "/bolsi-app-v2/chunk-I3EK65GV.js": "13f1a995ac0ef82865ed11af76f0054e83120b10",
     "/bolsi-app-v2/chunk-KPG33TAV.js": "58fcc332c9066ca9e907be738b28daecc65d4f7a",
     "/bolsi-app-v2/chunk-KWHVCXOA.js": "a9577c363371f00b0a58f77dab97bdf5ce745c50",
     "/bolsi-app-v2/chunk-KZHJTF33.js": "72414b355bb589e1e9dd20a221ce42b29e38da6d",
@@ -141,7 +142,6 @@
     "/bolsi-app-v2/chunk-WZUXFPH6.js": "09fd50c2a9e630083f6b64ebf6378cc7261f08e9",
     "/bolsi-app-v2/chunk-YC3YE7UD.js": "6b13be674ffa4977bb70e2daa3090cc8ffe1d8b4",
     "/bolsi-app-v2/chunk-YWVSET7H.js": "734afc8e03b694be84c930d6eaa078d9191b45b5",
-    "/bolsi-app-v2/chunk-Z56RSI6V.js": "bf6b1b115e250abb51daa9411547fd250fa63ae4",
     "/bolsi-app-v2/chunk-ZBWIPT4I.js": "14f6d366cc0f0666da497a7dd59ee8a7e1a6fd26",
     "/bolsi-app-v2/chunk-ZOXSOYKL.js": "157e0807e635063066595d378a8b03ac25a20d7b",
     "/bolsi-app-v2/favicon.ico": "e47e67b34dc6554d64ff6468206d9ff15c15135b",
@@ -155,8 +155,8 @@
     "/bolsi-app-v2/icons/icon-512.png": "4327b43cea6e0fe37619bf38cb4acba21c52c0b1",
     "/bolsi-app-v2/icons/icon-72.png": "f903509009f79f3903f6af78c6402f292e0d9c77",
     "/bolsi-app-v2/icons/icon-96.png": "448723c932d0cf55578f5e6d9e1a1d7390f5f025",
-    "/bolsi-app-v2/index.html": "3e0f8512d3a6623f9a5c08dcd9dbc763453c43b9",
-    "/bolsi-app-v2/main-W6H4POCK.js": "512a07acbd7974f8c8e5bb5e479d64980d18fffc",
+    "/bolsi-app-v2/index.html": "3e7d08c37c84a26d567bc11947773b767724ee2b",
+    "/bolsi-app-v2/main-KOCTNIJY.js": "cb701d7e8eb0679b06d1ab909070f10cf94af044",
     "/bolsi-app-v2/manifest.webmanifest": "10d58a4d9d9110ecf7232cc7fddd7cf9009a2e69",
     "/bolsi-app-v2/styles-ZRA6W42Y.css": "b1b3055f418d1dd456fab51eba28a7c19afca54d"
   },
