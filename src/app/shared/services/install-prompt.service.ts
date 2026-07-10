@@ -20,7 +20,8 @@ export class InstallPromptService {
       window.addEventListener('beforeinstallprompt', (event) => {
         event.preventDefault();
         this.deferredPrompt = event;
-        this.canInstall.set(!this.isInstalled());
+        // Defer signal update so Angular can render the component first
+        setTimeout(() => this.canInstall.set(!this.isInstalled()), 0);
       });
 
       window.addEventListener('appinstalled', () => {
