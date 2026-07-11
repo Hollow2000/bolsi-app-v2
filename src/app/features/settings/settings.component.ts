@@ -20,6 +20,7 @@ import { ListItemComponent } from '../../shared/components/list-item/list-item.c
 import { TextInputComponent } from '../../shared/components/text-input/text-input.component';
 import { ToastService } from '../../shared/services/toast.service';
 import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
+import { formatMexicanCurrency } from '../../shared/pipes/mexican-currency.pipe';
 
 @Component({
   selector: 'app-settings',
@@ -83,9 +84,9 @@ export class SettingsComponent {
 
   protected subtitleFor(method: PaymentMethod): string {
     if (method.type === 'credit') {
-      return `Crédito · Límite ${method.creditLimit ?? 0}`;
+      return `Crédito · Límite ${formatMexicanCurrency(method.creditLimit ?? 0)}`;
     }
-    return `Saldo ${method.currentBalance ?? 0}`;
+    return `Saldo ${formatMexicanCurrency(method.currentBalance ?? 0)}`;
   }
 
   protected isCustomCategory(category: string): boolean {
