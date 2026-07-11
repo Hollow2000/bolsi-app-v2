@@ -1,0 +1,65 @@
+:host {
+    display: block;
+}
+
+.section-actions {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    margin-top: var(--space-3);
+}
+
+.warning {
+    margin: 0 0 var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-warning-subtle);
+    color: var(--color-warning);
+    border-radius: var(--radius-medium);
+    font-size: var(--text-size-small);
+}
+
+.category-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    list-style: none;
+    margin: 0 0 var(--space-3);
+    padding: 0;
+}
+
+.category-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-2) var(--space-3);
+    background: var(--surface-alternate);
+    border-radius: var(--radius-medium);
+}
+
+.category-name {
+    font-size: var(--text-size-base);
+    color: var(--text-primary);
+}
+
+.add-category {
+    display: flex;
+    align-items: end;
+    gap: var(--space-2);
+}
+
+.add-category app-text-input {
+    flex: 1;
+}
+
+.import-button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    cursor: pointer;
+}
+
+.card-text {
+    margin: 0 0 var(--space-2);
+    color: var(--text-secondary);
+    font-size: var(--text-size-small);
+}
