@@ -1,0 +1,114 @@
+.navigation-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-secondary);
+  font-size: var(--text-size-extra-small);
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-medium);
+  transition: color 0.15s ease;
+  min-width: 48px;
+  min-height: 44px;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+}
+
+.navigation-item:hover,
+.navigation-item:focus-visible {
+  color: var(--color-primary);
+}
+
+.navigation-item__label {
+  font-size: var(--text-size-extra-small);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.hamburger-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--background-overlay);
+  z-index: 199;
+  animation: fade-in 0.2s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.hamburger-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 280px;
+  max-width: 85vw;
+  background: var(--surface);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-large);
+  animation: slide-in-right 0.25s ease;
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.hamburger-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.hamburger-panel__title {
+  font-size: var(--text-size-medium);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.hamburger-panel__list {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-2) 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.hamburger-panel__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: var(--text-size-base);
+  font-weight: 500;
+  transition: background 0.15s ease;
+  min-height: var(--tap-target-min);
+}
+
+.hamburger-panel__item:hover {
+  background: var(--surface-alternate);
+}
+
+.hamburger-panel__item:active {
+  background: var(--color-primary-subtle);
+}
+
+.hamburger-panel__item .icon {
+  color: var(--text-secondary);
+}
+
+.hamburger-panel__label {
+  color: inherit;
+}

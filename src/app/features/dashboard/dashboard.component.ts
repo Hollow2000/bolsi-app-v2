@@ -343,6 +343,30 @@ export class DashboardComponent {
     this.templateListOpen.set(false);
   }
 
+  protected isCurrentMonth(): boolean {
+    const now = new Date();
+    return this.currentMonth() === now.getMonth() + 1 && this.currentYear() === now.getFullYear();
+  }
+
+  protected prevMonth(): void {
+    if (this.currentMonth() === 1) {
+      this.currentMonth.set(12);
+      this.currentYear.update((y) => y - 1);
+    } else {
+      this.currentMonth.update((m) => m - 1);
+    }
+  }
+
+  protected nextMonth(): void {
+    if (this.isCurrentMonth()) return;
+    if (this.currentMonth() === 12) {
+      this.currentMonth.set(1);
+      this.currentYear.update((y) => y + 1);
+    } else {
+      this.currentMonth.update((m) => m + 1);
+    }
+  }
+
   protected onTemplateSelected(template: ExpenseTemplate): void {
     this.closeTemplateList();
     // Open expense form pre-filled with template data

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { HamburgerMenuComponent } from '../hamburger-menu/hamburger-menu.component';
 
 interface NavigationEntry {
   readonly path: string;
@@ -9,7 +10,7 @@ interface NavigationEntry {
 
 @Component({
   selector: 'app-bottom-navigation',
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, HamburgerMenuComponent],
   template: `
     <nav class="bottom-navigation" aria-label="Navegación principal">
       @for (entry of entries; track entry.path) {
@@ -23,6 +24,7 @@ interface NavigationEntry {
           <span class="navigation-item__label">{{ entry.label }}</span>
         </a>
       }
+      <app-hamburger-menu />
     </nav>
   `,
   styleUrl: './bottom-navigation.component.scss',
@@ -34,6 +36,5 @@ export class BottomNavigationComponent {
     { path: '/expenses', label: 'Gastos', icon: 'shopping_cart' },
     { path: '/templates', label: 'Gasto rápido', icon: 'bolt' },
     { path: '/monthly-payments', label: 'Pagos', icon: 'calendar_month' },
-    { path: '/settings', label: 'Ajustes', icon: 'settings' },
   ];
 }

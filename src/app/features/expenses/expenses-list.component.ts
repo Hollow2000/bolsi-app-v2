@@ -11,13 +11,11 @@ import { PocketService } from '../../core/services/pocket.service';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { CardComponent } from '../../shared/components/card/card.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { ExpenseFormModalComponent } from './expense-form-modal.component';
 import { FabComponent } from '../../shared/components/fab/fab.component';
-import { IconButtonDirective } from '../../shared/components/icon-button/icon-button.directive';
-import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
 import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
 import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
 import { ToastService } from '../../shared/services/toast.service';
-import { ExpenseFormModalComponent } from './expense-form-modal.component';
 import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
 
 interface FilterState {
@@ -37,8 +35,6 @@ const NO_CATEGORY = '';
     ConfirmDialogComponent,
     ExpenseFormModalComponent,
     FabComponent,
-    IconButtonDirective,
-    ListItemComponent,
     MexicanCurrencyPipe,
     SelectInputComponent,
     InstallPromptComponent,
@@ -118,12 +114,41 @@ export class ExpensesListComponent {
     this.filters.update((current) => ({ ...current, category }));
   }
 
-  protected subtitleFor(expense: Expense): string {
-    const method = this.paymentMethods().find((method) => method.id === expense.paymentMethodId);
-    const pocket = this.pockets().find((pocket) => pocket.id === expense.pocketId);
-    const methodName = method?.name ?? '—';
-    const pocketName = pocket ? pocket.name : '—';
-    return `${pocketName} · ${methodName} · ${expense.category}`;
+  protected isCurrentMonth(): boolean {
+    const now = new Date();
+    return this.currentMonth() === now.getMonth() + 1 && this.currentYear() === now.getFullYear();
+  }
+
+  protected prevMonth(): void {
+    if (this.currentMonth() === 1) {
+      this.currentMonth.set(12);
+      this.currentYear.update((y) => y - 1);
+    } else {
+      this.currentMonth.update((m) => m - 1);
+    }
+  }
+
+  protected nextMonth(): void {
+    if (this.isCurrentMonth()) return;
+    if (this.currentMonth() === 12) {
+      this.currentMonth.set(1);
+      this.currentYear.update((y) => y + 1);
+    } else {
+      this.currentMonth.update((m) => m + 1);
+    }
+  }
+
+  protected formatDate(iso: string): string {
+    const [, mm, dd] = iso.split('-');
+    return `${dd}/${mm}`;
+  }
+
+  protected getPocketName(pocketId: number): string {
+    return this.pockets().find((p) => p.id === pocketId)?.name ?? '—';
+  }
+
+  protected getMethodName(methodId: number): string {
+    return this.paymentMethods().find((m) => m.id === methodId)?.name ?? '—';
   }
 
   protected openAdd(): void {
