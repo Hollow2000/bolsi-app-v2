@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 
 import type { Income } from '../../core/models/income.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
@@ -75,7 +75,41 @@ export class IncomeListComponent {
   });
 
   constructor() {
-    void this.load();
+    void this.init();
+    effect(() => {
+      const month = this.currentMonth();
+      const year = this.currentYear();
+      void this.loadIncomes(month, year);
+    });
+  }
+
+  private async init(): Promise<void> {
+    const methods = await this.paymentMethodService.getAll();
+    this.paymentMethods.set(methods);
+  }
+
+  protected isCurrentMonth(): boolean {
+    const now = new Date();
+    return this.currentMonth() === now.getMonth() + 1 && this.currentYear() === now.getFullYear();
+  }
+
+  protected prevMonth(): void {
+    if (this.currentMonth() === 1) {
+      this.currentMonth.set(12);
+      this.currentYear.update((y) => y - 1);
+    } else {
+      this.currentMonth.update((m) => m - 1);
+    }
+  }
+
+  protected nextMonth(): void {
+    if (this.isCurrentMonth()) return;
+    if (this.currentMonth() === 12) {
+      this.currentMonth.set(1);
+      this.currentYear.update((y) => y + 1);
+    } else {
+      this.currentMonth.update((m) => m + 1);
+    }
   }
 
   protected subtitleFor(income: Income): string {
@@ -181,11 +215,11 @@ export class IncomeListComponent {
   }
 
   private async load(): Promise<void> {
-    const [incomes, methods] = await Promise.all([
-      this.incomeService.getByMonth(this.currentMonth(), this.currentYear()),
-      this.paymentMethodService.getAll(),
-    ]);
+    await this.loadIncomes(this.currentMonth(), this.currentYear());
+  }
+
+  private async loadIncomes(month: number, year: number): Promise<void> {
+    const incomes = await this.incomeService.getByMonth(month, year);
     this.incomes.set(incomes);
-    this.paymentMethods.set(methods);
   }
 }

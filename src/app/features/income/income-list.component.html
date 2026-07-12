@@ -1,7 +1,26 @@
     <div class="app-screen">
       <header class="app-screen-header">
-        <h1>Ingresos</h1>
-        <span class="screen-period">{{ periodLabel() }}</span>
+        <button
+          class="month-nav-btn"
+          type="button"
+          aria-label="Mes anterior"
+          (click)="prevMonth()"
+        >
+          <span class="material-symbols-outlined icon" aria-hidden="true">chevron_left</span>
+        </button>
+        <div class="header-center">
+          <h1>Ingresos</h1>
+          <span class="screen-period">{{ periodLabel() }}</span>
+        </div>
+        <button
+          class="month-nav-btn"
+          type="button"
+          aria-label="Mes siguiente"
+          [disabled]="isCurrentMonth()"
+          (click)="nextMonth()"
+        >
+          <span class="material-symbols-outlined icon" aria-hidden="true">chevron_right</span>
+        </button>
       </header>
       <app-install-prompt />
       <main class="app-screen-content">

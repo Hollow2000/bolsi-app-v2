@@ -4,7 +4,6 @@
           class="month-nav-btn"
           type="button"
           aria-label="Mes anterior"
-          [disabled]="isCurrentMonth()"
           (click)="prevMonth()"
         >
           <span class="material-symbols-outlined icon" aria-hidden="true">chevron_left</span>
@@ -16,9 +15,8 @@
         <button
           class="month-nav-btn"
           type="button"
-          aria-label="Mes siguiente"
-          [disabled]="isCurrentMonth()"
-          (click)="nextMonth()"
+          aria-label="Mes anterior"
+          (click)="prevMonth()"
         >
           <span class="material-symbols-outlined icon" aria-hidden="true">chevron_right</span>
         </button>
