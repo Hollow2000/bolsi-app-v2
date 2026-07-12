@@ -34,7 +34,7 @@ export class BottomNavigationComponent {
   protected readonly entries: readonly NavigationEntry[] = [
     { path: '/dashboard', label: 'Inicio', icon: 'home' },
     { path: '/expenses', label: 'Gastos', icon: 'shopping_cart' },
-    { path: '/templates', label: 'Gasto rápido', icon: 'bolt' },
-    { path: '/monthly-payments', label: 'Pagos', icon: 'calendar_month' },
+    { path: '/income', label: 'Ingresos', icon: 'paid' },
+    { path: '/credit-cards', label: 'Cuentas', icon: 'credit_card' },
   ];
 }

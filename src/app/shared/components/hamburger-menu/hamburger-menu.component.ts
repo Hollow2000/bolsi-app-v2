@@ -63,10 +63,10 @@ export class HamburgerMenuComponent {
 
   protected readonly entries: readonly MenuEntry[] = [
     { path: '/settings', label: 'Ajustes', icon: 'settings' },
-    { path: '/credit-cards', label: 'Cuentas', icon: 'credit_card' },
     { path: '/pockets', label: 'Bolsillos', icon: 'savings' },
     { path: '/budgets', label: 'Presupuestos', icon: 'account_balance_wallet' },
-    { path: '/income', label: 'Ingresos', icon: 'paid' },
+    { path: '/templates', label: 'Gasto rápido', icon: 'bolt' },
+    { path: '/monthly-payments', label: 'Pagos', icon: 'calendar_month' },
     { path: '/history', label: 'Historial', icon: 'history' },
   ];
 
