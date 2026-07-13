@@ -23,12 +23,23 @@
                   <span class="group-header__count">{{ group.methods.length }}</span>
                 </div>
                 <div class="group-header__right">
-                  <span
-                    class="group-header__total"
-                    [class.group-header__total--danger]="group.type === 'credit'"
-                  >
-                    {{ groupTotalLabel(group) }}
-                  </span>
+                  @if (group.type === 'credit') {
+                    <div class="group-header__credit-totals">
+                      <span class="group-header__credit-stat">
+                        <span class="group-header__credit-label">Este mes</span>
+                        <span class="group-header__credit-value">{{ group.usedThisMonth | mexicanCurrency }}</span>
+                      </span>
+                      <span class="group-header__credit-divider">|</span>
+                      <span class="group-header__credit-stat group-header__credit-stat--danger">
+                        <span class="group-header__credit-label">A pagar</span>
+                        <span class="group-header__credit-value">{{ group.toPay | mexicanCurrency }}</span>
+                      </span>
+                    </div>
+                  } @else {
+                    <span class="group-header__total">
+                      {{ groupTotalLabel(group) }}
+                    </span>
+                  }
                   <span
                     class="material-symbols-outlined icon group-header__chevron"
                     [class.group-header__chevron--collapsed]="isGroupCollapsed(group.type)"

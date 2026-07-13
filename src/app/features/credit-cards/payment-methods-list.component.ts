@@ -10,7 +10,7 @@ import { EditPaymentMethodModalComponent } from './edit-payment-method-modal.com
 import { FabComponent } from '../../shared/components/fab/fab.component';
 import { IconButtonDirective } from '../../shared/components/icon-button/icon-button.directive';
 import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
-import { formatMexicanCurrency } from '../../shared/pipes/mexican-currency.pipe';
+import { MexicanCurrencyPipe, formatMexicanCurrency } from '../../shared/pipes/mexican-currency.pipe';
 import { ToastService } from '../../shared/services/toast.service';
 import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
 
@@ -20,6 +20,8 @@ interface MethodGroup {
   readonly icon: string;
   readonly methods: PaymentMethod[];
   readonly totalBalance: number;
+  readonly usedThisMonth: number;
+  readonly toPay: number;
 }
 
 @Component({
@@ -32,6 +34,7 @@ interface MethodGroup {
     FabComponent,
     IconButtonDirective,
     ListItemComponent,
+    MexicanCurrencyPipe,
     RouterLink,
     InstallPromptComponent,
   ],
@@ -59,11 +62,16 @@ export class PaymentMethodsListComponent {
       { type: 'credit', label: 'Crédito', icon: 'credit_card' },
     ];
     return groups
-      .map((g) => ({
-        ...g,
-        methods: methods.filter((m) => m.type === g.type),
-        totalBalance: this.sumBalance(methods.filter((m) => m.type === g.type), g.type),
-      }))
+      .map((g) => {
+        const filtered = methods.filter((m) => m.type === g.type);
+        return {
+          ...g,
+          methods: filtered,
+          totalBalance: this.sumBalance(filtered, g.type),
+          usedThisMonth: this.sumCreditUsed(filtered),
+          toPay: this.sumCreditToPay(filtered),
+        };
+      })
       .filter((g) => g.methods.length > 0);
   });
 
@@ -89,8 +97,7 @@ export class PaymentMethodsListComponent {
 
   protected groupTotalLabel(group: MethodGroup): string {
     if (group.type === 'credit') {
-      const toPay = group.methods.reduce((sum, m) => sum + (m.statementBalance ?? 0), 0);
-      return `A pagar: ${formatMexicanCurrency(toPay)}`;
+      return '';
     }
     return `Disponible: ${formatMexicanCurrency(group.totalBalance)}`;
   }
@@ -178,6 +185,21 @@ export class PaymentMethodsListComponent {
       return methods.reduce((sum, m) => sum + (m.statementBalance ?? 0), 0);
     }
     return methods.reduce((sum, m) => sum + (m.currentBalance ?? 0), 0);
+  }
+
+  private sumCreditUsed(methods: PaymentMethod[]): number {
+    return Math.round(
+      methods.reduce((sum, m) => {
+        const used = (m.creditLimit ?? 0) - (m.availableCredit ?? 0);
+        return sum + Math.max(0, used);
+      }, 0) * 100,
+    ) / 100;
+  }
+
+  private sumCreditToPay(methods: PaymentMethod[]): number {
+    return Math.round(
+      methods.reduce((sum, m) => sum + (m.statementBalance ?? 0), 0) * 100,
+    ) / 100;
   }
 
   private async load(): Promise<void> {

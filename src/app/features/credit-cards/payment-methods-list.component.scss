@@ -69,6 +69,43 @@
   color: var(--color-danger);
 }
 
+.group-header__credit-totals {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-family-mono);
+}
+
+.group-header__credit-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.group-header__credit-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-family: inherit;
+  line-height: 1;
+}
+
+.group-header__credit-value {
+  font-size: var(--text-size-small);
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.group-header__credit-stat--danger .group-header__credit-value {
+  color: var(--color-danger);
+}
+
+.group-header__credit-divider {
+  font-size: var(--text-size-small);
+  color: var(--text-secondary);
+  font-weight: 300;
+}
+
 .group-header__chevron {
   color: var(--text-secondary);
   transition: transform 0.2s ease;
