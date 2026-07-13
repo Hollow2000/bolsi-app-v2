@@ -68,6 +68,9 @@ export const MATERIAL_ICONS = [
   'local_bar',
   'fastfood',
   'cake',
+  'piggy_bank',
+  'add_circle',
+  'remove_circle',
 ] as const;
 
 export const DEFAULT_POCKETS = [

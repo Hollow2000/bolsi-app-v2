@@ -10,7 +10,6 @@ import { TextInputComponent } from '../../shared/components/text-input/text-inpu
 const TYPE_OPTIONS: readonly SegmentedOption<PaymentMethodType>[] = [
   { value: 'cash', label: 'Efectivo' },
   { value: 'debit', label: 'Débito' },
-  { value: 'savings', label: 'Ahorro' },
   { value: 'credit', label: 'Crédito' },
 ];
 

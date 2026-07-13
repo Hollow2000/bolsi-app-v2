@@ -11,6 +11,7 @@ export class SpeedDialFabComponent {
   readonly expensePress = output<void>();
   readonly incomePress = output<void>();
   readonly transferPress = output<void>();
+  readonly savingsPress = output<void>();
 
   protected readonly isOpen = signal(false);
 

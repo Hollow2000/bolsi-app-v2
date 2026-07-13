@@ -82,6 +82,7 @@
       (expensePress)="openExpenseForm()"
       (incomePress)="openIncomeForm()"
       (transferPress)="openTransfer()"
+      (savingsPress)="navigateToSavings()"
     />
 
     @if (templateListOpen()) {
@@ -129,4 +130,16 @@
           (saved)="onTransferSaved($event)"
         />
       </app-bottom-sheet>
+    }
+
+    @if (yieldPromptOpen(); as open) {
+      @if (yieldAccount(); as account) {
+        <app-bottom-sheet title="Rendimiento del mes" (close)="onYieldSkip()">
+          <app-yield-prompt-modal
+            [account]="account"
+            (skip)="onYieldSkip()"
+            (saved)="onYieldSaved()"
+          />
+        </app-bottom-sheet>
+      }
     }

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 
 import { database } from '../../core/database/bolsi.database';
 import type { Expense } from '../../core/models/expense.model';
@@ -19,6 +20,8 @@ import { PaymentMethodService } from '../../core/services/payment-method.service
 import { PocketService } from '../../core/services/pocket.service';
 import { SettingsService } from '../../core/services/settings.service';
 import { TransferService } from '../../core/services/transfer.service';
+import { SavingsService } from '../../core/services/savings.service';
+import type { SavingsAccount } from '../../core/models/savings-account.model';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { CardComponent } from '../../shared/components/card/card.component';
@@ -34,6 +37,7 @@ import { ExpenseFormModalComponent } from '../expenses/expense-form-modal.compon
 import { EditIncomeModalComponent } from '../income/edit-income-modal.component';
 import { TransferFormModalComponent } from '../transfers/transfer-form-modal.component';
 import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
+import { YieldPromptModalComponent } from '../../shared/components/yield-prompt-modal/yield-prompt-modal.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -51,12 +55,14 @@ import { InstallPromptComponent } from '../../shared/components/install-prompt/i
     TransferFormModalComponent,
     UrgentPaymentsWidgetComponent,
     InstallPromptComponent,
+    YieldPromptModalComponent,
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardComponent {
+  private readonly router = inject(Router);
   private readonly balanceService = inject(BalanceService);
   private readonly creditCardStatement = inject(CreditCardStatementService);
   private readonly settingsService = inject(SettingsService);
@@ -67,6 +73,7 @@ export class DashboardComponent {
   private readonly expenseService = inject(ExpenseService);
   private readonly expenseTemplateService = inject(ExpenseTemplateService);
   private readonly transferService = inject(TransferService);
+  private readonly savingsService = inject(SavingsService);
   private readonly toast = inject(ToastService);
 
   protected readonly userName = signal('');
@@ -87,6 +94,10 @@ export class DashboardComponent {
 
   protected readonly currentMonth = signal(new Date().getMonth() + 1);
   protected readonly currentYear = signal(new Date().getFullYear());
+
+  protected readonly yieldPromptOpen = signal(false);
+  protected readonly yieldAccount = signal<SavingsAccount | null>(null);
+  protected readonly savingsAccountsNeedingYield = signal<SavingsAccount[]>([]);
 
   protected readonly periodLabel = computed(() => {
     const monthNames = [
@@ -181,6 +192,23 @@ export class DashboardComponent {
       this.creditCardEntries.set(
         this.buildCreditCardEntries(methods, expenses, installmentPlans, allTransfers, month, year),
       );
+
+      // Check for savings accounts needing yield prompt
+      const savingsAccounts = await this.savingsService.getAll();
+      const accountsNeedingYield: SavingsAccount[] = [];
+      for (const account of savingsAccounts) {
+        if (account.id !== undefined) {
+          const hasYield = await this.savingsService.hasYieldThisMonth(account.id);
+          if (!hasYield) {
+            accountsNeedingYield.push(account);
+          }
+        }
+      }
+      this.savingsAccountsNeedingYield.set(accountsNeedingYield);
+      if (accountsNeedingYield.length > 0 && this.isCurrentMonth()) {
+        this.yieldAccount.set(accountsNeedingYield[0]);
+        this.yieldPromptOpen.set(true);
+      }
     } catch (error) {
       console.error('Dashboard load error', error);
       this.balance.set(null);
@@ -384,5 +412,35 @@ export class DashboardComponent {
       isInstallment: false,
     });
     this.expenseFormOpen.set(true);
+  }
+
+  protected navigateToSavings(): void {
+    void this.router.navigate(['/savings']);
+  }
+
+  protected onYieldSaved(): void {
+    const remaining = this.savingsAccountsNeedingYield();
+    const current = this.yieldAccount();
+    const next = remaining.filter((a) => a.id !== current?.id);
+    this.savingsAccountsNeedingYield.set(next);
+    if (next.length > 0) {
+      this.yieldAccount.set(next[0]);
+    } else {
+      this.yieldPromptOpen.set(false);
+      this.yieldAccount.set(null);
+    }
+  }
+
+  protected onYieldSkip(): void {
+    const remaining = this.savingsAccountsNeedingYield();
+    const current = this.yieldAccount();
+    const next = remaining.filter((a) => a.id !== current?.id);
+    this.savingsAccountsNeedingYield.set(next);
+    if (next.length > 0) {
+      this.yieldAccount.set(next[0]);
+    } else {
+      this.yieldPromptOpen.set(false);
+      this.yieldAccount.set(null);
+    }
   }
 }

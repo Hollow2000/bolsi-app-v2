@@ -36,7 +36,7 @@ export class TransferFormModalComponent implements OnInit {
   protected readonly toPaymentMethodId = signal<number>(0);
 
   protected readonly transferableMethods = computed(() =>
-    this.paymentMethods().filter((m) => m.type !== 'savings'),
+    this.paymentMethods(),
   );
 
   protected readonly fromMethod = computed<PaymentMethod | null>(() => {
@@ -83,7 +83,6 @@ export class TransferFormModalComponent implements OnInit {
   protected typeLabel(type: PaymentMethod['type']): string {
     if (type === 'cash') return 'Efectivo';
     if (type === 'debit') return 'Débito';
-    if (type === 'savings') return 'Ahorro';
     return 'Crédito';
   }
 

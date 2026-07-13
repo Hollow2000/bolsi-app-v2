@@ -1,0 +1,193 @@
+<div class="app-screen">
+  <header class="app-screen-header">
+    <a class="back-link" routerLink="/savings" aria-label="Volver a ahorros">
+      <span class="material-symbols-outlined icon" aria-hidden="true">arrow_back</span>
+    </a>
+    <h1>{{ account()?.name }}</h1>
+    <button
+      class="edit-btn"
+      type="button"
+      aria-label="Editar cuenta"
+      (click)="openEditForm()"
+    >
+      <span class="material-symbols-outlined icon" aria-hidden="true">edit</span>
+    </button>
+  </header>
+  <app-install-prompt />
+  <main class="app-screen-content">
+    @if (account(); as acc) {
+      <section class="balance-card">
+        <span class="material-symbols-outlined icon balance-icon" aria-hidden="true">{{ acc.icon || 'savings' }}</span>
+        <div class="balance-info">
+          <span class="balance-label">Saldo actual</span>
+          <span class="balance-amount">{{ acc.balance | mexicanCurrency }}</span>
+        </div>
+        @if (acc.goal && acc.goal > 0) {
+          <div class="goal-section">
+            <div class="goal-header">
+              <span class="goal-label">Meta: {{ acc.goal | mexicanCurrency }}</span>
+              <span class="goal-percentage">{{ progressPercentage() }}%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="progressPercentage()"></div>
+            </div>
+          </div>
+        }
+      </section>
+
+      <div class="summary-row">
+        <div class="summary-item">
+          <span class="summary-label">Depósitos</span>
+          <span class="summary-value summary-value--positive">{{ summary().totalDeposits | mexicanCurrency }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Retiros</span>
+          <span class="summary-value summary-value--negative">{{ summary().totalWithdrawals | mexicanCurrency }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Rendimientos</span>
+          <span class="summary-value summary-value--positive">{{ summary().totalYields | mexicanCurrency }}</span>
+        </div>
+      </div>
+
+      <div class="filter-row">
+        <button type="button" class="filter-chip" [class.filter-chip--active]="filter() === 'all'" (click)="filter.set('all')">
+          Todas
+        </button>
+        <button type="button" class="filter-chip" [class.filter-chip--active]="filter() === 'deposit'" (click)="filter.set('deposit')">
+          Depósitos
+        </button>
+        <button type="button" class="filter-chip" [class.filter-chip--active]="filter() === 'withdrawal'" (click)="filter.set('withdrawal')">
+          Retiros
+        </button>
+        <button type="button" class="filter-chip" [class.filter-chip--active]="filter() === 'yield'" (click)="filter.set('yield')">
+          Rendimientos
+        </button>
+      </div>
+
+      <section class="transactions-section">
+        <h2 class="section-title">Historial</h2>
+        @if (filteredTransactions().length === 0) {
+          <p class="empty-message">No hay transacciones.</p>
+        } @else {
+          <ul class="transaction-list" aria-label="Historial de transacciones">
+            @for (tx of filteredTransactions(); track tx.id) {
+              <li class="transaction-item">
+                <span class="material-symbols-outlined icon transaction-icon" aria-hidden="true">{{ transactionIcon(tx.type) }}</span>
+                <div class="transaction-info">
+                  <span class="transaction-type">{{ transactionTypeLabel(tx.type) }}</span>
+                  @if (tx.description) {
+                    <span class="transaction-desc">{{ tx.description }}</span>
+                  }
+                  <span class="transaction-date">{{ formatDate(tx.date) }}</span>
+                </div>
+                <span
+                  class="transaction-amount"
+                  [class.transaction-amount--positive]="tx.type !== 'withdrawal'"
+                  [class.transaction-amount--negative]="tx.type === 'withdrawal'"
+                >
+                  {{ tx.type === 'withdrawal' ? '-' : '+' }}{{ tx.amount | mexicanCurrency }}
+                </span>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <div class="action-buttons">
+        <button
+          class="action-btn action-btn--deposit"
+          type="button"
+          (click)="openTransactionForm('deposit')"
+        >
+          <span class="material-symbols-outlined icon" aria-hidden="true">add_circle</span>
+          Depósito
+        </button>
+        <button
+          class="action-btn action-btn--withdraw"
+          type="button"
+          [disabled]="acc.balance <= 0"
+          (click)="openTransactionForm('withdrawal')"
+        >
+          <span class="material-symbols-outlined icon" aria-hidden="true">remove_circle</span>
+          Retiro
+        </button>
+        <button
+          class="action-btn action-btn--yield"
+          type="button"
+          (click)="openTransactionForm('yield')"
+        >
+          <span class="material-symbols-outlined icon" aria-hidden="true">trending_up</span>
+          Rendimiento
+        </button>
+      </div>
+    } @else {
+      <p class="empty-message">Cuenta no encontrada.</p>
+    }
+  </main>
+</div>
+
+@if (showTransactionForm()) {
+  <app-bottom-sheet [title]="transactionTypeLabel(transactionType())" (close)="closeTransactionForm()">
+    <div class="form-content">
+      @if (transactionType() !== 'yield') {
+        <app-text-input
+          label="Descripción"
+          [value]="transactionDraft().description"
+          (valueChange)="onTransactionDraftChange('description', $event)"
+        />
+      }
+      <app-number-input
+        label="Monto"
+        [value]="transactionDraft().amount"
+        (valueChange)="onTransactionDraftChange('amount', $event)"
+      />
+      @if (transactionError()) {
+        <p class="form-error" role="alert">{{ transactionError() }}</p>
+      }
+      <button
+        appButton
+        type="button"
+        class="form-submit"
+        (click)="saveTransaction()"
+      >
+        Registrar
+      </button>
+    </div>
+  </app-bottom-sheet>
+}
+
+@if (showEditForm()) {
+  <app-bottom-sheet title="Editar cuenta" (close)="closeEditForm()">
+    <div class="form-content">
+      <app-text-input
+        label="Nombre"
+        [value]="editDraft().name"
+        (valueChange)="onEditDraftChange('name', $event)"
+      />
+      <div class="form-field">
+        <label class="form-label">Icono</label>
+        <app-icon-picker
+          [icons]="icons"
+          [(value)]="editDraftIcon"
+        />
+      </div>
+      <app-number-input
+        label="Meta (opcional)"
+        [value]="editDraft().goal"
+        (valueChange)="onEditDraftChange('goal', $event)"
+      />
+      @if (editError()) {
+        <p class="form-error" role="alert">{{ editError() }}</p>
+      }
+      <button
+        appButton
+        type="button"
+        class="form-submit"
+        (click)="saveEdit()"
+      >
+        Guardar cambios
+      </button>
+    </div>
+  </app-bottom-sheet>
+}

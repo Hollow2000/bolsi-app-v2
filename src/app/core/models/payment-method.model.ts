@@ -1,4 +1,4 @@
-export type PaymentMethodType = 'cash' | 'debit' | 'credit' | 'savings';
+export type PaymentMethodType = 'cash' | 'debit' | 'credit';
 
 export interface PaymentMethod {
   id?: number;

@@ -1,0 +1,220 @@
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+
+import type { SavingsAccount } from '../../core/models/savings-account.model';
+import type { SavingsTransaction } from '../../core/models/savings-transaction.model';
+import { SavingsService } from '../../core/services/savings.service';
+import { MATERIAL_ICONS } from '../../core/catalogs';
+import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
+import { ButtonDirective } from '../../shared/components/button/button.directive';
+import { IconPickerComponent } from '../../shared/components/icon-picker/icon-picker.component';
+import { MexicanCurrencyPipe, formatMexicanCurrency } from '../../shared/pipes/mexican-currency.pipe';
+import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
+import { TextInputComponent } from '../../shared/components/text-input/text-input.component';
+import { ToastService } from '../../shared/services/toast.service';
+import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
+
+export type TransactionFilter = 'all' | 'deposit' | 'withdrawal' | 'yield';
+
+interface TransactionDraft {
+  amount: number;
+  description: string;
+}
+
+@Component({
+  selector: 'app-savings-detail',
+  imports: [
+    BottomSheetComponent,
+    ButtonDirective,
+    IconPickerComponent,
+    MexicanCurrencyPipe,
+    NumberInputComponent,
+    RouterLink,
+    TextInputComponent,
+    InstallPromptComponent,
+  ],
+  templateUrl: './savings-detail.component.html',
+  styleUrl: './savings-detail.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class SavingsDetailComponent {
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly service = inject(SavingsService);
+  private readonly toast = inject(ToastService);
+
+  private readonly accountId = Number(this.route.snapshot.paramMap.get('id')) || 0;
+
+  protected readonly account = signal<SavingsAccount | null>(null);
+  protected readonly transactions = signal<SavingsTransaction[]>([]);
+  protected readonly summary = signal({ totalDeposits: 0, totalWithdrawals: 0, totalYields: 0 });
+  protected readonly filter = signal<TransactionFilter>('all');
+  protected readonly icons = MATERIAL_ICONS;
+
+  protected readonly showTransactionForm = signal(false);
+  protected readonly transactionType = signal<'deposit' | 'withdrawal' | 'yield'>('deposit');
+  protected readonly transactionDraft = signal<TransactionDraft>({ amount: 0, description: '' });
+  protected readonly transactionError = signal<string | null>(null);
+
+  protected readonly showEditForm = signal(false);
+  protected readonly editDraft = signal({ name: '', icon: 'savings', goal: 0 });
+  protected readonly editDraftIcon = signal('savings');
+  protected readonly editError = signal<string | null>(null);
+
+  protected readonly filteredTransactions = computed(() => {
+    const all = this.transactions();
+    const f = this.filter();
+    if (f === 'all') return all;
+    return all.filter((t) => t.type === f);
+  });
+
+  protected readonly progressPercentage = computed(() => {
+    const acc = this.account();
+    if (!acc || !acc.goal || acc.goal <= 0) return 0;
+    return Math.min(100, Math.round((acc.balance / acc.goal) * 100));
+  });
+
+  constructor() {
+    void this.load();
+  }
+
+  protected filterLabel(type: TransactionFilter): string {
+    const labels: Record<TransactionFilter, string> = {
+      all: 'Todas',
+      deposit: 'Depósitos',
+      withdrawal: 'Retiros',
+      yield: 'Rendimientos',
+    };
+    return labels[type];
+  }
+
+  protected transactionIcon(type: SavingsTransaction['type']): string {
+    const icons: Record<SavingsTransaction['type'], string> = {
+      deposit: 'add_circle',
+      withdrawal: 'remove_circle',
+      yield: 'trending_up',
+    };
+    return icons[type];
+  }
+
+  protected transactionTypeLabel(type: SavingsTransaction['type']): string {
+    const labels: Record<SavingsTransaction['type'], string> = {
+      deposit: 'Depósito',
+      withdrawal: 'Retiro',
+      yield: 'Rendimiento',
+    };
+    return labels[type];
+  }
+
+  protected formatDate(date: Date | string): string {
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  protected openTransactionForm(type: 'deposit' | 'withdrawal' | 'yield'): void {
+    this.transactionType.set(type);
+    this.transactionDraft.set({ amount: 0, description: '' });
+    this.transactionError.set(null);
+    this.showTransactionForm.set(true);
+  }
+
+  protected closeTransactionForm(): void {
+    this.showTransactionForm.set(false);
+    this.transactionError.set(null);
+  }
+
+  protected onTransactionDraftChange<K extends keyof TransactionDraft>(field: K, value: TransactionDraft[K]): void {
+    this.transactionDraft.update((d) => ({ ...d, [field]: value }));
+  }
+
+  protected async saveTransaction(): Promise<void> {
+    const draft = this.transactionDraft();
+    const type = this.transactionType();
+    const acc = this.account();
+    if (!acc || acc.id === undefined) return;
+
+    if (draft.amount <= 0) {
+      this.transactionError.set('El monto debe ser mayor a 0.');
+      return;
+    }
+
+    if (type === 'withdrawal' && draft.amount > acc.balance) {
+      this.transactionError.set('El monto excede el saldo disponible.');
+      return;
+    }
+
+    try {
+      if (type === 'deposit') {
+        await this.service.deposit(acc.id, draft.amount, draft.description.trim() || undefined);
+        this.toast.show('Depósito registrado.');
+      } else if (type === 'withdrawal') {
+        await this.service.withdraw(acc.id, draft.amount, draft.description.trim() || undefined);
+        this.toast.show('Retiro registrado.');
+      } else {
+        await this.service.addYield(acc.id, draft.amount);
+        this.toast.show('Rendimiento registrado.');
+      }
+      this.closeTransactionForm();
+      await this.load();
+    } catch (error) {
+      this.transactionError.set(error instanceof Error ? error.message : 'No se pudo registrar.');
+    }
+  }
+
+  protected openEditForm(): void {
+    const acc = this.account();
+    if (!acc) return;
+    this.editDraft.set({ name: acc.name, icon: acc.icon, goal: acc.goal ?? 0 });
+    this.editDraftIcon.set(acc.icon);
+    this.editError.set(null);
+    this.showEditForm.set(true);
+  }
+
+  protected closeEditForm(): void {
+    this.showEditForm.set(false);
+    this.editError.set(null);
+  }
+
+  protected onEditDraftChange(field: 'name' | 'icon' | 'goal', value: string | number): void {
+    this.editDraft.update((d) => ({ ...d, [field]: value }));
+  }
+
+  protected async saveEdit(): Promise<void> {
+    const acc = this.account();
+    const draft = this.editDraft();
+    const icon = this.editDraftIcon();
+    if (!acc || acc.id === undefined) return;
+
+    if (!draft.name.trim()) {
+      this.editError.set('El nombre es obligatorio.');
+      return;
+    }
+
+    try {
+      await this.service.update(acc.id, {
+        name: draft.name.trim(),
+        icon,
+        goal: draft.goal > 0 ? draft.goal : undefined,
+      });
+      this.toast.show('Cuenta actualizada.');
+      this.closeEditForm();
+      await this.load();
+    } catch (error) {
+      this.editError.set(error instanceof Error ? error.message : 'No se pudo actualizar.');
+    }
+  }
+
+  private async load(): Promise<void> {
+    const [account, transactions, summary] = await Promise.all([
+      this.service.getById(this.accountId),
+      this.service.getTransactions(this.accountId),
+      this.service.getAccountSummary(this.accountId),
+    ]);
+    this.account.set(account ?? null);
+    this.transactions.set(transactions);
+    this.summary.set(summary);
+  }
+}
