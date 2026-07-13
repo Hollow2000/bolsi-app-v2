@@ -77,10 +77,7 @@ export const MATERIAL_ICONS = [
   'apparel',
   'laundry',
   'chair',
-  'build',
-  'piggy_bank',
-  'add_circle',
-  'remove_circle',
+  'build'
 ] as const;
 
 export const DEFAULT_POCKETS = [
