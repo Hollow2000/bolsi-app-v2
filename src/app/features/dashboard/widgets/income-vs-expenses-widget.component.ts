@@ -4,7 +4,8 @@ import { CardComponent } from '../../../shared/components/card/card.component';
 import { MexicanCurrencyPipe } from '../../../shared/pipes/mexican-currency.pipe';
 
 export interface IncomeVsExpenses {
-  readonly income: number;
+  readonly receivedIncome: number;
+  readonly pendingIncome: number;
   readonly expenses: number;
 }
 
@@ -18,11 +19,17 @@ export interface IncomeVsExpenses {
 export class IncomeVsExpensesWidgetComponent {
   readonly data = input.required<IncomeVsExpenses>();
 
-  protected readonly net = computed(() => this.data().income - this.data().expenses);
+  protected readonly totalIncome = computed(() => this.data().receivedIncome + this.data().pendingIncome);
 
-  protected readonly max = computed(() => Math.max(this.data().income, this.data().expenses, 1));
+  protected readonly net = computed(() => this.totalIncome() - this.data().expenses);
 
-  protected readonly incomePercent = computed(() => (this.data().income / this.max()) * 100);
+  protected readonly max = computed(() => Math.max(this.totalIncome(), this.data().expenses, 1));
+
+  protected readonly receivedPercent = computed(() => (this.data().receivedIncome / this.max()) * 100);
+
+  protected readonly pendingPercent = computed(() => (this.data().pendingIncome / this.max()) * 100);
+
+  protected readonly incomePercent = computed(() => ((this.data().receivedIncome + this.data().pendingIncome) / this.max()) * 100);
 
   protected readonly expensePercent = computed(() => (this.data().expenses / this.max()) * 100);
 }

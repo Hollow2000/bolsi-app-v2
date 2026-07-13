@@ -28,7 +28,8 @@
   color: var(--text-primary);
 }
 .ie-value--success { color: var(--color-success); }
-.ie-value--expense { color: var(--text-primary); }
+.ie-value--pending { color: #2196f3; }
+.ie-value--expense { color: #ff9800; }
 .ie-bars {
   display: flex;
   flex-direction: column;
@@ -50,10 +51,16 @@
   border-radius: var(--radius-full);
   overflow: hidden;
 }
-.ie-bars__fill {
+.ie-bars__fill-group {
+  display: flex;
   height: 100%;
   border-radius: var(--radius-full);
+  overflow: hidden;
+}
+.ie-bars__fill {
+  height: 100%;
   transition: width 0.3s ease;
 }
 .ie-bars__fill--success { background: var(--color-success); }
-.ie-bars__fill--expense { background: var(--color-primary); }
+.ie-bars__fill--pending { background: #2196f3; }
+.ie-bars__fill--expense { background: #ff9800; }

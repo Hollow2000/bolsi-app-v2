@@ -90,6 +90,7 @@ export class DashboardComponent {
   protected readonly templateListOpen = signal(false);
   protected readonly editingExpense = signal<Expense | null>(null);
   protected readonly monthlyIncome = signal(0);
+  protected readonly monthlyPendingIncome = signal(0);
   protected readonly monthlyExpenses = signal(0);
   protected readonly pocketBaseIncome = signal(0);
   protected readonly creditCardEntries = signal<CreditCardStatusEntry[]>([]);
@@ -132,7 +133,8 @@ export class DashboardComponent {
   protected readonly expensesByPocket = signal<Map<number, number>>(new Map());
 
   protected readonly incomeVsExpenses = computed(() => ({
-    income: this.monthlyIncome(),
+    receivedIncome: this.monthlyIncome(),
+    pendingIncome: this.monthlyPendingIncome(),
     expenses: this.monthlyExpenses(),
   }));
 
@@ -185,6 +187,11 @@ export class DashboardComponent {
       this.monthlyIncome.set(
         incomes
           .filter((income) => income.status === 'received')
+          .reduce((sum, income) => sum + income.amount, 0),
+      );
+      this.monthlyPendingIncome.set(
+        incomes
+          .filter((income) => income.status === 'expected')
           .reduce((sum, income) => sum + income.amount, 0),
       );
       this.pocketBaseIncome.set(
