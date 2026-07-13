@@ -2,6 +2,7 @@ import Dexie, { type EntityTable } from 'dexie';
 
 import type { AppSettings } from '../models/app-settings.model';
 import type { Budget } from '../models/budget.model';
+import type { CatalogItem } from '../models/catalog.model';
 import type { Expense } from '../models/expense.model';
 import type { ExpenseTemplate } from '../models/expense-template.model';
 import type { Income } from '../models/income.model';
@@ -26,6 +27,7 @@ export class BolsiDatabase extends Dexie {
   appSettings!: EntityTable<AppSettings, 'id'>;
   savingsAccounts!: EntityTable<SavingsAccount, 'id'>;
   savingsTransactions!: EntityTable<SavingsTransaction, 'id'>;
+  catalogs!: EntityTable<CatalogItem, 'id'>;
 
   constructor() {
     super('BolsiDB');
@@ -134,6 +136,103 @@ export class BolsiDatabase extends Dexie {
           await paymentMethods.delete(method['id']);
         }
       });
+    });
+    this.version(8).stores({
+      paymentMethods: '++id, type',
+      expenses: '++id, month, year, paymentMethodId, pocketId, isInstallment, hidden, category',
+      installmentPlans: '++id, expenseOriginId, paymentMethodId, cutoffMonth, cutoffYear, paid',
+      incomes: '++id, month, year, paymentMethodId, status, category',
+      pockets: '++id, sortOrder',
+      monthlyPayments: '++id, month, year, paid, isRecurring',
+      budgets: '++id, month, year, category',
+      expenseTemplates: '++id, description',
+      transfers: '++id, fromPaymentMethodId, toPaymentMethodId, month, year, isCreditCardPayment, billingPeriodMonth, billingPeriodYear',
+      appSettings: '++id',
+      savingsAccounts: '++id',
+      savingsTransactions: '++id, savingsId, date',
+      catalogs: '++id, type, [type+isDefault]',
+    }).upgrade(async (tx) => {
+      const catalogs = tx.table('catalogs');
+      const appSettings = tx.table('appSettings');
+
+      const defaultExpenseCategories = [
+        { name: 'Vivienda', icon: 'home' },
+        { name: 'Servicios', icon: 'bolt' },
+        { name: 'Supermercado', icon: 'local_grocery_store' },
+        { name: 'Transporte', icon: 'directions_car' },
+        { name: 'Ropa', icon: 'apparel' },
+        { name: 'Seguros', icon: 'security' },
+        { name: 'Salud', icon: 'local_hospital' },
+        { name: 'Compras menores', icon: 'shopping_bag' },
+        { name: 'Comidas fuera', icon: 'restaurant' },
+        { name: 'Entretenimiento', icon: 'movie' },
+        { name: 'Belleza', icon: 'spa' },
+        { name: 'Recargas', icon: 'phone' },
+        { name: 'Regalos', icon: 'celebration' },
+        { name: 'Viajes', icon: 'flight' },
+        { name: 'Tecnología', icon: 'devices' },
+        { name: 'Otro', icon: 'category' },
+      ];
+
+      const defaultIncomeCategories = [
+        { name: 'Salario', icon: 'work' },
+        { name: 'Devoluciones', icon: 'assignment_return' },
+        { name: 'Regalo', icon: 'card_giftcard' },
+        { name: 'Reembolso', icon: 'receipt' },
+        { name: 'Otro', icon: 'category' },
+      ];
+
+      let sortOrder = 0;
+      for (const cat of defaultExpenseCategories) {
+        await catalogs.add({
+          type: 'expense',
+          name: cat.name,
+          icon: cat.icon,
+          isDefault: true,
+          sortOrder: sortOrder++,
+        });
+      }
+
+      sortOrder = 0;
+      for (const cat of defaultIncomeCategories) {
+        await catalogs.add({
+          type: 'income',
+          name: cat.name,
+          icon: cat.icon,
+          isDefault: true,
+          sortOrder: sortOrder++,
+        });
+      }
+
+      const settings = await appSettings.toCollection().first();
+      if (settings) {
+        const customExpense = (settings as Record<string, unknown>)['customExpenseCategories'] as string[] | undefined;
+        if (customExpense) {
+          for (const name of customExpense) {
+            await catalogs.add({
+              type: 'expense',
+              name,
+              icon: 'category',
+              isDefault: false,
+              sortOrder: sortOrder++,
+            });
+          }
+        }
+
+        const customIncome = (settings as Record<string, unknown>)['customIncomeCategories'] as string[] | undefined;
+        sortOrder = 0;
+        if (customIncome) {
+          for (const name of customIncome) {
+            await catalogs.add({
+              type: 'income',
+              name,
+              icon: 'category',
+              isDefault: false,
+              sortOrder: sortOrder++,
+            });
+          }
+        }
+      }
     });
   }
 }

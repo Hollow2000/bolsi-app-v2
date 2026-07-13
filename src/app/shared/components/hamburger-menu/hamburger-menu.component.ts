@@ -63,6 +63,7 @@ export class HamburgerMenuComponent {
 
   protected readonly entries: readonly MenuEntry[] = [
     { path: '/settings', label: 'Ajustes', icon: 'settings' },
+    { path: '/catalogs', label: 'Categorías', icon: 'category' },
     { path: '/pockets', label: 'Bolsillos', icon: 'wallet' },
     { path: '/savings', label: 'Ahorros', icon: 'savings' },
     { path: '/budgets', label: 'Presupuestos', icon: 'account_balance_wallet' },

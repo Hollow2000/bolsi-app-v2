@@ -6,6 +6,7 @@ export interface Expense {
   paymentMethodId: number;
   pocketId: number;
   category: string;
+  icon?: string;
   month: number;
   year: number;
   isInstallment: boolean;

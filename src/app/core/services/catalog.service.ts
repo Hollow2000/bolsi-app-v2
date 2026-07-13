@@ -1,7 +1,9 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { Injectable } from '@angular/core';
 
 import { database } from '../database/bolsi.database';
+import type { CatalogItem } from '../models/catalog.model';
 
+// Backward compatibility - will be removed when all consumers use CatalogService
 export const EXPENSE_CATEGORIES_DEFAULT = [
   'Vivienda',
   'Servicios',
@@ -28,6 +30,9 @@ export const INCOME_CATEGORIES_DEFAULT = [
   'Reembolso',
   'Otro',
 ] as const;
+
+export type ExpenseCategory = (typeof EXPENSE_CATEGORIES_DEFAULT)[number];
+export type IncomeCategory = (typeof INCOME_CATEGORIES_DEFAULT)[number];
 
 export const MATERIAL_ICONS = [
   'money_bag',
@@ -77,7 +82,17 @@ export const MATERIAL_ICONS = [
   'apparel',
   'laundry',
   'chair',
-  'build'
+  'build',
+  'piggy_bank',
+  'add_circle',
+  'remove_circle',
+  'category',
+  'security',
+  'devices',
+  'assignment_return',
+  'card_giftcard',
+  'receipt',
+  'shopping_bag',
 ] as const;
 
 export const DEFAULT_POCKETS = [
@@ -86,83 +101,81 @@ export const DEFAULT_POCKETS = [
   { name: 'Ahorros', icon: 'money_bag', percentage: 20, sortOrder: 2 },
 ] as const;
 
-export type ExpenseCategory = (typeof EXPENSE_CATEGORIES_DEFAULT)[number];
-export type IncomeCategory = (typeof INCOME_CATEGORIES_DEFAULT)[number];
-
 @Injectable({ providedIn: 'root' })
 export class CatalogService {
-  private readonly customExpenseCategories = signal<string[]>([]);
-  private readonly customIncomeCategories = signal<string[]>([]);
-
-  async load(): Promise<void> {
-    const settings = await database.appSettings.toCollection().first();
-    this.customExpenseCategories.set(settings?.customExpenseCategories ?? []);
-    this.customIncomeCategories.set((settings as unknown as Record<string, unknown>)?.['customIncomeCategories'] as string[] ?? []);
+  async getByType(type: 'expense' | 'income'): Promise<CatalogItem[]> {
+    return database.catalogs
+      .where('type')
+      .equals(type)
+      .sortBy('sortOrder');
   }
 
-  getExpenseCategories(): string[] {
-    return [...EXPENSE_CATEGORIES_DEFAULT, ...this.customExpenseCategories()];
+  async getByName(type: 'expense' | 'income', name: string): Promise<CatalogItem | undefined> {
+    return database.catalogs
+      .where('type')
+      .equals(type)
+      .filter((item) => item.name === name)
+      .first();
   }
 
-  getIncomeCategories(): string[] {
-    return [...INCOME_CATEGORIES_DEFAULT, ...this.customIncomeCategories()];
+  async getIconForCategory(type: 'expense' | 'income', name: string): Promise<string> {
+    const item = await this.getByName(type, name);
+    return item?.icon ?? 'category';
   }
 
-  getIcons(): readonly string[] {
-    return MATERIAL_ICONS;
-  }
-
-  getDefaultPockets() {
-    return DEFAULT_POCKETS;
-  }
-
-  async addExpenseCategory(name: string): Promise<void> {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    const current = this.customExpenseCategories();
-    if (current.includes(trimmed) || EXPENSE_CATEGORIES_DEFAULT.includes(trimmed as ExpenseCategory)) return;
-    const updated = [...current, trimmed];
-    this.customExpenseCategories.set(updated);
-    await this.persistCustomCategories();
-  }
-
-  async removeExpenseCategory(name: string): Promise<void> {
-    const updated = this.customExpenseCategories().filter((c) => c !== name);
-    this.customExpenseCategories.set(updated);
-    await this.persistCustomCategories();
-  }
-
-  async addIncomeCategory(name: string): Promise<void> {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    const current = this.customIncomeCategories();
-    if (current.includes(trimmed) || INCOME_CATEGORIES_DEFAULT.includes(trimmed as IncomeCategory)) return;
-    const updated = [...current, trimmed];
-    this.customIncomeCategories.set(updated);
-    await this.persistCustomIncomeCategories();
-  }
-
-  async removeIncomeCategory(name: string): Promise<void> {
-    const updated = this.customIncomeCategories().filter((c) => c !== name);
-    this.customIncomeCategories.set(updated);
-    await this.persistCustomIncomeCategories();
-  }
-
-  private async persistCustomCategories(): Promise<void> {
-    const settings = await database.appSettings.toCollection().first();
-    if (settings?.id !== undefined) {
-      await database.appSettings.update(settings.id, {
-        customExpenseCategories: this.customExpenseCategories(),
-      });
+  async create(item: Omit<CatalogItem, 'id'>): Promise<number> {
+    const existing = await this.getByName(item.type, item.name);
+    if (existing) {
+      throw new Error(`Ya existe una categoría con el nombre "${item.name}".`);
     }
+    const maxSort = await database.catalogs
+      .where('type')
+      .equals(item.type)
+      .sortBy('sortOrder');
+    const nextSort = maxSort.length > 0 ? maxSort[maxSort.length - 1].sortOrder + 1 : 0;
+    const id = await database.catalogs.add({ ...item, sortOrder: nextSort } as CatalogItem);
+    return id as number;
   }
 
-  private async persistCustomIncomeCategories(): Promise<void> {
-    const settings = await database.appSettings.toCollection().first();
-    if (settings?.id !== undefined) {
-      await database.appSettings.update(settings.id, {
-        customIncomeCategories: this.customIncomeCategories(),
-      });
+  async update(id: number, changes: Pick<CatalogItem, 'name' | 'icon'>): Promise<void> {
+    const item = await database.catalogs.get(id);
+    if (!item) return;
+    if (changes.name && changes.name !== item.name) {
+      const duplicate = await this.getByName(item.type, changes.name);
+      if (duplicate && duplicate.id !== id) {
+        throw new Error(`Ya existe una categoría con el nombre "${changes.name}".`);
+      }
     }
+    await database.catalogs.update(id, changes);
+  }
+
+  async delete(id: number, reassignToName: string): Promise<void> {
+    const item = await database.catalogs.get(id);
+    if (!item) return;
+
+    if (item.type === 'expense') {
+      await database.expenses
+        .where('category')
+        .equals(item.name)
+        .modify({ category: reassignToName });
+    } else {
+      await database.incomes
+        .where('category')
+        .equals(item.name)
+        .modify({ category: reassignToName });
+    }
+
+    await database.catalogs.delete(id);
+  }
+
+  async countByCategory(type: 'expense' | 'income', name: string): Promise<number> {
+    if (type === 'expense') {
+      return database.expenses.where('category').equals(name).count();
+    }
+    return database.incomes.where('category').equals(name).count();
+  }
+
+  async deleteWithoutReassign(id: number): Promise<void> {
+    await database.catalogs.delete(id);
   }
 }

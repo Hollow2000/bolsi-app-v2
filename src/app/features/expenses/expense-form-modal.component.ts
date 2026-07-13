@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 
-import { EXPENSE_CATEGORIES_DEFAULT, type ExpenseCategory } from '../../core/services/catalog.service';
+import type { CatalogItem } from '../../core/models/catalog.model';
 import type { Expense } from '../../core/models/expense.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';
+import { CatalogService } from '../../core/services/catalog.service';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { DateInputComponent } from '../../shared/components/date-input/date-input.component';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
@@ -33,13 +34,15 @@ import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExpenseFormModalComponent implements OnInit {
+  private readonly catalogService = inject(CatalogService);
+
   readonly paymentMethods = input.required<readonly PaymentMethod[]>();
   readonly pockets = input.required<readonly Pocket[]>();
   readonly expense = input<Expense | null>(null);
   readonly cancel = output<void>();
   readonly saved = output<Expense>();
 
-  protected readonly categories = EXPENSE_CATEGORIES_DEFAULT;
+  protected readonly categories = signal<CatalogItem[]>([]);
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly description = signal('');
@@ -47,7 +50,8 @@ export class ExpenseFormModalComponent implements OnInit {
   protected readonly date = signal('');
   protected readonly paymentMethodId = signal<number>(0);
   protected readonly pocketId = signal<number>(0);
-  protected readonly category = signal<ExpenseCategory>(EXPENSE_CATEGORIES_DEFAULT[0]);
+  protected readonly category = signal('');
+  protected readonly selectedIcon = signal('category');
   protected readonly isInstallment = signal(false);
   protected readonly installmentMonths = signal<number>(2);
 
@@ -83,7 +87,10 @@ export class ExpenseFormModalComponent implements OnInit {
     return Math.round((this.amount() / months) * 100) / 100;
   });
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
+    const cats = await this.catalogService.getByType('expense');
+    this.categories.set(cats);
+
     const initial = this.expense();
     if (initial) {
       this.description.set(initial.description);
@@ -91,14 +98,24 @@ export class ExpenseFormModalComponent implements OnInit {
       this.date.set(initial.date);
       this.paymentMethodId.set(initial.paymentMethodId);
       this.pocketId.set(initial.pocketId);
-      this.category.set(initial.category as ExpenseCategory);
+      this.category.set(initial.category);
+      this.selectedIcon.set(initial.icon ?? 'category');
       this.isInstallment.set(initial.isInstallment);
       if (initial.installmentMonths !== undefined) {
         this.installmentMonths.set(initial.installmentMonths);
       }
     } else {
       this.date.set(this.todayIso());
+      if (cats.length > 0) {
+        this.category.set(cats[0].name);
+        this.selectedIcon.set(cats[0].icon);
+      }
     }
+  }
+
+  protected selectCategory(cat: CatalogItem): void {
+    this.category.set(cat.name);
+    this.selectedIcon.set(cat.icon);
   }
 
   protected typeLabel(type: PaymentMethod['type']): string {
@@ -180,6 +197,7 @@ export class ExpenseFormModalComponent implements OnInit {
       description,
       amount,
       category: this.category(),
+      icon: this.selectedIcon(),
       paymentMethodId,
       pocketId,
       month,

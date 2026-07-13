@@ -1,7 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { EXPENSE_CATEGORIES_DEFAULT } from '../../core/services/catalog.service';
 import { DataPortabilityService } from '../../core/services/data-portability.service';
 import { MonthlyPaymentService } from '../../core/services/monthly-payment.service';
 import { SettingsService } from '../../core/services/settings.service';
@@ -34,54 +33,10 @@ export class SettingsComponent {
   private readonly dataPortability = inject(DataPortabilityService);
   private readonly toast = inject(ToastService);
 
-  protected readonly customCategories = signal<string[]>([]);
-  protected readonly newCategory = signal('');
   protected readonly confirmOpen = signal(false);
   protected readonly confirmMessage = signal('');
   protected readonly confirmTone = signal<'primary' | 'destructive'>('destructive');
   protected readonly confirmAction = signal<(() => void) | null>(null);
-
-  protected readonly allCategories = computed(() => {
-    const defaults = EXPENSE_CATEGORIES_DEFAULT;
-    const customs = this.customCategories();
-    return [...defaults, ...customs].filter((c, i, arr) => arr.indexOf(c) === i);
-  });
-
-  constructor() {
-    void this.loadSettings();
-  }
-
-  protected isCustomCategory(category: string): boolean {
-    return this.customCategories().includes(category);
-  }
-
-  protected async addCategory(): Promise<void> {
-    const name = this.newCategory().trim();
-    if (!name) return;
-    if (this.allCategories().includes(name)) {
-      this.toast.show('Esa categoría ya existe.');
-      return;
-    }
-    const next = [...this.customCategories(), name];
-    this.customCategories.set(next);
-    this.newCategory.set('');
-    await this.persistCustomCategories(next);
-    this.toast.show('Categoría agregada.');
-  }
-
-  protected removeCategory(category: string): void {
-    this.confirmMessage.set(`¿Eliminar la categoría "${category}"?`);
-    this.confirmTone.set('destructive');
-    this.confirmAction.set(() => {
-      void (async () => {
-        const next = this.customCategories().filter((c) => c !== category);
-        this.customCategories.set(next);
-        await this.persistCustomCategories(next);
-        this.toast.show('Categoría eliminada.');
-      })();
-    });
-    this.confirmOpen.set(true);
-  }
 
   protected closeMonth(): void {
     this.confirmMessage.set('¿Cerrar el mes actual? Los pagos recurrentes se replicarán al siguiente.');
@@ -144,19 +99,5 @@ export class SettingsComponent {
   protected onCancelConfirm(): void {
     this.confirmOpen.set(false);
     this.confirmAction.set(null);
-  }
-
-  private async loadSettings(): Promise<void> {
-    const record = await this.settingsService.get();
-    this.customCategories.set(record?.customExpenseCategories ?? []);
-  }
-
-  private async persistCustomCategories(categories: string[]): Promise<void> {
-    const record = await this.settingsService.get();
-    await this.settingsService.save({
-      userName: record?.userName ?? '',
-      setupComplete: record?.setupComplete ?? true,
-      customExpenseCategories: categories,
-    });
   }
 }

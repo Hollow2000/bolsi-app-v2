@@ -109,5 +109,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/savings/savings-detail.component').then((m) => m.SavingsDetailComponent),
   },
+  {
+    path: 'catalogs',
+    canActivate: [setupRequiredGuard],
+    loadComponent: () =>
+      import('./features/catalogs/catalogs.component').then((m) => m.CatalogsComponent),
+  },
   { path: '**', redirectTo: 'onboarding' },
 ];

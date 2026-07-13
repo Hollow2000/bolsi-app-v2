@@ -88,7 +88,7 @@
             @for (expense of filteredExpenses(); track expense.id) {
               <li class="expense-row">
                 <div class="expense-icon" aria-hidden="true">
-                  <span class="material-symbols-outlined icon">shopping_bag</span>
+                  <span class="material-symbols-outlined icon">{{ expense.icon || 'receipt' }}</span>
                 </div>
                 <div class="expense-content">
                   <span class="expense-title">{{ expense.description }}</span>
