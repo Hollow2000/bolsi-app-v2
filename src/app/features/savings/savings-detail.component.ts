@@ -6,7 +6,7 @@ import type { SavingsAccount } from '../../core/models/savings-account.model';
 import type { SavingsTransaction } from '../../core/models/savings-transaction.model';
 import { PaymentMethodService } from '../../core/services/payment-method.service';
 import { SavingsService } from '../../core/services/savings.service';
-import { MATERIAL_ICONS } from '../../core/catalogs';
+import { MATERIAL_ICONS } from '../../core/services/catalog.service';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { IconPickerComponent } from '../../shared/components/icon-picker/icon-picker.component';

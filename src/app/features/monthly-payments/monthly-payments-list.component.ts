@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 
-import { INCOME_CATEGORIES } from '../../core/catalogs';
+import { INCOME_CATEGORIES_DEFAULT } from '../../core/services/catalog.service';
 import type { MonthlyPayment } from '../../core/models/monthly-payment.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';

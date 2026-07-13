@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../../core/catalogs';
+import { EXPENSE_CATEGORIES_DEFAULT, INCOME_CATEGORIES_DEFAULT } from '../../core/services/catalog.service';
 import type { Expense } from '../../core/models/expense.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';
@@ -50,7 +50,7 @@ export class ExpensesListComponent {
   private readonly pocketService = inject(PocketService);
   private readonly toast = inject(ToastService);
 
-  protected readonly allCategories = [...new Set([...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES])];
+  protected readonly allCategories = [...new Set([...EXPENSE_CATEGORIES_DEFAULT, ...INCOME_CATEGORIES_DEFAULT])];
 
   protected readonly expenses = signal<Expense[]>([]);
   protected readonly paymentMethods = signal<PaymentMethod[]>([]);

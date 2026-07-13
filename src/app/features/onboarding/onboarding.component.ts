@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { DEFAULT_POCKETS, INCOME_CATEGORIES, MATERIAL_ICONS, type IncomeCategory } from '../../core/catalogs';
+import { DEFAULT_POCKETS, INCOME_CATEGORIES_DEFAULT, MATERIAL_ICONS, type IncomeCategory } from '../../core/services/catalog.service';
 import type { Income, IncomeFrequency, IncomeStatus } from '../../core/models/income.model';
 import type { PaymentMethod, PaymentMethodType } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';
@@ -102,7 +102,7 @@ export class OnboardingComponent {
   protected readonly paymentMethodTypeOptions = PAYMENT_METHOD_TYPE_OPTIONS;
   protected readonly frequencyOptions = FREQUENCY_OPTIONS;
   protected readonly statusOptions = STATUS_OPTIONS;
-  protected readonly incomeCategories = INCOME_CATEGORIES;
+  protected readonly incomeCategories = INCOME_CATEGORIES_DEFAULT;
   protected readonly materialIcons = MATERIAL_ICONS;
   protected readonly importError = signal<string | null>(null);
   protected readonly importing = signal(false);

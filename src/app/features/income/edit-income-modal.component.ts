@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, input, output, signal } from '@angular/core';
 
-import { INCOME_CATEGORIES } from '../../core/catalogs';
+import { INCOME_CATEGORIES_DEFAULT } from '../../core/services/catalog.service';
 import type { Income, IncomeFrequency, IncomeStatus } from '../../core/models/income.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
 import { assertCanReceiveIncome, validateIncomeFields } from '../../core/validations/income.validation';
@@ -47,7 +47,7 @@ export class EditIncomeModalComponent implements OnInit {
   readonly cancel = output<void>();
   readonly saved = output<Income>();
 
-  protected readonly categories = INCOME_CATEGORIES;
+  protected readonly categories = INCOME_CATEGORIES_DEFAULT;
   protected readonly frequencyOptions = FREQUENCY_OPTIONS;
   protected readonly statusOptions = STATUS_OPTIONS;
   protected readonly errorMessage = signal<string | null>(null);
@@ -56,7 +56,7 @@ export class EditIncomeModalComponent implements OnInit {
   protected readonly amount = signal(0);
   protected readonly date = signal('');
   protected readonly paymentMethodId = signal<number>(0);
-  protected readonly category = signal<string>(INCOME_CATEGORIES[0]);
+  protected readonly category = signal<string>(INCOME_CATEGORIES_DEFAULT[0]);
   protected readonly frequency = signal<IncomeFrequency>('monthly');
   protected readonly status = signal<IncomeStatus>('received');
 

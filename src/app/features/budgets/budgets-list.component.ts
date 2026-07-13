@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 
-import { EXPENSE_CATEGORIES } from '../../core/catalogs';
+import { EXPENSE_CATEGORIES_DEFAULT } from '../../core/services/catalog.service';
 import { database } from '../../core/database/bolsi.database';
 import type { Budget } from '../../core/models/budget.model';
 import type { Expense } from '../../core/models/expense.model';

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, input, output, signal } from '@angular/core';
 
-import { MATERIAL_ICONS } from '../../core/catalogs';
+import { MATERIAL_ICONS } from '../../core/services/catalog.service';
 import type { Pocket } from '../../core/models/pocket.model';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { IconPickerComponent } from '../../shared/components/icon-picker/icon-picker.component';

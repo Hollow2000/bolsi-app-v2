@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 
-import { EXPENSE_CATEGORIES, MATERIAL_ICONS, type ExpenseCategory } from '../../core/catalogs';
+import { EXPENSE_CATEGORIES_DEFAULT, MATERIAL_ICONS, type ExpenseCategory } from '../../core/services/catalog.service';
 import type { ExpenseTemplate } from '../../core/models/expense-template.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';
@@ -24,7 +24,7 @@ export class TemplateFormModalComponent implements OnInit {
   readonly cancel = output<void>();
   readonly saved = output<ExpenseTemplate>();
 
-  protected readonly categories = EXPENSE_CATEGORIES;
+  protected readonly categories = EXPENSE_CATEGORIES_DEFAULT;
   protected readonly icons = MATERIAL_ICONS;
   protected readonly errorMessage = signal<string | null>(null);
 
@@ -32,7 +32,7 @@ export class TemplateFormModalComponent implements OnInit {
   protected readonly amount = signal(0);
   protected readonly paymentMethodId = signal<number>(0);
   protected readonly pocketId = signal<number>(0);
-  protected readonly category = signal<ExpenseCategory>(EXPENSE_CATEGORIES[0]);
+  protected readonly category = signal<ExpenseCategory>(EXPENSE_CATEGORIES_DEFAULT[0]);
   protected readonly icon = signal<string>('star');
 
   ngOnInit(): void {

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 
-import { EXPENSE_CATEGORIES, INSTALLMENT_MIN, type ExpenseCategory } from '../../core/catalogs';
+import { EXPENSE_CATEGORIES_DEFAULT, type ExpenseCategory } from '../../core/services/catalog.service';
 import type { Expense } from '../../core/models/expense.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';
@@ -39,7 +39,7 @@ export class ExpenseFormModalComponent implements OnInit {
   readonly cancel = output<void>();
   readonly saved = output<Expense>();
 
-  protected readonly categories = EXPENSE_CATEGORIES;
+  protected readonly categories = EXPENSE_CATEGORIES_DEFAULT;
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly description = signal('');
@@ -47,9 +47,9 @@ export class ExpenseFormModalComponent implements OnInit {
   protected readonly date = signal('');
   protected readonly paymentMethodId = signal<number>(0);
   protected readonly pocketId = signal<number>(0);
-  protected readonly category = signal<ExpenseCategory>(EXPENSE_CATEGORIES[0]);
+  protected readonly category = signal<ExpenseCategory>(EXPENSE_CATEGORIES_DEFAULT[0]);
   protected readonly isInstallment = signal(false);
-  protected readonly installmentMonths = signal<number>(INSTALLMENT_MIN);
+  protected readonly installmentMonths = signal<number>(2);
 
   protected readonly selectedPaymentMethod = computed<PaymentMethod | null>(() => {
     const id = this.paymentMethodId();

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 
-import { EXPENSE_CATEGORIES, MATERIAL_ICONS, type ExpenseCategory } from '../../core/catalogs';
+import { EXPENSE_CATEGORIES_DEFAULT, MATERIAL_ICONS, type ExpenseCategory } from '../../core/services/catalog.service';
 import type { MonthlyPayment } from '../../core/models/monthly-payment.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';
@@ -35,7 +35,7 @@ export class MonthlyPaymentFormModalComponent implements OnInit {
   readonly saved = output<MonthlyPayment>();
 
   protected readonly icons = MATERIAL_ICONS;
-  protected readonly categories = EXPENSE_CATEGORIES;
+  protected readonly categories = EXPENSE_CATEGORIES_DEFAULT;
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly name = signal('');
@@ -43,7 +43,7 @@ export class MonthlyPaymentFormModalComponent implements OnInit {
   protected readonly dueDate = signal('');
   protected readonly paymentMethodId = signal<number>(0);
   protected readonly pocketId = signal<number>(0);
-  protected readonly category = signal<ExpenseCategory>(EXPENSE_CATEGORIES[0]);
+  protected readonly category = signal<ExpenseCategory>(EXPENSE_CATEGORIES_DEFAULT[0]);
   protected readonly isRecurring = signal(true);
   protected readonly icon = signal('event');
 
@@ -57,7 +57,7 @@ export class MonthlyPaymentFormModalComponent implements OnInit {
       this.dueDate.set(initial.dueDate);
       this.paymentMethodId.set(initial.paymentMethodId ?? 0);
       this.pocketId.set(initial.pocketId ?? 0);
-      this.category.set((initial.expenseCategory as ExpenseCategory) ?? EXPENSE_CATEGORIES[0]);
+      this.category.set((initial.expenseCategory as ExpenseCategory) ?? EXPENSE_CATEGORIES_DEFAULT[0]);
       this.isRecurring.set(initial.isRecurring);
       this.icon.set(initial.icon ?? 'event');
     } else {

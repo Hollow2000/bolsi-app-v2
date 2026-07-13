@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { EXPENSE_CATEGORIES } from '../../core/catalogs';
+import { EXPENSE_CATEGORIES_DEFAULT } from '../../core/services/catalog.service';
 import { DataPortabilityService } from '../../core/services/data-portability.service';
 import { MonthlyPaymentService } from '../../core/services/monthly-payment.service';
 import { SettingsService } from '../../core/services/settings.service';
@@ -42,7 +42,7 @@ export class SettingsComponent {
   protected readonly confirmAction = signal<(() => void) | null>(null);
 
   protected readonly allCategories = computed(() => {
-    const defaults = EXPENSE_CATEGORIES;
+    const defaults = EXPENSE_CATEGORIES_DEFAULT;
     const customs = this.customCategories();
     return [...defaults, ...customs].filter((c, i, arr) => arr.indexOf(c) === i);
   });

@@ -16,7 +16,7 @@ import { NumberInputComponent } from '../../shared/components/number-input/numbe
 import { TextInputComponent } from '../../shared/components/text-input/text-input.component';
 import { ToastService } from '../../shared/services/toast.service';
 import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
-import { MATERIAL_ICONS } from '../../core/catalogs';
+import { MATERIAL_ICONS } from '../../core/services/catalog.service';
 
 interface AccountDraft {
   name: string;

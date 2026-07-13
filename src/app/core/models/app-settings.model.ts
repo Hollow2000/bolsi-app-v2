@@ -3,5 +3,6 @@ export interface AppSettings {
   userName: string;
   setupComplete: boolean;
   customExpenseCategories?: string[];
+  customIncomeCategories?: string[];
   showHiddenMovements?: boolean;
 }
