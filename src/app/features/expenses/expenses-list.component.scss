@@ -139,20 +139,20 @@
 }
 
 .day-group {
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-1);
 }
 
 .day-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-1) var(--space-4);
   background: transparent;
   border-bottom: none;
 }
 
 .day-header__label {
-  font-size: var(--text-size-xs);
+  font-size: 10px;
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -160,7 +160,7 @@
 }
 
 .day-header__total {
-  font-size: var(--text-size-xs);
+  font-size: 10px;
   font-weight: 600;
   color: var(--text-secondary);
   font-family: var(--font-family-mono);
