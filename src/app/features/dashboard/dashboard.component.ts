@@ -38,6 +38,7 @@ import { EditIncomeModalComponent } from '../income/edit-income-modal.component'
 import { TransferFormModalComponent } from '../transfers/transfer-form-modal.component';
 import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
 import { YieldPromptModalComponent } from '../../shared/components/yield-prompt-modal/yield-prompt-modal.component';
+import { QuickSavingsFormComponent } from '../../shared/components/quick-savings-form/quick-savings-form.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -56,6 +57,7 @@ import { YieldPromptModalComponent } from '../../shared/components/yield-prompt-
     UrgentPaymentsWidgetComponent,
     InstallPromptComponent,
     YieldPromptModalComponent,
+    QuickSavingsFormComponent,
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
@@ -98,6 +100,9 @@ export class DashboardComponent {
   protected readonly yieldPromptOpen = signal(false);
   protected readonly yieldAccount = signal<SavingsAccount | null>(null);
   protected readonly savingsAccountsNeedingYield = signal<SavingsAccount[]>([]);
+
+  protected readonly quickSavingsFormOpen = signal(false);
+  protected readonly savingsAccounts = signal<SavingsAccount[]>([]);
 
   protected readonly periodLabel = computed(() => {
     const monthNames = [
@@ -193,21 +198,30 @@ export class DashboardComponent {
         this.buildCreditCardEntries(methods, expenses, installmentPlans, allTransfers, month, year),
       );
 
-      // Check for savings accounts needing yield prompt
-      const savingsAccounts = await this.savingsService.getAll();
-      const accountsNeedingYield: SavingsAccount[] = [];
-      for (const account of savingsAccounts) {
-        if (account.id !== undefined) {
-          const hasYield = await this.savingsService.hasYieldThisMonth(account.id);
-          if (!hasYield) {
-            accountsNeedingYield.push(account);
+      // Load savings accounts
+      const allSavingsAccounts = await this.savingsService.getAll();
+      this.savingsAccounts.set(allSavingsAccounts);
+
+      // Check for savings accounts needing yield prompt (only on last days of month)
+      const today = new Date();
+      const dayOfMonth = today.getDate();
+      const isLastDaysOfMonth = dayOfMonth >= 29;
+      if (isLastDaysOfMonth) {
+        const savingsAccounts = await this.savingsService.getAll();
+        const accountsNeedingYield: SavingsAccount[] = [];
+        for (const account of savingsAccounts) {
+          if (account.id !== undefined) {
+            const hasYield = await this.savingsService.hasYieldThisMonth(account.id);
+            if (!hasYield) {
+              accountsNeedingYield.push(account);
+            }
           }
         }
-      }
-      this.savingsAccountsNeedingYield.set(accountsNeedingYield);
-      if (accountsNeedingYield.length > 0 && this.isCurrentMonth()) {
-        this.yieldAccount.set(accountsNeedingYield[0]);
-        this.yieldPromptOpen.set(true);
+        this.savingsAccountsNeedingYield.set(accountsNeedingYield);
+        if (accountsNeedingYield.length > 0 && this.isCurrentMonth()) {
+          this.yieldAccount.set(accountsNeedingYield[0]);
+          this.yieldPromptOpen.set(true);
+        }
       }
     } catch (error) {
       console.error('Dashboard load error', error);
@@ -414,8 +428,19 @@ export class DashboardComponent {
     this.expenseFormOpen.set(true);
   }
 
-  protected navigateToSavings(): void {
-    void this.router.navigate(['/savings']);
+  protected openQuickSavingsForm(): void {
+    this.quickSavingsFormOpen.set(true);
+  }
+
+  protected closeQuickSavingsForm(): void {
+    this.quickSavingsFormOpen.set(false);
+  }
+
+  protected async onQuickSavingsSaved(): Promise<void> {
+    this.closeQuickSavingsForm();
+    const month = this.currentMonth();
+    const year = this.currentYear();
+    await this.loadAll(month, year);
   }
 
   protected onYieldSaved(): void {

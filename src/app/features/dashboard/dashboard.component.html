@@ -82,7 +82,7 @@
       (expensePress)="openExpenseForm()"
       (incomePress)="openIncomeForm()"
       (transferPress)="openTransfer()"
-      (savingsPress)="navigateToSavings()"
+      (savingsPress)="openQuickSavingsForm()"
     />
 
     @if (templateListOpen()) {
@@ -142,4 +142,15 @@
           />
         </app-bottom-sheet>
       }
+    }
+
+    @if (quickSavingsFormOpen()) {
+      <app-bottom-sheet title="Ahorro" (close)="closeQuickSavingsForm()">
+        <app-quick-savings-form
+          [paymentMethods]="paymentMethods()"
+          [savingsAccounts]="savingsAccounts()"
+          (cancel)="closeQuickSavingsForm()"
+          (saved)="onQuickSavingsSaved()"
+        />
+      </app-bottom-sheet>
     }

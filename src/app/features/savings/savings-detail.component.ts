@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
+import type { PaymentMethod } from '../../core/models/payment-method.model';
 import type { SavingsAccount } from '../../core/models/savings-account.model';
 import type { SavingsTransaction } from '../../core/models/savings-transaction.model';
+import { PaymentMethodService } from '../../core/services/payment-method.service';
 import { SavingsService } from '../../core/services/savings.service';
 import { MATERIAL_ICONS } from '../../core/catalogs';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
@@ -10,6 +12,7 @@ import { ButtonDirective } from '../../shared/components/button/button.directive
 import { IconPickerComponent } from '../../shared/components/icon-picker/icon-picker.component';
 import { MexicanCurrencyPipe, formatMexicanCurrency } from '../../shared/pipes/mexican-currency.pipe';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
+import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
 import { TextInputComponent } from '../../shared/components/text-input/text-input.component';
 import { ToastService } from '../../shared/services/toast.service';
 import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
@@ -19,6 +22,7 @@ export type TransactionFilter = 'all' | 'deposit' | 'withdrawal' | 'yield';
 interface TransactionDraft {
   amount: number;
   description: string;
+  paymentMethodId: number;
 }
 
 @Component({
@@ -30,6 +34,7 @@ interface TransactionDraft {
     MexicanCurrencyPipe,
     NumberInputComponent,
     RouterLink,
+    SelectInputComponent,
     TextInputComponent,
     InstallPromptComponent,
   ],
@@ -41,6 +46,7 @@ export class SavingsDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly service = inject(SavingsService);
+  private readonly paymentMethodService = inject(PaymentMethodService);
   private readonly toast = inject(ToastService);
 
   private readonly accountId = Number(this.route.snapshot.paramMap.get('id')) || 0;
@@ -50,10 +56,11 @@ export class SavingsDetailComponent {
   protected readonly summary = signal({ totalDeposits: 0, totalWithdrawals: 0, totalYields: 0 });
   protected readonly filter = signal<TransactionFilter>('all');
   protected readonly icons = MATERIAL_ICONS;
+  protected readonly paymentMethods = signal<PaymentMethod[]>([]);
 
   protected readonly showTransactionForm = signal(false);
   protected readonly transactionType = signal<'deposit' | 'withdrawal' | 'yield'>('deposit');
-  protected readonly transactionDraft = signal<TransactionDraft>({ amount: 0, description: '' });
+  protected readonly transactionDraft = signal<TransactionDraft>({ amount: 0, description: '', paymentMethodId: 0 });
   protected readonly transactionError = signal<string | null>(null);
 
   protected readonly showEditForm = signal(false);
@@ -73,6 +80,10 @@ export class SavingsDetailComponent {
     if (!acc || !acc.goal || acc.goal <= 0) return 0;
     return Math.min(100, Math.round((acc.balance / acc.goal) * 100));
   });
+
+  protected readonly availablePaymentMethods = computed(() =>
+    this.paymentMethods().filter((m) => m.type === 'cash' || m.type === 'debit'),
+  );
 
   constructor() {
     void this.load();
@@ -116,7 +127,7 @@ export class SavingsDetailComponent {
 
   protected openTransactionForm(type: 'deposit' | 'withdrawal' | 'yield'): void {
     this.transactionType.set(type);
-    this.transactionDraft.set({ amount: 0, description: '' });
+    this.transactionDraft.set({ amount: 0, description: '', paymentMethodId: 0 });
     this.transactionError.set(null);
     this.showTransactionForm.set(true);
   }
@@ -130,6 +141,11 @@ export class SavingsDetailComponent {
     this.transactionDraft.update((d) => ({ ...d, [field]: value }));
   }
 
+  protected onPaymentMethodChange(value: number | string | null): void {
+    const id = typeof value === 'number' ? value : 0;
+    this.transactionDraft.update((d) => ({ ...d, paymentMethodId: id }));
+  }
+
   protected async saveTransaction(): Promise<void> {
     const draft = this.transactionDraft();
     const type = this.transactionType();
@@ -138,6 +154,11 @@ export class SavingsDetailComponent {
 
     if (draft.amount <= 0) {
       this.transactionError.set('El monto debe ser mayor a 0.');
+      return;
+    }
+
+    if ((type === 'deposit' || type === 'withdrawal') && draft.paymentMethodId === 0) {
+      this.transactionError.set('Selecciona una cuenta.');
       return;
     }
 
@@ -208,13 +229,15 @@ export class SavingsDetailComponent {
   }
 
   private async load(): Promise<void> {
-    const [account, transactions, summary] = await Promise.all([
+    const [account, transactions, summary, paymentMethods] = await Promise.all([
       this.service.getById(this.accountId),
       this.service.getTransactions(this.accountId),
       this.service.getAccountSummary(this.accountId),
+      this.paymentMethodService.getAll(),
     ]);
     this.account.set(account ?? null);
     this.transactions.set(transactions);
     this.summary.set(summary);
+    this.paymentMethods.set(paymentMethods);
   }
 }

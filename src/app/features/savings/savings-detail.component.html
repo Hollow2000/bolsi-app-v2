@@ -131,6 +131,35 @@
   <app-bottom-sheet [title]="transactionTypeLabel(transactionType())" (close)="closeTransactionForm()">
     <div class="form-content">
       @if (transactionType() !== 'yield') {
+        @if (transactionType() === 'deposit') {
+          <app-select-input
+            label="Cuenta de origen"
+            [valueType]="'number'"
+            [value]="transactionDraft().paymentMethodId"
+            (valueChange)="onPaymentMethodChange($event)"
+          >
+            <option value="0" disabled [selected]="transactionDraft().paymentMethodId === 0">Seleccionar cuenta</option>
+            @for (method of availablePaymentMethods(); track method.id) {
+              <option [value]="method.id!" [selected]="transactionDraft().paymentMethodId === method.id">
+                {{ method.name }}
+              </option>
+            }
+          </app-select-input>
+        } @else {
+          <app-select-input
+            label="Cuenta de destino"
+            [valueType]="'number'"
+            [value]="transactionDraft().paymentMethodId"
+            (valueChange)="onPaymentMethodChange($event)"
+          >
+            <option value="0" disabled [selected]="transactionDraft().paymentMethodId === 0">Seleccionar cuenta</option>
+            @for (method of availablePaymentMethods(); track method.id) {
+              <option [value]="method.id!" [selected]="transactionDraft().paymentMethodId === method.id">
+                {{ method.name }}
+              </option>
+            }
+          </app-select-input>
+        }
         <app-text-input
           label="Descripción"
           [value]="transactionDraft().description"

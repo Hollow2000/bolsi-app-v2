@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 
 import type { SavingsAccount } from '../../../core/models/savings-account.model';
 import { SavingsService } from '../../../core/services/savings.service';
@@ -25,8 +25,13 @@ import { ToastService } from '../../services/toast.service';
       </div>
       <app-number-input
         label="Rendimiento"
-        [value]="amount()"
-        (valueChange)="amount.set($event)"
+        [value]="yieldAmount()"
+        (valueChange)="onYieldChange($event)"
+      />
+      <app-number-input
+        label="Saldo nuevo"
+        [value]="newBalance()"
+        (valueChange)="onNewBalanceChange($event)"
       />
       @if (errorMessage()) {
         <p class="yield-prompt__error" role="alert">{{ errorMessage() }}</p>
@@ -110,26 +115,52 @@ export class YieldPromptModalComponent {
   readonly skip = output<void>();
   readonly saved = output<void>();
 
-  protected readonly amount = signal(0);
+  protected readonly yieldAmount = signal(0);
+  protected readonly newBalance = signal(0);
+  protected readonly editMode = signal<'yield' | 'balance'>('yield');
   protected readonly errorMessage = signal<string | null>(null);
+
+  protected readonly computedNewBalance = computed(() => {
+    return Math.round((this.account().balance + this.yieldAmount()) * 100) / 100;
+  });
+
+  protected onYieldChange(value: number): void {
+    this.yieldAmount.set(value);
+    this.editMode.set('yield');
+    this.newBalance.set(Math.round((this.account().balance + value) * 100) / 100);
+  }
+
+  protected onNewBalanceChange(value: number): void {
+    this.newBalance.set(value);
+    this.editMode.set('balance');
+    const yieldAmount = Math.round((value - this.account().balance) * 100) / 100;
+    this.yieldAmount.set(Math.max(0, yieldAmount));
+  }
 
   protected async save(): Promise<void> {
     const acc = this.account();
     if (acc.id === undefined) return;
 
-    const amount = this.amount();
-    if (amount < 0) {
-      this.errorMessage.set('El monto no puede ser negativo.');
+    const yieldAmt = this.yieldAmount();
+    const newBal = this.newBalance();
+
+    if (yieldAmt < 0) {
+      this.errorMessage.set('El rendimiento no puede ser negativo.');
       return;
     }
 
-    if (amount === 0) {
+    if (newBal < acc.balance && this.editMode() === 'balance') {
+      this.errorMessage.set('El saldo nuevo no puede ser menor al saldo actual.');
+      return;
+    }
+
+    if (yieldAmt === 0) {
       this.skip.emit();
       return;
     }
 
     try {
-      await this.savingsService.addYield(acc.id, amount);
+      await this.savingsService.addYield(acc.id, yieldAmt);
       this.toast.show(`Rendimiento de ${acc.name} registrado.`);
       this.saved.emit();
     } catch (error) {
