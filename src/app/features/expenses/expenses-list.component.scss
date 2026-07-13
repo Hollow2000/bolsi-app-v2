@@ -72,8 +72,8 @@
   display: flex;
   align-items: flex-start;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--border-default);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .expense-row:last-child {
@@ -139,11 +139,7 @@
 }
 
 .day-group {
-  background: var(--surface);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-large);
-  overflow: hidden;
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-2);
 }
 
 .day-header {
@@ -151,8 +147,8 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-2) var(--space-4);
-  background: var(--surface-alternate);
-  border-bottom: 1px solid var(--border-default);
+  background: transparent;
+  border-bottom: none;
 }
 
 .day-header__label {
