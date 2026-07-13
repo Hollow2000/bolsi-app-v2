@@ -96,7 +96,7 @@
 
       <div class="action-buttons">
         <button
-          class="action-btn action-btn--deposit"
+          class="action-btn"
           type="button"
           (click)="openTransactionForm('deposit')"
         >
@@ -104,7 +104,7 @@
           Depósito
         </button>
         <button
-          class="action-btn action-btn--withdraw"
+          class="action-btn"
           type="button"
           [disabled]="acc.balance <= 0"
           (click)="openTransactionForm('withdrawal')"
@@ -113,7 +113,7 @@
           Retiro
         </button>
         <button
-          class="action-btn action-btn--yield"
+          class="action-btn"
           type="button"
           (click)="openTransactionForm('yield')"
         >

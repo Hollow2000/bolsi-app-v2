@@ -243,9 +243,7 @@
   cursor: not-allowed;
 }
 
-.action-btn--deposit .icon { color: var(--color-success); }
-.action-btn--withdraw .icon { color: var(--color-danger); }
-.action-btn--yield .icon { color: var(--color-primary); }
+.action-btn .icon { color: var(--text-secondary); }
 
 .form-content {
   display: flex;

@@ -62,15 +62,21 @@ export const MATERIAL_ICONS = [
   'luggage',
   'celebration',
   'emoji_emotions',
-  'child_care',
+  'baby_changing_station',
+  'family_restroom',
   'spa',
   'local_cafe',
   'local_bar',
   'fastfood',
   'cake',
-  'piggy_bank',
-  'add_circle',
-  'remove_circle',
+  'support',
+  'emergency',
+  'medical_services',
+  'beach_access',
+  'apparel',
+  'laundry',
+  'chair',
+  'build'
 ] as const;
 
 export const DEFAULT_POCKETS = [
