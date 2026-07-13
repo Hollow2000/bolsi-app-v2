@@ -58,6 +58,23 @@ export class ExpenseFormModalComponent implements OnInit {
 
   protected readonly isCreditSelected = computed(() => this.selectedPaymentMethod()?.type === 'credit');
 
+  protected readonly availableBalance = computed<number>(() => {
+    const method = this.selectedPaymentMethod();
+    if (!method) return 0;
+    if (method.type === 'credit') {
+      return method.availableCredit ?? 0;
+    }
+    return method.currentBalance ?? 0;
+  });
+
+  protected readonly exceedsAvailable = computed<boolean>(() => {
+    const method = this.selectedPaymentMethod();
+    if (!method) return false;
+    const amount = this.amount();
+    if (amount <= 0) return false;
+    return amount > this.availableBalance();
+  });
+
   protected readonly monthlyInstallment = computed(() => {
     const months = this.installmentMonths();
     if (months < 2) {
@@ -145,6 +162,15 @@ export class ExpenseFormModalComponent implements OnInit {
     if (pocketId === 0) {
       this.errorMessage.set('Selecciona un bolsillo.');
       return;
+    }
+
+    const method = this.paymentMethods().find((m) => m.id === paymentMethodId);
+    if (method) {
+      const available = method.type === 'credit' ? (method.availableCredit ?? 0) : (method.currentBalance ?? 0);
+      if (amount > available) {
+        this.errorMessage.set(`El monto excede el saldo disponible (${available.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}).`);
+        return;
+      }
     }
 
     const previous = this.expense();

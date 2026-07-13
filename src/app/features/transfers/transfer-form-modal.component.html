@@ -26,12 +26,21 @@
       (valueChange)="fromPaymentMethodId.set($any($event))"
     >
       <option value="0" disabled [selected]="fromPaymentMethodId() === 0">Selecciona origen</option>
-      @for (method of paymentMethods(); track method.id) {
+      @for (method of transferableMethods(); track method.id) {
         <option [value]="method.id" [selected]="method.id === fromPaymentMethodId()">
           {{ method.name }} ({{ typeLabel(method.type) }})
         </option>
       }
     </app-select-input>
+
+    @if (fromMethod(); as method) {
+      <div class="balance-info" [class.balance-info--danger]="exceedsAvailable()">
+        <span class="balance-info__label">
+          {{ method.type === 'credit' ? 'Crédito disponible' : 'Saldo disponible' }}
+        </span>
+        <span class="balance-info__amount">{{ fromBalance() | mexicanCurrency }}</span>
+      </div>
+    }
 
     <app-select-input
       label="Hacia"
@@ -40,12 +49,21 @@
       (valueChange)="toPaymentMethodId.set($any($event))"
     >
       <option value="0" disabled [selected]="toPaymentMethodId() === 0">Selecciona destino</option>
-      @for (method of paymentMethods(); track method.id) {
+      @for (method of transferableMethods(); track method.id) {
         <option [value]="method.id" [selected]="method.id === toPaymentMethodId()">
           {{ method.name }} ({{ typeLabel(method.type) }})
         </option>
       }
     </app-select-input>
+
+    @if (toMethod(); as method) {
+      <div class="balance-info">
+        <span class="balance-info__label">
+          {{ method.type === 'credit' ? 'Crédito disponible' : 'Saldo disponible' }}
+        </span>
+        <span class="balance-info__amount">{{ toBalance() | mexicanCurrency }}</span>
+      </div>
+    }
 
     @if (errorMessage(); as message) {
       <p class="modal-error" role="alert">{{ message }}</p>

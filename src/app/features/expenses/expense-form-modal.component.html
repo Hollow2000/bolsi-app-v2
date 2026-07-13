@@ -33,6 +33,15 @@
       }
     </app-select-input>
 
+    @if (selectedPaymentMethod(); as method) {
+      <div class="balance-info" [class.balance-info--danger]="exceedsAvailable()">
+        <span class="balance-info__label">
+          {{ method.type === 'credit' ? 'Crédito disponible' : 'Saldo disponible' }}
+        </span>
+        <span class="balance-info__amount">{{ availableBalance() | mexicanCurrency }}</span>
+      </div>
+    }
+
     <app-select-input
       label="Bolsillo"
       [valueType]="'number'"

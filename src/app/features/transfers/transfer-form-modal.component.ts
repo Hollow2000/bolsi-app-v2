@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 
 import type { PaymentMethod } from '../../core/models/payment-method.model';
 import type { Transfer } from '../../core/models/transfer.model';
@@ -7,12 +7,14 @@ import { DateInputComponent } from '../../shared/components/date-input/date-inpu
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
 import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
 import { TextInputComponent } from '../../shared/components/text-input/text-input.component';
+import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
 
 @Component({
   selector: 'app-transfer-form-modal',
   imports: [
     ButtonDirective,
     DateInputComponent,
+    MexicanCurrencyPipe,
     NumberInputComponent,
     SelectInputComponent,
     TextInputComponent,
@@ -33,9 +35,43 @@ export class TransferFormModalComponent implements OnInit {
   protected readonly fromPaymentMethodId = signal<number>(0);
   protected readonly toPaymentMethodId = signal<number>(0);
 
+  protected readonly transferableMethods = computed(() =>
+    this.paymentMethods().filter((m) => m.type !== 'savings'),
+  );
+
+  protected readonly fromMethod = computed<PaymentMethod | null>(() => {
+    const id = this.fromPaymentMethodId();
+    return this.paymentMethods().find((m) => m.id === id) ?? null;
+  });
+
+  protected readonly toMethod = computed<PaymentMethod | null>(() => {
+    const id = this.toPaymentMethodId();
+    return this.paymentMethods().find((m) => m.id === id) ?? null;
+  });
+
+  protected readonly fromBalance = computed<number>(() => {
+    const method = this.fromMethod();
+    if (!method) return 0;
+    if (method.type === 'credit') return method.availableCredit ?? 0;
+    return method.currentBalance ?? 0;
+  });
+
+  protected readonly toBalance = computed<number>(() => {
+    const method = this.toMethod();
+    if (!method) return 0;
+    if (method.type === 'credit') return method.availableCredit ?? 0;
+    return method.currentBalance ?? 0;
+  });
+
+  protected readonly exceedsAvailable = computed<boolean>(() => {
+    const amount = this.amount();
+    if (amount <= 0) return false;
+    return amount > this.fromBalance();
+  });
+
   ngOnInit(): void {
     this.date.set(this.todayIso());
-    const methods = this.paymentMethods();
+    const methods = this.transferableMethods();
     if (methods.length >= 2) {
       this.fromPaymentMethodId.set(methods[0].id ?? 0);
       this.toPaymentMethodId.set(methods[1].id ?? 0);
@@ -73,6 +109,16 @@ export class TransferFormModalComponent implements OnInit {
       this.errorMessage.set('El origen y el destino no pueden ser la misma cuenta.');
       return;
     }
+
+    const from = this.fromMethod();
+    if (from) {
+      const available = from.type === 'credit' ? (from.availableCredit ?? 0) : (from.currentBalance ?? 0);
+      if (amount > available) {
+        this.errorMessage.set(`El monto excede el saldo disponible de la cuenta de origen (${available.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}).`);
+        return;
+      }
+    }
+
     const date = this.date();
     const parts = date.split('-').map((segment) => Number(segment));
     if (parts.length !== 3 || parts.some((segment) => !Number.isInteger(segment))) {

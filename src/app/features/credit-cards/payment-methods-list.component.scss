@@ -1,22 +1,106 @@
-      :host { display: block; }
-      .empty-message {
-        margin: 0;
-        color: var(--text-secondary);
-        text-align: center;
-        padding: var(--space-4) 0;
-      }
-      .item-link {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        flex: 1;
-        min-width: 0;
-        text-decoration: none;
-        color: inherit;
-        padding: var(--space-3) var(--space-4);
-      }
-      .item-link:hover { background: var(--surface-alternate); }
-      .chevron {
-        color: var(--text-secondary);
-        flex-shrink: 0;
-      }
+:host {
+  display: block;
+}
+
+.empty-message {
+  margin: 0;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: var(--space-4) 0;
+}
+
+.group-section {
+  background: var(--surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-large);
+  overflow: hidden;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  min-height: var(--tap-target-min);
+  transition: background 0.15s ease;
+}
+
+.group-header:hover {
+  background: var(--surface-alternate);
+}
+
+.group-header__left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.group-header__title {
+  font-size: var(--text-size-base);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.group-header__count {
+  font-size: var(--text-size-small);
+  color: var(--text-secondary);
+  background: var(--surface-alternate);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+}
+
+.group-header__right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.group-header__total {
+  font-size: var(--text-size-small);
+  color: var(--text-secondary);
+  font-family: var(--font-family-mono);
+}
+
+.group-header__total--danger {
+  color: var(--color-danger);
+}
+
+.group-header__chevron {
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+}
+
+.group-header__chevron--collapsed {
+  transform: rotate(-90deg);
+}
+
+.group-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--border-default);
+}
+
+.item-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+  padding: var(--space-3) var(--space-4);
+}
+
+.item-link:hover {
+  background: var(--surface-alternate);
+}
+
+.chevron {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}

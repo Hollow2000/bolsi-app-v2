@@ -4,68 +4,6 @@
     </header>
     <app-install-prompt />
     <main class="app-screen-content">
-        <app-card title="Métodos de pago">
-            <ul class="app-list" aria-label="Métodos de pago">
-                @for (method of paymentMethods(); track method.id) {
-                <li>
-                    <app-list-item [icon]="iconFor(method.type)" [title]="method.name" [subtitle]="subtitleFor(method)">
-                        <div slot="trailing" class="item-actions">
-                            <button appIconButton type="button" aria-label="Editar método de pago"
-                                (click)="openEditMethod(method)">
-                                <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
-                            </button>
-                            <button appIconButton type="button" aria-label="Eliminar método de pago"
-                                (click)="confirmDeleteMethod(method)">
-                                <span class="material-symbols-outlined icon icon--small"
-                                    aria-hidden="true">delete</span>
-                            </button>
-                        </div>
-                    </app-list-item>
-                </li>
-                }
-            </ul>
-            <div class="section-actions">
-                <button appButton variant="secondary" type="button" (click)="openAddMethod()">
-                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">add</span>
-                    Agregar método
-                </button>
-            </div>
-        </app-card>
-
-        <app-card title="Bolsillos">
-            @if (pocketTotal() !== 100) {
-            <p class="warning" role="alert">
-                Los porcentajes suman {{ pocketTotal() }}%. Deben sumar exactamente 100%.
-            </p>
-            }
-            <ul class="app-list" aria-label="Bolsillos">
-                @for (pocket of pockets(); track pocket.id) {
-                <li>
-                    <app-list-item [icon]="pocket.icon || 'money_bag'" [title]="pocket.name"
-                        [subtitle]="pocket.percentage + '%'">
-                        <div slot="trailing" class="item-actions">
-                            <button appIconButton type="button" aria-label="Editar bolsillo"
-                                (click)="openEditPocket(pocket)">
-                                <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
-                            </button>
-                            <button appIconButton type="button" aria-label="Eliminar bolsillo"
-                                (click)="confirmDeletePocket(pocket)">
-                                <span class="material-symbols-outlined icon icon--small"
-                                    aria-hidden="true">delete</span>
-                            </button>
-                        </div>
-                    </app-list-item>
-                </li>
-                }
-            </ul>
-            <div class="section-actions">
-                <button appButton variant="secondary" type="button" (click)="openAddPocket()">
-                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">add</span>
-                    Agregar bolsillo
-                </button>
-            </div>
-        </app-card>
-
         <app-card title="Categorías personalizadas">
             <ul class="category-list" aria-label="Categorías disponibles">
                 @for (cat of allCategories(); track cat) {
@@ -133,19 +71,6 @@
         </app-card>
     </main>
 </div>
-
-@if (editingMethod(); as method) {
-<app-bottom-sheet title="Editar método de pago" (close)="closeMethodModal()">
-    <app-edit-payment-method-modal [paymentMethod]="method" (cancel)="closeMethodModal()"
-        (saved)="onMethodSaved($event)" />
-</app-bottom-sheet>
-}
-
-@if (editingPocket(); as pocket) {
-<app-bottom-sheet title="Editar bolsillo" (close)="closePocketModal()">
-    <app-edit-pocket-modal [pocket]="pocket" (cancel)="closePocketModal()" (saved)="onPocketSaved($event)" />
-</app-bottom-sheet>
-}
 
 @if (confirmOpen()) {
 <app-bottom-sheet title="Confirmar" (close)="onCancelConfirm()">

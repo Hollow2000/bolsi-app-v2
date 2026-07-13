@@ -6,6 +6,7 @@ import { PocketService } from '../../core/services/pocket.service';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { CardComponent } from '../../shared/components/card/card.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { FabComponent } from '../../shared/components/fab/fab.component';
 import { IconButtonDirective } from '../../shared/components/icon-button/icon-button.directive';
 import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
 import { ToastService } from '../../shared/services/toast.service';
@@ -19,6 +20,7 @@ import { InstallPromptComponent } from '../../shared/components/install-prompt/i
     CardComponent,
     ConfirmDialogComponent,
     EditPocketModalComponent,
+    FabComponent,
     IconButtonDirective,
     ListItemComponent,
     RouterLink,
@@ -74,10 +76,14 @@ import { InstallPromptComponent } from '../../shared/components/install-prompt/i
           }
         }
       </main>
+      <app-fab icon="add" ariaLabel="Agregar bolsillo" (press)="openAdd()" />
     </div>
 
     @if (editing(); as pocket) {
-      <app-bottom-sheet title="Editar bolsillo" (close)="closeEdit()">
+      <app-bottom-sheet
+        [title]="pocket.id ? 'Editar bolsillo' : 'Nuevo bolsillo'"
+        (close)="closeEdit()"
+      >
         <app-edit-pocket-modal
           [pocket]="pocket"
           (cancel)="closeEdit()"
@@ -159,6 +165,15 @@ export class PocketsListComponent {
     void this.load();
   }
 
+  protected openAdd(): void {
+    this.editing.set({
+      name: '',
+      icon: 'money_bag',
+      percentage: 0,
+      sortOrder: this.pockets().length,
+    });
+  }
+
   protected openEdit(pocket: Pocket): void {
     this.editing.set(pocket);
   }
@@ -168,11 +183,17 @@ export class PocketsListComponent {
   }
 
   protected async onSaved(updated: Pocket): Promise<void> {
+    const isCreating = updated.id === undefined;
     try {
-      await this.service.update(updated);
+      if (isCreating) {
+        await this.service.create(updated);
+        this.toast.show('Bolsillo creado.');
+      } else {
+        await this.service.update(updated);
+        this.toast.show('Bolsillo actualizado.');
+      }
       this.editing.set(null);
       await this.load();
-      this.toast.show('Bolsillo actualizado.');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'No se pudo guardar el bolsillo.';
       this.toast.show(message);

@@ -102,6 +102,8 @@ export class MonthlyPaymentsListComponent {
   }
 
   protected iconFor(payment: PaymentWithUrgency): string {
+    if (payment.paid) return 'check_circle';
+    if (payment.icon) return payment.icon;
     if (payment.daysUntilDue < 0) return 'warning';
     if (payment.daysUntilDue <= 3) return 'schedule';
     return 'event';

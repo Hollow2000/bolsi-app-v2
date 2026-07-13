@@ -1,26 +1,22 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 
-import { EXPENSE_CATEGORIES, type ExpenseCategory } from '../../core/catalogs';
+import { EXPENSE_CATEGORIES, MATERIAL_ICONS, type ExpenseCategory } from '../../core/catalogs';
 import type { MonthlyPayment } from '../../core/models/monthly-payment.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { DateInputComponent } from '../../shared/components/date-input/date-input.component';
+import { IconPickerComponent } from '../../shared/components/icon-picker/icon-picker.component';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
 import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
 import { TextInputComponent } from '../../shared/components/text-input/text-input.component';
 
-/**
- * Form for adding or editing a monthly payment. Pure presentational:
- * the parent owns persistence. If `payment` is provided, the form
- * starts pre-filled for editing; otherwise it starts empty for
- * adding.
- */
 @Component({
   selector: 'app-monthly-payment-form-modal',
   imports: [
     ButtonDirective,
     DateInputComponent,
+    IconPickerComponent,
     NumberInputComponent,
     SelectInputComponent,
     TextInputComponent,
@@ -38,6 +34,7 @@ export class MonthlyPaymentFormModalComponent implements OnInit {
   readonly cancel = output<void>();
   readonly saved = output<MonthlyPayment>();
 
+  protected readonly icons = MATERIAL_ICONS;
   protected readonly categories = EXPENSE_CATEGORIES;
   protected readonly errorMessage = signal<string | null>(null);
 
@@ -48,6 +45,7 @@ export class MonthlyPaymentFormModalComponent implements OnInit {
   protected readonly pocketId = signal<number>(0);
   protected readonly category = signal<ExpenseCategory>(EXPENSE_CATEGORIES[0]);
   protected readonly isRecurring = signal(true);
+  protected readonly icon = signal('event');
 
   protected readonly submitLabel = computed(() => (this.payment() ? 'Guardar cambios' : 'Agregar pago'));
 
@@ -61,6 +59,7 @@ export class MonthlyPaymentFormModalComponent implements OnInit {
       this.pocketId.set(initial.pocketId ?? 0);
       this.category.set((initial.expenseCategory as ExpenseCategory) ?? EXPENSE_CATEGORIES[0]);
       this.isRecurring.set(initial.isRecurring);
+      this.icon.set(initial.icon ?? 'event');
     } else {
       this.dueDate.set(this.defaultDueDate());
     }
@@ -119,6 +118,7 @@ export class MonthlyPaymentFormModalComponent implements OnInit {
       isRecurring: this.isRecurring(),
       month: this.month(),
       year: this.year(),
+      icon: this.icon(),
     };
     if (initial?.id !== undefined) {
       updated.id = initial.id;

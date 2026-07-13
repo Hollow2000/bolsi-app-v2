@@ -4,49 +4,87 @@
       </header>
       <app-install-prompt />
       <main class="app-screen-content">
-        @if (paymentMethods().length === 0) {
+        @if (methodGroups().length === 0) {
           <app-card title="Sin métodos de pago">
             <p class="empty-message">No tienes métodos de pago registrados todavía.</p>
           </app-card>
         } @else {
-          <ul class="app-list" aria-label="Métodos de pago">
-            @for (method of paymentMethods(); track method.id) {
-              <li class="app-list-row">
-                <a class="item-link" [routerLink]="detailRoute(method)">
-                  <app-list-item
-                    [icon]="iconFor(method.type)"
-                    [title]="method.name"
-                    [subtitle]="subtitleFor(method)"
-                  />
-                  <span class="material-symbols-outlined icon chevron" aria-hidden="true">chevron_right</span>
-                </a>
-                <div class="item-actions">
-                  <button
-                    appIconButton
-                    type="button"
-                    aria-label="Editar método de pago"
-                    (click)="openEdit(method)"
-                  >
-                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
-                  </button>
-                  <button
-                    appIconButton
-                    type="button"
-                    aria-label="Eliminar método de pago"
-                    (click)="confirmDelete(method)"
-                  >
-                    <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
-                  </button>
+          @for (group of methodGroups(); track group.type) {
+            <section class="group-section" [attr.aria-label]="group.label">
+              <button
+                class="group-header"
+                type="button"
+                [attr.aria-expanded]="!isGroupCollapsed(group.type)"
+                (click)="toggleGroup(group.type)"
+              >
+                <div class="group-header__left">
+                  <span class="material-symbols-outlined icon" aria-hidden="true">{{ group.icon }}</span>
+                  <span class="group-header__title">{{ group.label }}</span>
+                  <span class="group-header__count">{{ group.methods.length }}</span>
                 </div>
-              </li>
-            }
-          </ul>
+                <div class="group-header__right">
+                  <span
+                    class="group-header__total"
+                    [class.group-header__total--danger]="group.type === 'credit'"
+                  >
+                    {{ groupTotalLabel(group) }}
+                  </span>
+                  <span
+                    class="material-symbols-outlined icon group-header__chevron"
+                    [class.group-header__chevron--collapsed]="isGroupCollapsed(group.type)"
+                    aria-hidden="true"
+                  >
+                    expand_more
+                  </span>
+                </div>
+              </button>
+
+              @if (!isGroupCollapsed(group.type)) {
+                <ul class="group-list" [attr.aria-label]="group.label">
+                  @for (method of group.methods; track method.id) {
+                    <li class="app-list-row">
+                      <a class="item-link" [routerLink]="detailRoute(method)">
+                        <app-list-item
+                          [icon]="group.icon"
+                          [title]="method.name"
+                          [subtitle]="subtitleFor(method)"
+                        />
+                        <span class="material-symbols-outlined icon chevron" aria-hidden="true">chevron_right</span>
+                      </a>
+                      <div class="item-actions">
+                        <button
+                          appIconButton
+                          type="button"
+                          [attr.aria-label]="'Editar ' + method.name"
+                          (click)="openEdit(method)"
+                        >
+                          <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
+                        </button>
+                        <button
+                          appIconButton
+                          type="button"
+                          [attr.aria-label]="'Eliminar ' + method.name"
+                          (click)="confirmDelete(method)"
+                        >
+                          <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
+                        </button>
+                      </div>
+                    </li>
+                  }
+                </ul>
+              }
+            </section>
+          }
         }
       </main>
+      <app-fab icon="add" ariaLabel="Agregar método de pago" (press)="openAdd()" />
     </div>
 
     @if (editing(); as method) {
-      <app-bottom-sheet title="Editar método de pago" (close)="closeEdit()">
+      <app-bottom-sheet
+        [title]="method.id ? 'Editar método de pago' : 'Nuevo método de pago'"
+        (close)="closeEdit()"
+      >
         <app-edit-payment-method-modal
           [paymentMethod]="method"
           (cancel)="closeEdit()"

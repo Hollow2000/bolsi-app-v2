@@ -39,6 +39,30 @@
         color: var(--color-primary);
         font-family: var(--font-family-mono);
       }
+      .balance-info {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-3);
+        background: var(--color-success-subtle);
+        border-radius: var(--radius-medium);
+      }
+      .balance-info--danger {
+        background: var(--color-danger-subtle);
+      }
+      .balance-info__label {
+        font-size: var(--text-size-small);
+        color: var(--text-secondary);
+      }
+      .balance-info__amount {
+        font-size: var(--text-size-base);
+        font-weight: 600;
+        color: var(--text-primary);
+        font-family: var(--font-family-mono);
+      }
+      .balance-info--danger .balance-info__amount {
+        color: var(--color-danger);
+      }
       .modal-actions {
         display: flex;
         justify-content: flex-end;

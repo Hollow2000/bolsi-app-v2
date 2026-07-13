@@ -13,4 +13,5 @@ export interface MonthlyPayment {
   isRecurring: boolean;
   month: number;
   year: number;
+  icon?: string;
 }
