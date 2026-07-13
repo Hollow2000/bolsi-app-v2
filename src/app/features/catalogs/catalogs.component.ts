@@ -4,7 +4,6 @@ import type { CatalogItem } from '../../core/models/catalog.model';
 import { CatalogService } from '../../core/services/catalog.service';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { CardComponent } from '../../shared/components/card/card.component';
-import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { FabComponent } from '../../shared/components/fab/fab.component';
 import { IconButtonDirective } from '../../shared/components/icon-button/icon-button.directive';
 import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
@@ -18,7 +17,6 @@ import { CatalogDeleteConfirmComponent } from './catalog-delete-confirm.componen
   imports: [
     BottomSheetComponent,
     CardComponent,
-    ConfirmDialogComponent,
     FabComponent,
     IconButtonDirective,
     ListItemComponent,
