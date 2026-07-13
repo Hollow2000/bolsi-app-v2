@@ -137,3 +137,33 @@
   display: flex;
   gap: var(--space-1);
 }
+
+.day-group {
+  background: var(--surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-large);
+  overflow: hidden;
+  margin-bottom: var(--space-3);
+}
+
+.day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-alternate);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.day-header__label {
+  font-size: var(--text-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.day-header__total {
+  font-size: var(--text-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-family: var(--font-family-mono);
+}

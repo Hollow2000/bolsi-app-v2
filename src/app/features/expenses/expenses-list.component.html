@@ -84,50 +84,57 @@
             </p>
           </app-card>
         } @else {
-          <ul class="app-list" aria-label="Gastos del mes">
-            @for (expense of filteredExpenses(); track expense.id) {
-              <li class="expense-row">
-                <div class="expense-icon" aria-hidden="true">
-                  <span class="material-symbols-outlined icon">{{ expense.icon || 'receipt' }}</span>
-                </div>
-                <div class="expense-content">
-                  <span class="expense-title">{{ expense.description }}</span>
-                  <span class="expense-detail">{{ formatDate(expense.date) }}</span>
-                  <span class="expense-detail">{{ getPocketName(expense.pocketId) }} · {{ expense.category }}</span>
-                  <span class="expense-detail">{{ getMethodName(expense.paymentMethodId) }}</span>
-                </div>
-                <div class="expense-right">
-                  <span class="expense-amount">{{ (expense.amount | mexicanCurrency) ?? '' }}</span>
-                  <div class="expense-actions">
-                    <button
-                      class="app-icon-button"
-                      type="button"
-                      aria-label="Guardar como plantilla"
-                      (click)="saveAsTemplate(expense)"
-                    >
-                      <span class="material-symbols-outlined icon icon--small" aria-hidden="true">bookmark_add</span>
-                    </button>
-                    <button
-                      class="app-icon-button"
-                      type="button"
-                      aria-label="Editar gasto"
-                      (click)="openEdit(expense)"
-                    >
-                      <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
-                    </button>
-                    <button
-                      class="app-icon-button"
-                      type="button"
-                      aria-label="Eliminar gasto"
-                      (click)="confirmDelete(expense)"
-                    >
-                      <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
-                    </button>
-                  </div>
-                </div>
-              </li>
-            }
-          </ul>
+          @for (group of dayGroups(); track group.date) {
+            <section class="day-group">
+              <div class="day-header">
+                <span class="day-header__label">{{ group.label }}</span>
+                <span class="day-header__total">{{ group.total | mexicanCurrency }}</span>
+              </div>
+              <ul class="app-list" aria-label="Gastos del {{ group.label }}">
+                @for (expense of group.expenses; track expense.id) {
+                  <li class="expense-row">
+                    <div class="expense-icon" aria-hidden="true">
+                      <span class="material-symbols-outlined icon">{{ expense.icon || 'receipt' }}</span>
+                    </div>
+                    <div class="expense-content">
+                      <span class="expense-title">{{ expense.description }}</span>
+                      <span class="expense-detail">{{ getPocketName(expense.pocketId) }} · {{ expense.category }}</span>
+                      <span class="expense-detail">{{ getMethodName(expense.paymentMethodId) }}</span>
+                    </div>
+                    <div class="expense-right">
+                      <span class="expense-amount">{{ (expense.amount | mexicanCurrency) ?? '' }}</span>
+                      <div class="expense-actions">
+                        <button
+                          class="app-icon-button"
+                          type="button"
+                          aria-label="Guardar como plantilla"
+                          (click)="saveAsTemplate(expense)"
+                        >
+                          <span class="material-symbols-outlined icon icon--small" aria-hidden="true">bookmark_add</span>
+                        </button>
+                        <button
+                          class="app-icon-button"
+                          type="button"
+                          aria-label="Editar gasto"
+                          (click)="openEdit(expense)"
+                        >
+                          <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
+                        </button>
+                        <button
+                          class="app-icon-button"
+                          type="button"
+                          aria-label="Eliminar gasto"
+                          (click)="confirmDelete(expense)"
+                        >
+                          <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                }
+              </ul>
+            </section>
+          }
         }
       </main>
       <app-fab icon="add" ariaLabel="Registrar nuevo gasto" (press)="openAdd()" />

@@ -24,6 +24,13 @@ interface FilterState {
   readonly category: string;
 }
 
+interface DayGroup {
+  readonly date: string;
+  readonly label: string;
+  readonly expenses: Expense[];
+  readonly total: number;
+}
+
 const NO_FILTER = 0;
 const NO_CATEGORY = '';
 
@@ -72,12 +79,33 @@ export class ExpensesListComponent {
 
   protected readonly filteredExpenses = computed(() => {
     const filter = this.filters();
-    return this.expenses().filter((expense) => {
-      if (filter.pocketId !== NO_FILTER && expense.pocketId !== filter.pocketId) return false;
-      if (filter.paymentMethodId !== NO_FILTER && expense.paymentMethodId !== filter.paymentMethodId) return false;
-      if (filter.category !== NO_CATEGORY && expense.category !== filter.category) return false;
-      return true;
-    });
+    return this.expenses()
+      .filter((expense) => {
+        if (filter.pocketId !== NO_FILTER && expense.pocketId !== filter.pocketId) return false;
+        if (filter.paymentMethodId !== NO_FILTER && expense.paymentMethodId !== filter.paymentMethodId) return false;
+        if (filter.category !== NO_CATEGORY && expense.category !== filter.category) return false;
+        return true;
+      })
+      .sort((a, b) => b.date.localeCompare(a.date));
+  });
+
+  protected readonly dayGroups = computed<DayGroup[]>(() => {
+    const expenses = this.filteredExpenses();
+    const groups = new Map<string, Expense[]>();
+    for (const expense of expenses) {
+      const existing = groups.get(expense.date);
+      if (existing) {
+        existing.push(expense);
+      } else {
+        groups.set(expense.date, [expense]);
+      }
+    }
+    return Array.from(groups.entries()).map(([date, items]) => ({
+      date,
+      label: this.formatDayLabel(date),
+      expenses: items,
+      total: Math.round(items.reduce((sum, e) => sum + e.amount, 0) * 100) / 100,
+    }));
   });
 
   protected readonly totalSpent = computed(() =>
@@ -141,6 +169,18 @@ export class ExpensesListComponent {
   protected formatDate(iso: string): string {
     const [, mm, dd] = iso.split('-');
     return `${dd}/${mm}`;
+  }
+
+  protected formatDayLabel(iso: string): string {
+    const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const monthNames = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+    ];
+    const [year, month, day] = iso.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    const dayName = dayNames[date.getDay()];
+    return `${dayName} ${day} de ${monthNames[month - 1]}`;
   }
 
   protected getPocketName(pocketId: number): string {
