@@ -6,6 +6,7 @@ import { filter, map } from 'rxjs/operators';
 
 import type { PaymentMethod } from './core/models/payment-method.model';
 import { CreditCardStatementService } from './core/services/credit-card-statement.service';
+import { CatalogService } from './core/services/catalog.service';
 import { PaymentMethodService } from './core/services/payment-method.service';
 import { BottomSheetComponent } from './shared/components/bottom-sheet/bottom-sheet.component';
 import { ButtonDirective } from './shared/components/button/button.directive';
@@ -66,6 +67,7 @@ import { MexicanCurrencyPipe } from './shared/pipes/mexican-currency.pipe';
 export class App implements OnInit {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  private readonly catalogService = inject(CatalogService);
   private readonly creditCardStatement = inject(CreditCardStatementService);
   private readonly paymentMethodService = inject(PaymentMethodService);
   private readonly swUpdate = inject(SwUpdate);
@@ -90,6 +92,7 @@ export class App implements OnInit {
   protected readonly updateAvailable = signal(false);
 
   async ngOnInit(): Promise<void> {
+    await this.catalogService.initialize();
     await this.checkCutoffs();
     this.checkForUpdates();
   }

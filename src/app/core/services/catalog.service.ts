@@ -100,6 +100,13 @@ export const DEFAULT_POCKETS = [
 
 @Injectable({ providedIn: 'root' })
 export class CatalogService {
+  async initialize(): Promise<void> {
+    const count = await database.catalogs.count();
+    if (count === 0) {
+      await this.seedDefaults();
+    }
+  }
+
   async getByType(type: 'expense' | 'income'): Promise<CatalogItem[]> {
     return database.catalogs
       .where('type')
@@ -203,5 +210,56 @@ export class CatalogService {
 
   async deleteWithoutReassign(id: number): Promise<void> {
     await database.catalogs.delete(id);
+  }
+
+  private async seedDefaults(): Promise<void> {
+    const defaultExpenseCategories = [
+      { name: 'Vivienda', icon: 'home' },
+      { name: 'Servicios', icon: 'bolt' },
+      { name: 'Supermercado', icon: 'local_grocery_store' },
+      { name: 'Transporte', icon: 'directions_car' },
+      { name: 'Ropa', icon: 'apparel' },
+      { name: 'Seguros', icon: 'security' },
+      { name: 'Salud', icon: 'local_hospital' },
+      { name: 'Compras menores', icon: 'shopping_bag' },
+      { name: 'Comidas fuera', icon: 'restaurant' },
+      { name: 'Entretenimiento', icon: 'movie' },
+      { name: 'Belleza', icon: 'spa' },
+      { name: 'Recargas', icon: 'phone' },
+      { name: 'Regalos', icon: 'celebration' },
+      { name: 'Viajes', icon: 'flight' },
+      { name: 'Tecnología', icon: 'devices' },
+      { name: 'Otro', icon: 'category' },
+    ];
+
+    const defaultIncomeCategories = [
+      { name: 'Salario', icon: 'work' },
+      { name: 'Devoluciones', icon: 'assignment_return' },
+      { name: 'Regalo', icon: 'card_giftcard' },
+      { name: 'Reembolso', icon: 'receipt' },
+      { name: 'Otro', icon: 'category' },
+    ];
+
+    let sortOrder = 0;
+    for (const cat of defaultExpenseCategories) {
+      await database.catalogs.add({
+        type: 'expense',
+        name: cat.name,
+        icon: cat.icon,
+        isDefault: true,
+        sortOrder: sortOrder++,
+      } as CatalogItem);
+    }
+
+    sortOrder = 0;
+    for (const cat of defaultIncomeCategories) {
+      await database.catalogs.add({
+        type: 'income',
+        name: cat.name,
+        icon: cat.icon,
+        isDefault: true,
+        sortOrder: sortOrder++,
+      } as CatalogItem);
+    }
   }
 }
