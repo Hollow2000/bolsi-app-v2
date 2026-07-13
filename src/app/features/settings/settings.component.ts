@@ -33,10 +33,31 @@ export class SettingsComponent {
   private readonly dataPortability = inject(DataPortabilityService);
   private readonly toast = inject(ToastService);
 
+  protected readonly userName = signal('');
   protected readonly confirmOpen = signal(false);
   protected readonly confirmMessage = signal('');
   protected readonly confirmTone = signal<'primary' | 'destructive'>('destructive');
   protected readonly confirmAction = signal<(() => void) | null>(null);
+
+  constructor() {
+    void this.loadUserName();
+  }
+
+  protected async saveUserName(): Promise<void> {
+    const name = this.userName().trim();
+    if (!name) return;
+    try {
+      const record = await this.settingsService.get();
+      await this.settingsService.save({
+        userName: name,
+        setupComplete: record?.setupComplete ?? true,
+        customExpenseCategories: record?.customExpenseCategories,
+      });
+      this.toast.show('Nombre actualizado.');
+    } catch (error) {
+      this.toast.show(error instanceof Error ? error.message : 'No se pudo guardar.');
+    }
+  }
 
   protected closeMonth(): void {
     this.confirmMessage.set('¿Cerrar el mes actual? Los pagos recurrentes se replicarán al siguiente.');
@@ -99,5 +120,10 @@ export class SettingsComponent {
   protected onCancelConfirm(): void {
     this.confirmOpen.set(false);
     this.confirmAction.set(null);
+  }
+
+  private async loadUserName(): Promise<void> {
+    const record = await this.settingsService.get();
+    this.userName.set(record?.userName ?? '');
   }
 }

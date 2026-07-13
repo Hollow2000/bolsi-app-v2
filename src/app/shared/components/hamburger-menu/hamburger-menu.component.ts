@@ -27,7 +27,10 @@ interface MenuEntry {
       <div class="hamburger-overlay" (click)="close()"></div>
       <nav class="hamburger-panel" aria-label="Menú de navegación">
         <div class="hamburger-panel__header">
-          <span class="hamburger-panel__title">Menú</span>
+          <div class="hamburger-panel__brand">
+            <img src="/icons/icon-96.png" alt="" class="hamburger-panel__logo" width="40" height="40" />
+            <span class="hamburger-panel__title">Bolsi</span>
+          </div>
           <button
             class="app-icon-button"
             type="button"

@@ -70,6 +70,16 @@
   border-bottom: 1px solid var(--border-default);
 }
 
+.hamburger-panel__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.hamburger-panel__logo {
+  border-radius: var(--radius-medium);
+}
+
 .hamburger-panel__title {
   font-size: var(--text-size-medium);
   font-weight: 700;

@@ -4,6 +4,15 @@
     </header>
     <app-install-prompt />
     <main class="app-screen-content">
+        <app-card title="Nombre de usuario">
+            <div class="user-name-row">
+                <app-text-input label="Tu nombre" [value]="userName()" (valueChange)="userName.set($event)" />
+                <button appButton variant="primary" type="button" [disabled]="!userName().trim()" (click)="saveUserName()">
+                    Guardar
+                </button>
+            </div>
+        </app-card>
+
         <app-card title="Cierre de mes">
             <p class="card-text">
                 Replica todos los pagos mensuales recurrentes al mes siguiente. Los
@@ -36,10 +45,6 @@
         </app-card>
 
         <app-card title="Navegación">
-            <a appButton variant="secondary" routerLink="/budgets">
-                <span class="material-symbols-outlined icon icon--small" aria-hidden="true">savings</span>
-                Gestionar presupuestos
-            </a>
             <a appButton variant="secondary" routerLink="/history">
                 <span class="material-symbols-outlined icon icon--small" aria-hidden="true">history</span>
                 Ver historial de meses
