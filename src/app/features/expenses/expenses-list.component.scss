@@ -138,10 +138,6 @@
   gap: var(--space-1);
 }
 
-.day-group {
-  margin-bottom: var(--space-1);
-}
-
 .day-header {
   display: flex;
   align-items: center;
@@ -152,7 +148,7 @@
 }
 
 .day-header__label {
-  font-size: 10px;
+  font-size: var(--text-size-small);
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -160,7 +156,7 @@
 }
 
 .day-header__total {
-  font-size: 10px;
+  font-size: var(--text-size-small);
   font-weight: 600;
   color: var(--text-secondary);
   font-family: var(--font-family-mono);

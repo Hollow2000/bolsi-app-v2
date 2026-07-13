@@ -85,7 +85,7 @@
           </app-card>
         } @else {
           @for (group of dayGroups(); track group.date) {
-            <section class="day-group">
+            <section>
               <div class="day-header">
                 <span class="day-header__label">{{ group.label }}</span>
                 <span class="day-header__total">{{ group.total | mexicanCurrency }}</span>
