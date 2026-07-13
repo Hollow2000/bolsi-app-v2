@@ -45,16 +45,22 @@
       }
     </app-select-input>
 
-    <app-select-input
-      label="Categoría"
-      [valueType]="'string'"
-      [value]="category()"
-      (valueChange)="category.set($any($event))"
-    >
-      @for (item of categories; track item) {
-        <option [value]="item" [selected]="item === category()">{{ item }}</option>
-      }
-    </app-select-input>
+    <div class="category-section">
+      <label class="category-label">Categoría</label>
+      <div class="category-grid">
+        @for (cat of categories(); track cat.id) {
+          <button
+            type="button"
+            class="category-chip"
+            [class.category-chip--selected]="category() === cat.name"
+            (click)="selectCategory(cat)"
+          >
+            <span class="material-symbols-outlined icon category-chip__icon" aria-hidden="true">{{ cat.icon }}</span>
+            <span class="category-chip__name">{{ cat.name }}</span>
+          </button>
+        }
+      </div>
+    </div>
 
     @if (errorMessage(); as message) {
       <p class="modal-error" role="alert">{{ message }}</p>

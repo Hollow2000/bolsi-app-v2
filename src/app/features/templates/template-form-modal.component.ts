@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, input, output, signal } from '@angular/core';
 
-import { EXPENSE_CATEGORIES_DEFAULT, MATERIAL_ICONS, type ExpenseCategory } from '../../core/services/catalog.service';
+import type { CatalogItem } from '../../core/models/catalog.model';
 import type { ExpenseTemplate } from '../../core/models/expense-template.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';
+import { CatalogService, MATERIAL_ICONS } from '../../core/services/catalog.service';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { IconPickerComponent } from '../../shared/components/icon-picker/icon-picker.component';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
@@ -18,13 +19,15 @@ import { TextInputComponent } from '../../shared/components/text-input/text-inpu
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TemplateFormModalComponent implements OnInit {
+  private readonly catalogService = inject(CatalogService);
+
   readonly paymentMethods = input.required<readonly PaymentMethod[]>();
   readonly pockets = input.required<readonly Pocket[]>();
   readonly template = input<ExpenseTemplate | null>(null);
   readonly cancel = output<void>();
   readonly saved = output<ExpenseTemplate>();
 
-  protected readonly categories = EXPENSE_CATEGORIES_DEFAULT;
+  protected readonly categories = signal<CatalogItem[]>([]);
   protected readonly icons = MATERIAL_ICONS;
   protected readonly errorMessage = signal<string | null>(null);
 
@@ -32,19 +35,30 @@ export class TemplateFormModalComponent implements OnInit {
   protected readonly amount = signal(0);
   protected readonly paymentMethodId = signal<number>(0);
   protected readonly pocketId = signal<number>(0);
-  protected readonly category = signal<ExpenseCategory>(EXPENSE_CATEGORIES_DEFAULT[0]);
+  protected readonly category = signal('');
   protected readonly icon = signal<string>('star');
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
+    const cats = await this.catalogService.getByType('expense');
+    this.categories.set(cats);
+
     const initial = this.template();
     if (initial) {
       this.description.set(initial.description);
       this.amount.set(initial.amount);
       this.paymentMethodId.set(initial.paymentMethodId);
       this.pocketId.set(initial.pocketId);
-      this.category.set(initial.category as ExpenseCategory);
+      this.category.set(initial.category);
       this.icon.set(initial.icon || 'star');
+    } else if (cats.length > 0) {
+      this.category.set(cats[0].name);
+      this.icon.set(cats[0].icon);
     }
+  }
+
+  protected selectCategory(cat: CatalogItem): void {
+    this.category.set(cat.name);
+    this.icon.set(cat.icon);
   }
 
   protected typeLabel(type: PaymentMethod['type']): string {
