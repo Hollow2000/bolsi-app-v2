@@ -112,7 +112,7 @@ export class PaymentMethodsListComponent {
   protected subtitleFor(method: PaymentMethod): string {
     if (method.type === 'credit') {
       const toPay = method.statementBalance ?? 0;
-      return `Límite ${formatMexicanCurrency(method.creditLimit ?? 0)} · A pagar ${formatMexicanCurrency(toPay)}`;
+      return `Límite ${formatMexicanCurrency(method.creditLimit ?? 0)}  · A pagar ${formatMexicanCurrency(toPay)}`;
     }
     return `Saldo ${formatMexicanCurrency(method.currentBalance ?? 0)}`;
   }
