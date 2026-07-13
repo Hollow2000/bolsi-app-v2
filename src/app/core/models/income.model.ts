@@ -7,6 +7,7 @@ export interface Income {
   description: string;
   amount: number;
   category: string;
+  icon?: string;
   paymentMethodId: number;
   frequency: IncomeFrequency;
   status: IncomeStatus;

@@ -144,6 +144,35 @@ export class CatalogService {
       }
     }
     await database.catalogs.update(id, changes);
+
+    // Propagate name/icon changes to expenses or incomes using the category index
+    if (item.type === 'expense') {
+      if (changes.name && changes.name !== item.name) {
+        await database.expenses
+          .where('category')
+          .equals(item.name)
+          .modify({ category: changes.name });
+      }
+      if (changes.icon && changes.icon !== item.icon) {
+        await database.expenses
+          .where('category')
+          .equals(changes.name ?? item.name)
+          .modify({ icon: changes.icon });
+      }
+    } else {
+      if (changes.name && changes.name !== item.name) {
+        await database.incomes
+          .where('category')
+          .equals(item.name)
+          .modify({ category: changes.name });
+      }
+      if (changes.icon && changes.icon !== item.icon) {
+        await database.incomes
+          .where('category')
+          .equals(changes.name ?? item.name)
+          .modify({ icon: changes.icon });
+      }
+    }
   }
 
   async delete(id: number, reassignToName: string): Promise<void> {
