@@ -73,3 +73,14 @@
 .user-name-row app-text-input {
     flex: 1;
 }
+
+.version-info {
+    display: flex;
+    justify-content: center;
+    padding: var(--space-4) 0;
+}
+
+.version-text {
+    font-size: var(--text-size-small);
+    color: var(--text-secondary);
+}

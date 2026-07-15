@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { APP_VERSION } from '../../../environments/version';
 import { DataPortabilityService } from '../../core/services/data-portability.service';
 import { MonthlyPaymentService } from '../../core/services/monthly-payment.service';
 import { SettingsService } from '../../core/services/settings.service';
@@ -33,6 +34,7 @@ export class SettingsComponent {
   private readonly dataPortability = inject(DataPortabilityService);
   private readonly toast = inject(ToastService);
 
+  protected readonly version = APP_VERSION;
   protected readonly userName = signal('');
   protected readonly confirmOpen = signal(false);
   protected readonly confirmMessage = signal('');

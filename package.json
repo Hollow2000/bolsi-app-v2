@@ -4,10 +4,14 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --host 0.0.0.0",
-    "build": "ng build",
+    "build": "node scripts/generate-version.js && ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "deploy": "ng build --configuration production --base-href /bolsi-app-v2/ && npx ngh --dir=dist/bolsi-app-gemini/browser"
+    "bump": "node scripts/bump-version.js",
+    "bump:minor": "node scripts/bump-version.js minor",
+    "bump:major": "node scripts/bump-version.js major",
+    "predeploy": "npm run bump",
+    "deploy": "node scripts/generate-version.js && ng build --configuration production --base-href /bolsi-app-v2/ && npx ngh --dir=dist/bolsi-app-gemini/browser"
   },
   "private": true,
   "packageManager": "npm@11.12.1",
