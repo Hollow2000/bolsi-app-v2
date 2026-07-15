@@ -36,24 +36,36 @@ export class SavingsService {
       .sortBy('date');
   }
 
-  async deposit(savingsId: number, amount: number, description?: string): Promise<void> {
+  async deposit(savingsId: number, amount: number, originPaymentMethodId: number, description?: string): Promise<void> {
     const account = await database.savingsAccounts.get(savingsId);
     if (!account) {
       throw new Error('Cuenta de ahorro no encontrada.');
     }
+    const origin = await database.paymentMethods.get(originPaymentMethodId);
+    if (!origin) {
+      throw new Error('Cuenta de origen no encontrada.');
+    }
+    const available = origin.currentBalance ?? 0;
+    if (amount > available) {
+      throw new Error('El monto excede el saldo disponible de la cuenta de origen.');
+    }
+    await database.paymentMethods.update(originPaymentMethodId, {
+      currentBalance: available - amount,
+    });
     await database.savingsTransactions.add({
       savingsId,
       amount,
       type: 'deposit',
       date: new Date(),
       description,
+      paymentMethodId: originPaymentMethodId,
     });
     await database.savingsAccounts.update(savingsId, {
       balance: account.balance + amount,
     });
   }
 
-  async withdraw(savingsId: number, amount: number, description?: string): Promise<void> {
+  async withdraw(savingsId: number, amount: number, destinationPaymentMethodId: number, description?: string): Promise<void> {
     const account = await database.savingsAccounts.get(savingsId);
     if (!account) {
       throw new Error('Cuenta de ahorro no encontrada.');
@@ -61,12 +73,20 @@ export class SavingsService {
     if (amount > account.balance) {
       throw new Error('El monto excede el saldo disponible.');
     }
+    const destination = await database.paymentMethods.get(destinationPaymentMethodId);
+    if (!destination) {
+      throw new Error('Cuenta de destino no encontrada.');
+    }
+    await database.paymentMethods.update(destinationPaymentMethodId, {
+      currentBalance: (destination.currentBalance ?? 0) + amount,
+    });
     await database.savingsTransactions.add({
       savingsId,
       amount,
       type: 'withdrawal',
       date: new Date(),
       description,
+      paymentMethodId: destinationPaymentMethodId,
     });
     await database.savingsAccounts.update(savingsId, {
       balance: account.balance - amount,

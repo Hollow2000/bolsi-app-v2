@@ -7,6 +7,7 @@ import { ExpenseService } from './expense.service';
 import { IncomeService } from './income.service';
 import { MonthlyPaymentService } from './monthly-payment.service';
 import { PaymentMethodService } from './payment-method.service';
+import { ScheduledSavingService } from './scheduled-saving.service';
 
 interface DateRange {
   readonly startIso: string;
@@ -39,6 +40,7 @@ export class BalanceService {
   private readonly expenseService = inject(ExpenseService);
   private readonly incomeService = inject(IncomeService);
   private readonly monthlyPayments = inject(MonthlyPaymentService);
+  private readonly scheduledSavings = inject(ScheduledSavingService);
 
   async calculate(month: number, year: number): Promise<MonthlyBalance> {
     const [methods, allExpenses, incomes, payments, allTransfers] = await Promise.all([
@@ -58,9 +60,10 @@ export class BalanceService {
       year,
     );
     const pendingFixedPayments = this.sumPendingFixedPayments(methods, payments);
+    const pendingScheduledSavings = await this.scheduledSavings.getTotalPendingForMonth(month, year);
     const pendingIncome = this.sumPendingIncome(incomes);
     const netBalanceThisMonth = this.round(
-      totalAvailable - billableDebtThisMonth - pendingFixedPayments,
+      totalAvailable - billableDebtThisMonth - pendingFixedPayments - pendingScheduledSavings,
     );
     const endOfMonthProjection = this.round(netBalanceThisMonth + pendingIncome);
 
@@ -68,6 +71,7 @@ export class BalanceService {
       totalAvailable,
       billableDebtThisMonth,
       pendingFixedPayments,
+      pendingScheduledSavings,
       pendingIncome,
       netBalanceThisMonth,
       endOfMonthProjection,

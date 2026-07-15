@@ -4,6 +4,7 @@ import type { PaymentMethod } from '../../../core/models/payment-method.model';
 import type { SavingsAccount } from '../../../core/models/savings-account.model';
 import { SavingsService } from '../../../core/services/savings.service';
 import { ButtonDirective } from '../button/button.directive';
+import { MexicanCurrencyPipe } from '../../pipes/mexican-currency.pipe';
 import { NumberInputComponent } from '../number-input/number-input.component';
 import { SegmentedControlComponent, type SegmentedOption } from '../segmented-control/segmented-control.component';
 import { SelectInputComponent } from '../select-input/select-input.component';
@@ -21,6 +22,7 @@ const TRANSACTION_TYPE_OPTIONS: readonly SegmentedOption<TransactionType>[] = [
   selector: 'app-quick-savings-form',
   imports: [
     ButtonDirective,
+    MexicanCurrencyPipe,
     NumberInputComponent,
     SegmentedControlComponent,
     SelectInputComponent,
@@ -63,6 +65,9 @@ const TRANSACTION_TYPE_OPTIONS: readonly SegmentedOption<TransactionType>[] = [
             </option>
           }
         </app-select-input>
+        @if (originBalance() !== null) {
+          <p class="balance-info">Disponible: <strong>{{ originBalance() | mexicanCurrency }}</strong></p>
+        }
       } @else {
         <app-select-input
           label="Cuenta de destino"
@@ -77,6 +82,9 @@ const TRANSACTION_TYPE_OPTIONS: readonly SegmentedOption<TransactionType>[] = [
             </option>
           }
         </app-select-input>
+        @if (selectedSavingsBalance() !== null) {
+          <p class="balance-info">Disponible en ahorro: <strong>{{ selectedSavingsBalance() | mexicanCurrency }}</strong></p>
+        }
       }
 
       <app-number-input
@@ -119,6 +127,18 @@ const TRANSACTION_TYPE_OPTIONS: readonly SegmentedOption<TransactionType>[] = [
       text-align: center;
     }
     .form-submit { width: 100%; }
+    .balance-info {
+      margin: 0;
+      font-size: var(--text-size-small);
+      color: var(--text-secondary);
+      padding: var(--space-2) var(--space-3);
+      background: var(--surface-alt);
+      border-radius: var(--radius-md);
+    }
+    .balance-info strong {
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -147,6 +167,20 @@ export class QuickSavingsFormComponent {
   protected readonly destinationMethods = computed(() =>
     this.paymentMethods().filter((m) => m.type === 'cash' || m.type === 'debit'),
   );
+
+  protected readonly originBalance = computed(() => {
+    const id = this.originPaymentMethodId();
+    if (id === 0) return null;
+    const method = this.paymentMethods().find((m) => m.id === id);
+    return method?.currentBalance ?? 0;
+  });
+
+  protected readonly selectedSavingsBalance = computed(() => {
+    const id = this.savingsAccountId();
+    if (id === 0) return null;
+    const account = this.savingsAccounts().find((a) => a.id === id);
+    return account?.balance ?? 0;
+  });
 
   protected onSavingsAccountChange(value: number | string | null): void {
     this.savingsAccountId.set(typeof value === 'number' ? value : 0);
@@ -188,6 +222,11 @@ export class QuickSavingsFormComponent {
         this.errorMessage.set('Selecciona una cuenta de origen.');
         return;
       }
+      const originBalance = this.originBalance() ?? 0;
+      if (amount > originBalance) {
+        this.errorMessage.set('El monto excede el saldo disponible de la cuenta de origen.');
+        return;
+      }
     } else {
       const destId = this.destinationPaymentMethodId();
       if (destId === 0) {
@@ -203,10 +242,10 @@ export class QuickSavingsFormComponent {
 
     try {
       if (type === 'deposit') {
-        await this.savingsService.deposit(savingsId, amount, this.description().trim() || undefined);
+        await this.savingsService.deposit(savingsId, amount, this.originPaymentMethodId(), this.description().trim() || undefined);
         this.toast.show('Depósito registrado.');
       } else {
-        await this.savingsService.withdraw(savingsId, amount, this.description().trim() || undefined);
+        await this.savingsService.withdraw(savingsId, amount, this.destinationPaymentMethodId(), this.description().trim() || undefined);
         this.toast.show('Retiro registrado.');
       }
       this.saved.emit();

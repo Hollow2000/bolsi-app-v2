@@ -12,6 +12,8 @@ import type { PaymentMethod } from '../models/payment-method.model';
 import type { Pocket } from '../models/pocket.model';
 import type { SavingsAccount } from '../models/savings-account.model';
 import type { SavingsTransaction } from '../models/savings-transaction.model';
+import type { ScheduledSaving } from '../models/scheduled-saving.model';
+import type { ScheduledSavingExecution } from '../models/scheduled-saving-execution.model';
 import type { Transfer } from '../models/transfer.model';
 
 export class BolsiDatabase extends Dexie {
@@ -28,6 +30,8 @@ export class BolsiDatabase extends Dexie {
   savingsAccounts!: EntityTable<SavingsAccount, 'id'>;
   savingsTransactions!: EntityTable<SavingsTransaction, 'id'>;
   catalogs!: EntityTable<CatalogItem, 'id'>;
+  scheduledSavings!: EntityTable<ScheduledSaving, 'id'>;
+  scheduledSavingExecutions!: EntityTable<ScheduledSavingExecution, 'id'>;
 
   constructor() {
     super('BolsiDB');
@@ -233,6 +237,23 @@ export class BolsiDatabase extends Dexie {
           }
         }
       }
+    });
+    this.version(9).stores({
+      paymentMethods: '++id, type',
+      expenses: '++id, month, year, paymentMethodId, pocketId, isInstallment, hidden, category',
+      installmentPlans: '++id, expenseOriginId, paymentMethodId, cutoffMonth, cutoffYear, paid',
+      incomes: '++id, month, year, paymentMethodId, status, category',
+      pockets: '++id, sortOrder',
+      monthlyPayments: '++id, month, year, paid, isRecurring',
+      budgets: '++id, month, year, category',
+      expenseTemplates: '++id, description',
+      transfers: '++id, fromPaymentMethodId, toPaymentMethodId, month, year, isCreditCardPayment, billingPeriodMonth, billingPeriodYear',
+      appSettings: '++id',
+      savingsAccounts: '++id',
+      savingsTransactions: '++id, savingsId, date',
+      catalogs: '++id, type, [type+isDefault]',
+      scheduledSavings: '++id, savingsAccountId, paymentMethodId, isActive',
+      scheduledSavingExecutions: '++id, scheduledSavingId, [month+year], executed',
     });
   }
 }

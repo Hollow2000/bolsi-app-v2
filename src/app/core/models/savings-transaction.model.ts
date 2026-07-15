@@ -5,4 +5,5 @@ export interface SavingsTransaction {
   type: 'deposit' | 'withdrawal' | 'yield';
   date: Date;
   description?: string;
+  paymentMethodId?: number;
 }

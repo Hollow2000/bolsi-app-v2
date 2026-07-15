@@ -21,7 +21,9 @@ import { PocketService } from '../../core/services/pocket.service';
 import { SettingsService } from '../../core/services/settings.service';
 import { TransferService } from '../../core/services/transfer.service';
 import { SavingsService } from '../../core/services/savings.service';
+import { ScheduledSavingService } from '../../core/services/scheduled-saving.service';
 import type { SavingsAccount } from '../../core/models/savings-account.model';
+import type { PendingSaving } from '../../core/services/scheduled-saving.service';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { CardComponent } from '../../shared/components/card/card.component';
@@ -76,6 +78,7 @@ export class DashboardComponent {
   private readonly expenseTemplateService = inject(ExpenseTemplateService);
   private readonly transferService = inject(TransferService);
   private readonly savingsService = inject(SavingsService);
+  private readonly scheduledSavingService = inject(ScheduledSavingService);
   private readonly toast = inject(ToastService);
 
   protected readonly userName = signal('');
@@ -104,6 +107,8 @@ export class DashboardComponent {
 
   protected readonly quickSavingsFormOpen = signal(false);
   protected readonly savingsAccounts = signal<SavingsAccount[]>([]);
+  protected readonly dueScheduledSavings = signal<PendingSaving[]>([]);
+  protected readonly showScheduledSavingBanner = signal(false);
 
   protected readonly periodLabel = computed(() => {
     const monthNames = [
@@ -208,6 +213,16 @@ export class DashboardComponent {
       // Load savings accounts
       const allSavingsAccounts = await this.savingsService.getAll();
       this.savingsAccounts.set(allSavingsAccounts);
+
+      // Check for scheduled savings due
+      if (this.isCurrentMonth()) {
+        const dueSavings = await this.scheduledSavingService.getDueSavings(month, year);
+        this.dueScheduledSavings.set(dueSavings);
+        this.showScheduledSavingBanner.set(dueSavings.length > 0);
+      } else {
+        this.dueScheduledSavings.set([]);
+        this.showScheduledSavingBanner.set(false);
+      }
 
       // Check for savings accounts needing yield prompt (only on last days of month)
       const today = new Date();
@@ -473,6 +488,29 @@ export class DashboardComponent {
     } else {
       this.yieldPromptOpen.set(false);
       this.yieldAccount.set(null);
+    }
+  }
+
+  protected async executeScheduledSaving(pending: PendingSaving): Promise<void> {
+    try {
+      const saving = pending.scheduledSaving;
+      const occurrences = this.scheduledSavingService.calculateOccurrences(
+        saving.frequency,
+        this.currentMonth(),
+        this.currentYear(),
+      );
+      await this.scheduledSavingService.execute(
+        saving.id!,
+        this.currentMonth(),
+        this.currentYear(),
+        pending.executedCount + 1,
+      );
+      this.toast.show(`Ahorro "${saving.name}" ejecutado.`);
+      const month = this.currentMonth();
+      const year = this.currentYear();
+      await this.loadAll(month, year);
+    } catch (error) {
+      this.toast.show(error instanceof Error ? error.message : 'Error al ejecutar ahorro.');
     }
   }
 }

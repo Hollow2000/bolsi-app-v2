@@ -102,3 +102,72 @@
         text-align: center;
         padding: var(--space-4) 0;
       }
+
+      .scheduled-savings-banner {
+        background: var(--color-primary-soft);
+        border: 1px solid var(--color-primary);
+        border-radius: var(--radius-lg);
+        padding: var(--space-3);
+        margin-top: var(--space-3);
+      }
+
+      .banner-content {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        margin-bottom: var(--space-3);
+      }
+
+      .banner-icon {
+        color: var(--color-primary);
+        font-size: 24px;
+      }
+
+      .banner-text {
+        flex: 1;
+      }
+
+      .banner-title {
+        margin: 0;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .banner-subtitle {
+        margin: 0;
+        font-size: var(--text-size-small);
+        color: var(--text-secondary);
+      }
+
+      .banner-actions {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+
+      .banner-action-btn {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--space-2) var(--space-3);
+        background: var(--surface);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+
+      .banner-action-btn:hover {
+        background: var(--surface-alt);
+      }
+
+      .banner-action-name {
+        font-weight: 500;
+        color: var(--text-primary);
+      }
+
+      .banner-action-amount {
+        font-family: var(--font-mono);
+        font-weight: 600;
+        color: var(--color-primary);
+      }

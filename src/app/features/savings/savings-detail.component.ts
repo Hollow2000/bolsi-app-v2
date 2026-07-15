@@ -162,6 +162,15 @@ export class SavingsDetailComponent {
       return;
     }
 
+    if (type === 'deposit') {
+      const method = this.paymentMethods().find((m) => m.id === draft.paymentMethodId);
+      const available = method?.currentBalance ?? 0;
+      if (draft.amount > available) {
+        this.transactionError.set('El monto excede el saldo disponible de la cuenta de origen.');
+        return;
+      }
+    }
+
     if (type === 'withdrawal' && draft.amount > acc.balance) {
       this.transactionError.set('El monto excede el saldo disponible.');
       return;
@@ -169,10 +178,10 @@ export class SavingsDetailComponent {
 
     try {
       if (type === 'deposit') {
-        await this.service.deposit(acc.id, draft.amount, draft.description.trim() || undefined);
+        await this.service.deposit(acc.id, draft.amount, draft.paymentMethodId, draft.description.trim() || undefined);
         this.toast.show('Depósito registrado.');
       } else if (type === 'withdrawal') {
-        await this.service.withdraw(acc.id, draft.amount, draft.description.trim() || undefined);
+        await this.service.withdraw(acc.id, draft.amount, draft.paymentMethodId, draft.description.trim() || undefined);
         this.toast.show('Retiro registrado.');
       } else {
         await this.service.addYield(acc.id, draft.amount);

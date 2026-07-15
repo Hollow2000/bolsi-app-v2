@@ -51,6 +51,12 @@
                 <span class="breakdown-label">Pagos fijos pendientes</span>
                 <span class="breakdown-value breakdown-value--expense">−{{ data.pendingFixedPayments | mexicanCurrency }}</span>
               </li>
+              @if (data.pendingScheduledSavings > 0) {
+                <li>
+                  <span class="breakdown-label">Ahorros programados</span>
+                  <span class="breakdown-value breakdown-value--expense">−{{ data.pendingScheduledSavings | mexicanCurrency }}</span>
+                </li>
+              }
               <li class="breakdown-row--net">
                 <span class="breakdown-label">Saldo neto del mes</span>
                 <span class="breakdown-value" [class.breakdown-value--danger]="data.netBalanceThisMonth < 0">
@@ -74,6 +80,32 @@
         <app-credit-card-status-widget [items]="creditCardEntries()" />
 
         <app-income-vs-expenses-widget [data]="incomeVsExpenses()" />
+
+        @if (showScheduledSavingBanner()) {
+          <div class="scheduled-savings-banner">
+            <div class="banner-content">
+              <span class="material-symbols-outlined icon banner-icon" aria-hidden="true">savings</span>
+              <div class="banner-text">
+                <p class="banner-title">Ahorros programados pendientes</p>
+                <p class="banner-subtitle">
+                  Tienes {{ dueScheduledSavings().length }} ahorro(s) por ejecutar este mes
+                </p>
+              </div>
+            </div>
+            <div class="banner-actions">
+              @for (pending of dueScheduledSavings(); track pending.scheduledSaving.id) {
+                <button
+                  class="banner-action-btn"
+                  type="button"
+                  (click)="executeScheduledSaving(pending)"
+                >
+                  <span class="banner-action-name">{{ pending.scheduledSaving.name }}</span>
+                  <span class="banner-action-amount">{{ pending.pendingAmount | mexicanCurrency }}</span>
+                </button>
+              }
+            </div>
+          </div>
+        }
       </main>
     </div>
 
