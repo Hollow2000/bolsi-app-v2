@@ -2,9 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import type { PaymentMethod } from '../../core/models/payment-method.model';
+import type { Pocket } from '../../core/models/pocket.model';
 import type { SavingsAccount, SavingFrequency, ScheduledSavingConfig } from '../../core/models/savings-account.model';
 import type { SavingsTransaction } from '../../core/models/savings-transaction.model';
 import { PaymentMethodService } from '../../core/services/payment-method.service';
+import { PocketService } from '../../core/services/pocket.service';
 import { SavingsService } from '../../core/services/savings.service';
 import { MATERIAL_ICONS } from '../../core/services/catalog.service';
 import { SegmentedControlComponent, type SegmentedOption } from '../../shared/components/segmented-control/segmented-control.component';
@@ -49,6 +51,7 @@ export class SavingsDetailComponent {
   private readonly router = inject(Router);
   private readonly service = inject(SavingsService);
   private readonly paymentMethodService = inject(PaymentMethodService);
+  private readonly pocketService = inject(PocketService);
   private readonly toast = inject(ToastService);
 
   private readonly accountId = Number(this.route.snapshot.paramMap.get('id')) || 0;
@@ -59,6 +62,7 @@ export class SavingsDetailComponent {
   protected readonly filter = signal<TransactionFilter>('all');
   protected readonly icons = MATERIAL_ICONS;
   protected readonly paymentMethods = signal<PaymentMethod[]>([]);
+  protected readonly pockets = signal<Pocket[]>([]);
 
   protected readonly showTransactionForm = signal(false);
   protected readonly transactionType = signal<'deposit' | 'withdrawal' | 'yield'>('deposit');
@@ -85,6 +89,10 @@ export class SavingsDetailComponent {
     { value: 'weekly', label: 'Semanal' },
   ];
 
+  protected readonly showPocketForm = signal(false);
+  protected readonly selectedPocketId = signal<number | null>(null);
+  protected readonly pocketError = signal<string | null>(null);
+
   protected readonly filteredTransactions = computed(() => {
     const all = this.transactions();
     const f = this.filter();
@@ -101,6 +109,13 @@ export class SavingsDetailComponent {
   protected readonly availablePaymentMethods = computed(() =>
     this.paymentMethods().filter((m) => m.type === 'cash' || m.type === 'debit'),
   );
+
+  protected readonly currentPocketName = computed(() => {
+    const acc = this.account();
+    if (!acc?.pocketId) return null;
+    const pocket = this.pockets().find((p) => p.id === acc.pocketId);
+    return pocket?.name ?? null;
+  });
 
   constructor() {
     void this.load();
@@ -334,16 +349,61 @@ export class SavingsDetailComponent {
     }
   }
 
+  protected openPocketForm(): void {
+    const acc = this.account();
+    this.selectedPocketId.set(acc?.pocketId ?? null);
+    this.pocketError.set(null);
+    this.showPocketForm.set(true);
+  }
+
+  protected closePocketForm(): void {
+    this.showPocketForm.set(false);
+    this.pocketError.set(null);
+  }
+
+  protected onPocketChange(value: number | string | null): void {
+    this.selectedPocketId.set(typeof value === 'number' ? value : null);
+  }
+
+  protected async savePocket(): Promise<void> {
+    const acc = this.account();
+    if (!acc || acc.id === undefined) return;
+    try {
+      await this.service.update(acc.id, {
+        pocketId: this.selectedPocketId() ?? undefined,
+      });
+      this.toast.show('Bolsillo asignado.');
+      this.closePocketForm();
+      await this.load();
+    } catch (error) {
+      this.pocketError.set(error instanceof Error ? error.message : 'No se pudo guardar.');
+    }
+  }
+
+  protected async removePocket(): Promise<void> {
+    const acc = this.account();
+    if (!acc || acc.id === undefined) return;
+    try {
+      await this.service.update(acc.id, { pocketId: undefined });
+      this.toast.show('Bolsillo desasignado.');
+      await this.load();
+    } catch (error) {
+      this.toast.show(error instanceof Error ? error.message : 'No se pudo actualizar.');
+    }
+  }
+
   private async load(): Promise<void> {
-    const [account, transactions, summary, paymentMethods] = await Promise.all([
+    const [account, transactions, summary, paymentMethods, pockets] = await Promise.all([
       this.service.getById(this.accountId),
       this.service.getTransactions(this.accountId),
       this.service.getAccountSummary(this.accountId),
       this.paymentMethodService.getAll(),
+      this.pocketService.getAll(),
     ]);
     this.account.set(account ?? null);
     this.transactions.set(transactions);
     this.summary.set(summary);
     this.paymentMethods.set(paymentMethods);
+    this.pockets.set(pockets);
   }
 }

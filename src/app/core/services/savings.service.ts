@@ -72,6 +72,23 @@ export class SavingsService {
     await database.savingsAccounts.update(savingsId, {
       balance: account.balance + amount,
     });
+
+    // Add expense to pocket if configured
+    if (account.pocketId) {
+      const now = new Date();
+      await database.expenses.add({
+        date: this.toIsoDate(now),
+        description: description || `Depósito a ${account.name}`,
+        amount,
+        paymentMethodId: originPaymentMethodId,
+        pocketId: account.pocketId,
+        category: 'Ahorro',
+        icon: 'savings',
+        month: now.getMonth() + 1,
+        year: now.getFullYear(),
+        isInstallment: false,
+      });
+    }
   }
 
   async withdraw(savingsId: number, amount: number, destinationPaymentMethodId: number, description?: string): Promise<void> {
@@ -100,6 +117,23 @@ export class SavingsService {
     await database.savingsAccounts.update(savingsId, {
       balance: account.balance - amount,
     });
+
+    // Subtract from pocket if configured (negative expense)
+    if (account.pocketId) {
+      const now = new Date();
+      await database.expenses.add({
+        date: this.toIsoDate(now),
+        description: description || `Retiro de ${account.name}`,
+        amount: -amount,
+        paymentMethodId: destinationPaymentMethodId,
+        pocketId: account.pocketId,
+        category: 'Ahorro',
+        icon: 'savings',
+        month: now.getMonth() + 1,
+        year: now.getFullYear(),
+        isInstallment: false,
+      });
+    }
   }
 
   async addYield(savingsId: number, amount: number): Promise<void> {
@@ -242,5 +276,12 @@ export class SavingsService {
   async getDueScheduledSavings(month: number, year: number): Promise<PendingScheduledSaving[]> {
     const pending = await this.getAccountsScheduledForMonth(month, year);
     return pending.filter((p) => p.executedCount < p.occurrences);
+  }
+
+  private toIsoDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }

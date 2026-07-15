@@ -163,6 +163,45 @@
           </button>
         }
       </section>
+
+      <section class="pocket-section">
+        <h2 class="section-title">Bolsillo</h2>
+        @if (currentPocketName(); as name) {
+          <div class="pocket-card">
+            <div class="pocket-info">
+              <span class="material-symbols-outlined icon pocket-icon" aria-hidden="true">account_balance_wallet</span>
+              <span class="pocket-name">{{ name }}</span>
+            </div>
+            <div class="pocket-actions">
+              <button
+                class="icon-button"
+                type="button"
+                aria-label="Cambiar bolsillo"
+                (click)="openPocketForm()"
+              >
+                <span class="material-symbols-outlined icon" aria-hidden="true">edit</span>
+              </button>
+              <button
+                class="icon-button"
+                type="button"
+                aria-label="Quitar bolsillo"
+                (click)="removePocket()"
+              >
+                <span class="material-symbols-outlined icon" aria-hidden="true">delete</span>
+              </button>
+            </div>
+          </div>
+        } @else {
+          <button
+            class="add-pocket-btn"
+            type="button"
+            (click)="openPocketForm()"
+          >
+            <span class="material-symbols-outlined icon" aria-hidden="true">add</span>
+            Asignar bolsillo
+          </button>
+        }
+      </section>
     } @else {
       <p class="empty-message">Cuenta no encontrada.</p>
     }
@@ -320,6 +359,40 @@
         <button appButton variant="primary" type="button" (click)="saveScheduledSaving()">
           {{ account()?.scheduledSaving ? 'Actualizar' : 'Activar' }}
         </button>
+      </div>
+    </div>
+  </app-bottom-sheet>
+}
+
+@if (showPocketForm()) {
+  <app-bottom-sheet title="Asignar bolsillo" (close)="closePocketForm()">
+    <div class="form-content">
+      <p class="form-hint">
+        Los depósitos a esta cuenta se contarán como gasto del bolsillo seleccionado.
+        Los retiros se restarán del bolsillo.
+      </p>
+      <div class="form-field">
+        <label class="form-label">Bolsillo</label>
+        <app-select-input
+          label="Bolsillo"
+          [valueType]="'number'"
+          [value]="selectedPocketId() ?? 0"
+          (valueChange)="onPocketChange($event)"
+        >
+          <option [value]="0" disabled>Seleccionar bolsillo</option>
+          @for (pocket of pockets(); track pocket.id) {
+            <option [value]="pocket.id!" [selected]="selectedPocketId() === pocket.id">
+              {{ pocket.name }}
+            </option>
+          }
+        </app-select-input>
+      </div>
+      @if (pocketError()) {
+        <p class="form-error" role="alert">{{ pocketError() }}</p>
+      }
+      <div class="modal-actions">
+        <button appButton variant="secondary" type="button" (click)="closePocketForm()">Cancelar</button>
+        <button appButton variant="primary" type="button" (click)="savePocket()">Guardar</button>
       </div>
     </div>
   </app-bottom-sheet>

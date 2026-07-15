@@ -14,6 +14,7 @@ export interface SavingsAccount {
   icon: string;
   balance: number;
   goal?: number;
+  pocketId?: number;
   scheduledSaving?: ScheduledSavingConfig;
   createdAt: Date;
 }
