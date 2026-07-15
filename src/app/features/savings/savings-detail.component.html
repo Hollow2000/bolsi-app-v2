@@ -121,6 +121,48 @@
           Rendimiento
         </button>
       </div>
+
+      <section class="scheduled-section">
+        <h2 class="section-title">Ahorro programado</h2>
+        @if (acc.scheduledSaving; as config) {
+          <div class="scheduled-card">
+            <div class="scheduled-info">
+              <span class="material-symbols-outlined icon scheduled-icon" aria-hidden="true">schedule</span>
+              <div class="scheduled-details">
+                <span class="scheduled-label">{{ frequencyLabel(config.frequency) }}</span>
+                <span class="scheduled-amount">{{ config.amount | mexicanCurrency }}</span>
+              </div>
+            </div>
+            <div class="scheduled-actions">
+              <button
+                class="icon-button"
+                type="button"
+                aria-label="Editar ahorro programado"
+                (click)="openScheduledForm()"
+              >
+                <span class="material-symbols-outlined icon" aria-hidden="true">edit</span>
+              </button>
+              <button
+                class="icon-button"
+                type="button"
+                aria-label="Desactivar ahorro programado"
+                (click)="disableScheduledSaving()"
+              >
+                <span class="material-symbols-outlined icon" aria-hidden="true">delete</span>
+              </button>
+            </div>
+          </div>
+        } @else {
+          <button
+            class="add-scheduled-btn"
+            type="button"
+            (click)="openScheduledForm()"
+          >
+            <span class="material-symbols-outlined icon" aria-hidden="true">add</span>
+            Configurar ahorro programado
+          </button>
+        }
+      </section>
     } @else {
       <p class="empty-message">Cuenta no encontrada.</p>
     }
@@ -217,6 +259,68 @@
       >
         Guardar cambios
       </button>
+    </div>
+  </app-bottom-sheet>
+}
+
+@if (showScheduledForm()) {
+  <app-bottom-sheet title="Ahorro programado" (close)="closeScheduledForm()">
+    <div class="form-content">
+      <div class="form-field">
+        <label class="form-label">Frecuencia</label>
+        <app-segmented-control
+          ariaLabel="Frecuencia del ahorro"
+          [options]="frequencyOptions"
+          [value]="scheduledDraft().frequency"
+          (valueChange)="onScheduledFrequencyChange($event)"
+        />
+      </div>
+
+      @if (scheduledDraft().frequency === 'monthly') {
+        <div class="form-field">
+          <label class="form-label">Día del mes (1-31)</label>
+          <app-number-input
+            [value]="scheduledDraft().dayOfMonth"
+            (valueChange)="onScheduledDraftChange('dayOfMonth', $event)"
+            placeholder="1"
+          />
+        </div>
+      }
+
+      <div class="form-field">
+        <label class="form-label">Monto</label>
+        <app-number-input
+          [value]="scheduledDraft().amount"
+          (valueChange)="onScheduledDraftChange('amount', $event)"
+          placeholder="0.00"
+        />
+      </div>
+
+      <div class="form-field">
+        <label class="form-label">Cuenta de origen</label>
+        <app-select-input
+          label="Cuenta de origen"
+          [valueType]="'number'"
+          [value]="scheduledDraft().paymentMethodId"
+          (valueChange)="onScheduledDraftChange('paymentMethodId', $event)"
+        >
+          <option [value]="0" disabled>Seleccionar cuenta</option>
+          @for (method of availablePaymentMethods(); track method.id) {
+            <option [value]="method.id!">{{ method.name }}</option>
+          }
+        </app-select-input>
+      </div>
+
+      @if (scheduledError()) {
+        <p class="form-error" role="alert">{{ scheduledError() }}</p>
+      }
+
+      <div class="modal-actions">
+        <button appButton variant="secondary" type="button" (click)="closeScheduledForm()">Cancelar</button>
+        <button appButton variant="primary" type="button" (click)="saveScheduledSaving()">
+          {{ account()?.scheduledSaving ? 'Actualizar' : 'Activar' }}
+        </button>
+      </div>
     </div>
   </app-bottom-sheet>
 }

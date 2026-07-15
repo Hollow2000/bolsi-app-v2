@@ -2,11 +2,12 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import type { PaymentMethod } from '../../core/models/payment-method.model';
-import type { SavingsAccount } from '../../core/models/savings-account.model';
+import type { SavingsAccount, SavingFrequency, ScheduledSavingConfig } from '../../core/models/savings-account.model';
 import type { SavingsTransaction } from '../../core/models/savings-transaction.model';
 import { PaymentMethodService } from '../../core/services/payment-method.service';
 import { SavingsService } from '../../core/services/savings.service';
 import { MATERIAL_ICONS } from '../../core/services/catalog.service';
+import { SegmentedControlComponent, type SegmentedOption } from '../../shared/components/segmented-control/segmented-control.component';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { IconPickerComponent } from '../../shared/components/icon-picker/icon-picker.component';
@@ -34,6 +35,7 @@ interface TransactionDraft {
     MexicanCurrencyPipe,
     NumberInputComponent,
     RouterLink,
+    SegmentedControlComponent,
     SelectInputComponent,
     TextInputComponent,
     InstallPromptComponent,
@@ -67,6 +69,21 @@ export class SavingsDetailComponent {
   protected readonly editDraft = signal({ name: '', icon: 'savings', goal: 0 });
   protected readonly editDraftIcon = signal('savings');
   protected readonly editError = signal<string | null>(null);
+
+  protected readonly showScheduledForm = signal(false);
+  protected readonly scheduledDraft = signal({
+    paymentMethodId: 0,
+    amount: 0,
+    frequency: 'monthly' as SavingFrequency,
+    dayOfMonth: 1,
+    isActive: true,
+  });
+  protected readonly scheduledError = signal<string | null>(null);
+  protected readonly frequencyOptions: readonly SegmentedOption<SavingFrequency>[] = [
+    { value: 'monthly', label: 'Mensual' },
+    { value: 'biweekly', label: 'Quincenal' },
+    { value: 'weekly', label: 'Semanal' },
+  ];
 
   protected readonly filteredTransactions = computed(() => {
     const all = this.transactions();
@@ -234,6 +251,86 @@ export class SavingsDetailComponent {
       await this.load();
     } catch (error) {
       this.editError.set(error instanceof Error ? error.message : 'No se pudo actualizar.');
+    }
+  }
+
+  protected openScheduledForm(): void {
+    const acc = this.account();
+    if (!acc) return;
+    const config = acc.scheduledSaving;
+    this.scheduledDraft.set({
+      paymentMethodId: config?.paymentMethodId ?? 0,
+      amount: config?.amount ?? 0,
+      frequency: config?.frequency ?? 'monthly',
+      dayOfMonth: config?.dayOfMonth ?? 1,
+      isActive: config?.isActive ?? true,
+    });
+    this.scheduledError.set(null);
+    this.showScheduledForm.set(true);
+  }
+
+  protected closeScheduledForm(): void {
+    this.showScheduledForm.set(false);
+    this.scheduledError.set(null);
+  }
+
+  protected onScheduledDraftChange(field: string, value: number | string | boolean | null): void {
+    this.scheduledDraft.update((d) => ({ ...d, [field]: value ?? 0 }));
+  }
+
+  protected onScheduledFrequencyChange(value: SavingFrequency): void {
+    this.scheduledDraft.update((d) => ({ ...d, frequency: value }));
+  }
+
+  protected async saveScheduledSaving(): Promise<void> {
+    const acc = this.account();
+    if (!acc || acc.id === undefined) return;
+    const draft = this.scheduledDraft();
+
+    if (draft.paymentMethodId === 0) {
+      this.scheduledError.set('Selecciona una cuenta de origen.');
+      return;
+    }
+    if (draft.amount <= 0) {
+      this.scheduledError.set('El monto debe ser mayor a 0.');
+      return;
+    }
+
+    try {
+      const config: ScheduledSavingConfig = {
+        paymentMethodId: draft.paymentMethodId,
+        amount: draft.amount,
+        frequency: draft.frequency,
+        dayOfMonth: draft.frequency === 'monthly' ? draft.dayOfMonth : undefined,
+        isActive: draft.isActive,
+      };
+      await this.service.update(acc.id, { scheduledSaving: config });
+      this.toast.show('Ahorro programado configurado.');
+      this.closeScheduledForm();
+      await this.load();
+    } catch (error) {
+      this.scheduledError.set(error instanceof Error ? error.message : 'No se pudo guardar.');
+    }
+  }
+
+  protected async disableScheduledSaving(): Promise<void> {
+    const acc = this.account();
+    if (!acc || acc.id === undefined) return;
+    try {
+      await this.service.update(acc.id, { scheduledSaving: undefined });
+      this.toast.show('Ahorro programado desactivado.');
+      await this.load();
+    } catch (error) {
+      this.toast.show(error instanceof Error ? error.message : 'No se pudo desactivar.');
+    }
+  }
+
+  protected frequencyLabel(frequency?: SavingFrequency): string {
+    switch (frequency) {
+      case 'monthly': return 'Mensual';
+      case 'biweekly': return 'Quincenal';
+      case 'weekly': return 'Semanal';
+      default: return '';
     }
   }
 

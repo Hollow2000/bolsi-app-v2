@@ -93,13 +93,13 @@
               </div>
             </div>
             <div class="banner-actions">
-              @for (pending of dueScheduledSavings(); track pending.scheduledSaving.id) {
+              @for (pending of dueScheduledSavings(); track pending.account.id) {
                 <button
                   class="banner-action-btn"
                   type="button"
                   (click)="executeScheduledSaving(pending)"
                 >
-                  <span class="banner-action-name">{{ pending.scheduledSaving.name }}</span>
+                  <span class="banner-action-name">{{ pending.account.name }}</span>
                   <span class="banner-action-amount">{{ pending.pendingAmount | mexicanCurrency }}</span>
                 </button>
               }
@@ -110,6 +110,7 @@
     </div>
 
     <app-speed-dial-fab
+      [showSavings]="savingsAccounts().length > 0"
       (templatePress)="openTemplateList()"
       (expensePress)="openExpenseForm()"
       (incomePress)="openIncomeForm()"

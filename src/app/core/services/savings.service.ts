@@ -1,8 +1,17 @@
 import { Injectable } from '@angular/core';
 
 import { database } from '../database/bolsi.database';
-import type { SavingsAccount } from '../models/savings-account.model';
+import type { SavingsAccount, SavingFrequency, ScheduledSavingConfig } from '../models/savings-account.model';
 import type { SavingsTransaction } from '../models/savings-transaction.model';
+import type { SavingsExecution } from '../models/savings-execution.model';
+
+export interface PendingScheduledSaving {
+  account: SavingsAccount;
+  config: ScheduledSavingConfig;
+  occurrences: number;
+  executedCount: number;
+  pendingAmount: number;
+}
 
 @Injectable({ providedIn: 'root' })
 export class SavingsService {
@@ -151,5 +160,87 @@ export class SavingsService {
       const date = new Date(t.date);
       return date.getMonth() + 1 === currentMonth && date.getFullYear() === currentYear;
     });
+  }
+
+  calculateOccurrences(frequency: SavingFrequency): number {
+    switch (frequency) {
+      case 'monthly': return 1;
+      case 'biweekly': return 2;
+      case 'weekly': return 4;
+      default: return 1;
+    }
+  }
+
+  async getExecutionsForMonth(month: number, year: number): Promise<SavingsExecution[]> {
+    return database.savingsExecutions
+      .where('[month+year]')
+      .equals([month, year])
+      .toArray();
+  }
+
+  async getAccountsScheduledForMonth(month: number, year: number): Promise<PendingScheduledSaving[]> {
+    const allAccounts = await database.savingsAccounts.toArray();
+    const executions = await this.getExecutionsForMonth(month, year);
+    const result: PendingScheduledSaving[] = [];
+
+    for (const account of allAccounts) {
+      const config = account.scheduledSaving;
+      if (!config || !config.isActive) continue;
+
+      const occurrences = this.calculateOccurrences(config.frequency);
+      const executedCount = executions.filter(
+        (e) => e.savingsAccountId === account.id,
+      ).length;
+      const pending = occurrences - executedCount;
+
+      if (pending > 0) {
+        result.push({
+          account,
+          config,
+          occurrences,
+          executedCount,
+          pendingAmount: pending * config.amount,
+        });
+      }
+    }
+
+    return result;
+  }
+
+  async getTotalPendingScheduledForMonth(month: number, year: number): Promise<number> {
+    const pending = await this.getAccountsScheduledForMonth(month, year);
+    return pending.reduce((sum, p) => sum + p.pendingAmount, 0);
+  }
+
+  async executeScheduledSaving(savingsAccountId: number, month: number, year: number, occurrenceIndex: number): Promise<void> {
+    const account = await database.savingsAccounts.get(savingsAccountId);
+    if (!account) {
+      throw new Error('Cuenta de ahorro no encontrada.');
+    }
+    const config = account.scheduledSaving;
+    if (!config) {
+      throw new Error('Esta cuenta no tiene ahorro programado configurado.');
+    }
+
+    await this.deposit(
+      savingsAccountId,
+      config.amount,
+      config.paymentMethodId,
+      `Ahorro programado: ${account.name}`,
+    );
+
+    await database.savingsExecutions.add({
+      savingsAccountId,
+      month,
+      year,
+      occurrenceIndex,
+      executedDate: new Date().toISOString().split('T')[0],
+      amount: config.amount,
+    });
+  }
+
+  async getDueScheduledSavings(month: number, year: number): Promise<PendingScheduledSaving[]> {
+    const pending = await this.getAccountsScheduledForMonth(month, year);
+    return pending.filter((p) => p.executedCount < p.occurrences);
   }
 }

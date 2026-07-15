@@ -115,11 +115,5 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/catalogs/catalogs.component').then((m) => m.CatalogsComponent),
   },
-  {
-    path: 'scheduled-savings',
-    canActivate: [setupRequiredGuard],
-    loadComponent: () =>
-      import('./features/scheduled-savings/scheduled-savings-list.component').then((m) => m.ScheduledSavingsListComponent),
-  },
   { path: '**', redirectTo: 'onboarding' },
 ];

@@ -15,6 +15,9 @@ export interface BackupPayload {
     readonly budgets: readonly unknown[];
     readonly expenseTemplates: readonly unknown[];
     readonly appSettings: readonly unknown[];
+    readonly savingsAccounts: readonly unknown[];
+    readonly savingsTransactions: readonly unknown[];
+    readonly savingsExecutions: readonly unknown[];
   };
 }
 
@@ -59,6 +62,9 @@ export class DataPortabilityService {
         database.budgets,
         database.expenseTemplates,
         database.appSettings,
+        database.savingsAccounts,
+        database.savingsTransactions,
+        database.savingsExecutions,
       ],
       async () => {
         await database.paymentMethods.clear();
@@ -70,6 +76,9 @@ export class DataPortabilityService {
         await database.budgets.clear();
         await database.expenseTemplates.clear();
         await database.appSettings.clear();
+        await database.savingsAccounts.clear();
+        await database.savingsTransactions.clear();
+        await database.savingsExecutions.clear();
 
         if (payload.tables.paymentMethods.length > 0) {
           await database.paymentMethods.bulkAdd(payload.tables.paymentMethods as never);
@@ -98,6 +107,15 @@ export class DataPortabilityService {
         if (payload.tables.appSettings.length > 0) {
           await database.appSettings.bulkAdd(payload.tables.appSettings as never);
         }
+        if (payload.tables.savingsAccounts.length > 0) {
+          await database.savingsAccounts.bulkAdd(payload.tables.savingsAccounts as never);
+        }
+        if (payload.tables.savingsTransactions.length > 0) {
+          await database.savingsTransactions.bulkAdd(payload.tables.savingsTransactions as never);
+        }
+        if (payload.tables.savingsExecutions.length > 0) {
+          await database.savingsExecutions.bulkAdd(payload.tables.savingsExecutions as never);
+        }
       },
     );
   }
@@ -119,6 +137,9 @@ export class DataPortabilityService {
       budgets,
       expenseTemplates,
       appSettings,
+      savingsAccounts,
+      savingsTransactions,
+      savingsExecutions,
     ] = await Promise.all([
       database.paymentMethods.toArray(),
       database.expenses.toArray(),
@@ -129,6 +150,9 @@ export class DataPortabilityService {
       database.budgets.toArray(),
       database.expenseTemplates.toArray(),
       database.appSettings.toArray(),
+      database.savingsAccounts.toArray(),
+      database.savingsTransactions.toArray(),
+      database.savingsExecutions.toArray(),
     ]);
     return {
       version: BACKUP_VERSION,
@@ -143,6 +167,9 @@ export class DataPortabilityService {
         budgets,
         expenseTemplates,
         appSettings,
+        savingsAccounts,
+        savingsTransactions,
+        savingsExecutions,
       },
     };
   }

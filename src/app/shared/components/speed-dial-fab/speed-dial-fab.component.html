@@ -43,16 +43,18 @@
       <span class="speed-dial-action__label">Transferir</span>
       <span class="speed-dial-action__icon material-symbols-outlined" aria-hidden="true">swap_horiz</span>
     </button>
-    <button
-      class="speed-dial-action"
-      type="button"
-      role="menuitem"
-      [attr.aria-hidden]="!isOpen()"
-      (click)="onAction(() => savingsPress.emit())"
-    >
-      <span class="speed-dial-action__label">Ahorro</span>
-      <span class="speed-dial-action__icon material-symbols-outlined" aria-hidden="true">savings</span>
-    </button>
+    @if (showSavings()) {
+      <button
+        class="speed-dial-action"
+        type="button"
+        role="menuitem"
+        [attr.aria-hidden]="!isOpen()"
+        (click)="onAction(() => savingsPress.emit())"
+      >
+        <span class="speed-dial-action__label">Ahorro</span>
+        <span class="speed-dial-action__icon material-symbols-outlined" aria-hidden="true">savings</span>
+      </button>
+    }
   </div>
   <button
     class="speed-dial-trigger"

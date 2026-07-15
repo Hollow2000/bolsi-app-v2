@@ -3,7 +3,6 @@ import { RouterLink } from '@angular/router';
 
 import { DataPortabilityService } from '../../core/services/data-portability.service';
 import { MonthlyPaymentService } from '../../core/services/monthly-payment.service';
-import { ScheduledSavingService } from '../../core/services/scheduled-saving.service';
 import { SettingsService } from '../../core/services/settings.service';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { CardComponent } from '../../shared/components/card/card.component';
@@ -31,7 +30,6 @@ import { BottomSheetComponent } from '../../shared/components/bottom-sheet/botto
 export class SettingsComponent {
   private readonly settingsService = inject(SettingsService);
   private readonly monthlyPaymentService = inject(MonthlyPaymentService);
-  private readonly scheduledSavingService = inject(ScheduledSavingService);
   private readonly dataPortability = inject(DataPortabilityService);
   private readonly toast = inject(ToastService);
 
@@ -73,8 +71,7 @@ export class SettingsComponent {
         const nextYear = month === 12 ? year + 1 : year;
         try {
           const paymentCount = await this.monthlyPaymentService.replicateRecurring(month, year, nextMonth, nextYear);
-          const savingCount = await this.scheduledSavingService.replicateToNextMonth(month, year, nextMonth, nextYear);
-          this.toast.show(`${paymentCount} pago(s) y ${savingCount} ahorro(s) replicado(s) al siguiente mes.`);
+          this.toast.show(`${paymentCount} pago(s) recurrente(s) replicado(s) al siguiente mes.`);
         } catch (error) {
           this.toast.show(error instanceof Error ? error.message : 'No se pudo cerrar el mes.');
         }

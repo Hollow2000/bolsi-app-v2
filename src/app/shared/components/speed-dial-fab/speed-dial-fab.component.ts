@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 
 @Component({
   selector: 'app-speed-dial-fab',
@@ -7,6 +7,7 @@ import { ChangeDetectionStrategy, Component, output, signal } from '@angular/cor
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SpeedDialFabComponent {
+  readonly showSavings = input(false);
   readonly templatePress = output<void>();
   readonly expensePress = output<void>();
   readonly incomePress = output<void>();

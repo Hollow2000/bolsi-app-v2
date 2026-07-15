@@ -69,7 +69,6 @@ export class HamburgerMenuComponent {
     { path: '/catalogs', label: 'Categorías', icon: 'category' },
     { path: '/pockets', label: 'Bolsillos', icon: 'wallet' },
     { path: '/savings', label: 'Ahorros', icon: 'savings' },
-    { path: '/scheduled-savings', label: 'Ahorros prog.', icon: 'schedule' },
     { path: '/budgets', label: 'Presupuestos', icon: 'account_balance_wallet' },
     { path: '/templates', label: 'Gasto rápido', icon: 'bolt' },
     { path: '/monthly-payments', label: 'Pagos', icon: 'calendar_month' },
