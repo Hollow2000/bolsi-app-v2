@@ -73,6 +73,18 @@
       <span>Se repite cada mes</span>
     </label>
 
+    @if (isRecurring()) {
+      <div class="frequency-field">
+        <label class="form-label">Frecuencia</label>
+        <app-segmented-control
+          ariaLabel="Frecuencia del pago"
+          [options]="frequencyOptions"
+          [value]="frequency()"
+          (valueChange)="frequency.set($event)"
+        />
+      </div>
+    }
+
     @if (errorMessage(); as message) {
       <p class="modal-error" role="alert">{{ message }}</p>
     }

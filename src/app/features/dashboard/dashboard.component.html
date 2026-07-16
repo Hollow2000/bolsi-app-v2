@@ -183,6 +183,19 @@
       <app-bottom-sheet title="Confirmar ahorro programado" (close)="closeConfirmScheduledSaving()">
         <div class="confirm-scheduled-form">
           <p class="confirm-scheduled-name">{{ confirmScheduledSavingAccount()?.name }}</p>
+          <app-select-input
+            label="Cuenta de origen"
+            [valueType]="'number'"
+            [value]="confirmScheduledSavingPaymentMethodId()"
+            (valueChange)="confirmScheduledSavingPaymentMethodId.set($any($event))"
+          >
+            <option [value]="0" disabled>Seleccionar cuenta</option>
+            @for (method of originPaymentMethods(); track method.id) {
+              <option [value]="method.id!" [selected]="confirmScheduledSavingPaymentMethodId() === method.id">
+                {{ method.name }}
+              </option>
+            }
+          </app-select-input>
           <app-number-input
             label="Monto"
             [value]="confirmScheduledSavingAmount()"

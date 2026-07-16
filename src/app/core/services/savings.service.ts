@@ -222,19 +222,21 @@ export class SavingsService {
       if (!config || !config.isActive) continue;
 
       const occurrences = this.calculateOccurrences(config.frequency);
-      const executedCount = executions.filter(
-        (e) => e.savingsAccountId === account.id,
-      ).length;
-      const pending = occurrences - executedCount;
+      const executedIndices = executions
+        .filter((e) => e.savingsAccountId === account.id)
+        .map((e) => e.occurrenceIndex);
 
-      if (pending > 0) {
-        result.push({
-          account,
-          config,
-          occurrences,
-          executedCount,
-          pendingAmount: pending * config.amount,
-        });
+      // Return one item per pending occurrence (not summed)
+      for (let i = 1; i <= occurrences; i++) {
+        if (!executedIndices.includes(i)) {
+          result.push({
+            account,
+            config,
+            occurrences,
+            executedCount: i - 1,
+            pendingAmount: config.amount,
+          });
+        }
       }
     }
 
@@ -246,7 +248,14 @@ export class SavingsService {
     return pending.reduce((sum, p) => sum + p.pendingAmount, 0);
   }
 
-  async executeScheduledSaving(savingsAccountId: number, month: number, year: number, occurrenceIndex: number): Promise<void> {
+  async executeScheduledSaving(
+    savingsAccountId: number,
+    month: number,
+    year: number,
+    occurrenceIndex: number,
+    customAmount?: number,
+    customPaymentMethodId?: number,
+  ): Promise<void> {
     const account = await database.savingsAccounts.get(savingsAccountId);
     if (!account) {
       throw new Error('Cuenta de ahorro no encontrada.');
@@ -256,10 +265,13 @@ export class SavingsService {
       throw new Error('Esta cuenta no tiene ahorro programado configurado.');
     }
 
+    const amount = customAmount ?? config.amount;
+    const paymentMethodId = customPaymentMethodId ?? config.paymentMethodId;
+
     await this.deposit(
       savingsAccountId,
-      config.amount,
-      config.paymentMethodId,
+      amount,
+      paymentMethodId,
       `Ahorro programado: ${account.name}`,
     );
 
@@ -269,7 +281,7 @@ export class SavingsService {
       year,
       occurrenceIndex,
       executedDate: new Date().toISOString().split('T')[0],
-      amount: config.amount,
+      amount,
     });
   }
 

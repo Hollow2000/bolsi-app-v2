@@ -401,8 +401,9 @@ export class CreditCardDetailComponent {
     this.hiddenExpenses.set(hidden.sort((a, b) => b.date.localeCompare(a.date)));
 
     // Non-hidden direct charges in period
+    // Prioritize applicationDate (when bank confirms) over date (operation date)
     const inRange = allCardExpenses.filter(
-      (expense) => !expense.isInstallment && !expense.hidden && expense.date >= range.startIso && expense.date <= range.endIso,
+      (expense) => !expense.isInstallment && !expense.hidden && (expense.applicationDate ?? expense.date) >= range.startIso && (expense.applicationDate ?? expense.date) <= range.endIso,
     );
     this.periodDirectCharges.set(inRange);
 

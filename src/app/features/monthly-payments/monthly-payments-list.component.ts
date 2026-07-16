@@ -112,16 +112,26 @@ export class MonthlyPaymentsListComponent {
   protected subtitleFor(payment: PaymentWithUrgency): string {
     const method = this.paymentMethods().find((m) => m.id === payment.paymentMethodId);
     const methodName = method?.name ?? '—';
+    const freq = payment.isRecurring ? ` · ${this.frequencyLabel(payment.frequency)}` : '';
     if (payment.paid) {
-      return `Pagado · ${methodName}`;
+      return `Pagado · ${methodName}${freq}`;
     }
     if (payment.daysUntilDue < 0) {
-      return `Vencido hace ${Math.abs(payment.daysUntilDue)} día(s) · ${methodName}`;
+      return `Vencido hace ${Math.abs(payment.daysUntilDue)} día(s) · ${methodName}${freq}`;
     }
     if (payment.daysUntilDue === 0) {
-      return `Vence hoy · ${methodName}`;
+      return `Vence hoy · ${methodName}${freq}`;
     }
-    return `Vence en ${payment.daysUntilDue} día(s) · ${methodName}`;
+    return `Vence en ${payment.daysUntilDue} día(s) · ${methodName}${freq}`;
+  }
+
+  protected frequencyLabel(frequency?: string): string {
+    switch (frequency) {
+      case 'monthly': return 'Mensual';
+      case 'biweekly': return 'Quincenal';
+      case 'weekly': return 'Semanal';
+      default: return 'Mensual';
+    }
   }
 
   protected urgencyClass(payment: PaymentWithUrgency): string {

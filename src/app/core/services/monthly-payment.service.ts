@@ -68,6 +68,12 @@ export class MonthlyPaymentService {
       throw new Error('Para pagar, selecciona una cuenta de efectivo o débito.');
     }
 
+    // Validate sufficient balance
+    const available = source.currentBalance ?? 0;
+    if (amountPaid > available) {
+      throw new Error(`Saldo insuficiente. Disponible: ${available.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}`);
+    }
+
     // 1. Mark the monthly payment as paid.
     const updated: MonthlyPayment = {
       ...payment,

@@ -26,6 +26,7 @@ import { BottomSheetComponent } from '../../shared/components/bottom-sheet/botto
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { CardComponent } from '../../shared/components/card/card.component';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
+import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
 import { SpeedDialFabComponent } from '../../shared/components/speed-dial-fab/speed-dial-fab.component';
 import { TemplateSelectorComponent } from '../../shared/components/template-selector/template-selector.component';
 import { ToastService } from '../../shared/services/toast.service';
@@ -54,6 +55,7 @@ import { QuickSavingsFormComponent } from '../../shared/components/quick-savings
     MexicanCurrencyPipe,
     NumberInputComponent,
     PocketSummaryWidgetComponent,
+    SelectInputComponent,
     SpeedDialFabComponent,
     TemplateSelectorComponent,
     TransferFormModalComponent,
@@ -114,6 +116,7 @@ export class DashboardComponent {
   protected readonly confirmScheduledSavingAccount = signal<SavingsAccount | null>(null);
   protected readonly confirmScheduledSavingAmount = signal(0);
   protected readonly confirmScheduledSavingPaymentMethodId = signal(0);
+  protected readonly confirmScheduledSavingOccurrenceIndex = signal(0);
   protected readonly confirmScheduledSavingError = signal<string | null>(null);
 
   protected readonly periodLabel = computed(() => {
@@ -151,6 +154,10 @@ export class DashboardComponent {
 
   protected readonly receivableMethods = computed(() =>
     this.paymentMethods().filter((method) => method.type !== 'credit'),
+  );
+
+  protected readonly originPaymentMethods = computed(() =>
+    this.paymentMethods().filter((method) => method.type === 'cash' || method.type === 'debit'),
   );
 
   constructor() {
@@ -528,6 +535,7 @@ export class DashboardComponent {
     this.confirmScheduledSavingAccount.set(pending.account);
     this.confirmScheduledSavingAmount.set(pending.pendingAmount);
     this.confirmScheduledSavingPaymentMethodId.set(pending.config.paymentMethodId);
+    this.confirmScheduledSavingOccurrenceIndex.set(pending.executedCount + 1);
     this.confirmScheduledSavingError.set(null);
     this.confirmScheduledSavingOpen.set(true);
   }
@@ -541,23 +549,38 @@ export class DashboardComponent {
   protected async confirmAndExecuteScheduledSaving(): Promise<void> {
     const account = this.confirmScheduledSavingAccount();
     const amount = this.confirmScheduledSavingAmount();
+    const paymentMethodId = this.confirmScheduledSavingPaymentMethodId();
+    const occurrenceIndex = this.confirmScheduledSavingOccurrenceIndex();
     if (!account || account.id === undefined) return;
+
+    if (paymentMethodId === 0) {
+      this.confirmScheduledSavingError.set('Selecciona una cuenta de origen.');
+      return;
+    }
 
     if (amount <= 0) {
       this.confirmScheduledSavingError.set('El monto debe ser mayor a 0.');
       return;
     }
 
-    const pending = this.dueScheduledSavings().find((p) => p.account.id === account.id);
-    if (!pending) return;
+    // Validate sufficient balance
+    const method = this.paymentMethods().find((m) => m.id === paymentMethodId);
+    if (method) {
+      const available = method.currentBalance ?? 0;
+      if (amount > available) {
+        this.confirmScheduledSavingError.set(`Saldo insuficiente. Disponible: ${available.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}`);
+        return;
+      }
+    }
 
     try {
-      // Execute with custom amount by depositing directly
-      await this.savingsService.deposit(
+      await this.savingsService.executeScheduledSaving(
         account.id,
+        this.currentMonth(),
+        this.currentYear(),
+        occurrenceIndex,
         amount,
-        pending.config.paymentMethodId,
-        `Ahorro programado: ${account.name}`,
+        paymentMethodId,
       );
       this.toast.show(`Ahorro "${account.name}" ejecutado.`);
       this.closeConfirmScheduledSaving();

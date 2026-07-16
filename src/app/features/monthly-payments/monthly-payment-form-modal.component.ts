@@ -1,15 +1,22 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 
 import { EXPENSE_CATEGORIES_DEFAULT, MATERIAL_ICONS, type ExpenseCategory } from '../../core/services/catalog.service';
-import type { MonthlyPayment } from '../../core/models/monthly-payment.model';
+import type { MonthlyPayment, PaymentFrequency } from '../../core/models/monthly-payment.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { DateInputComponent } from '../../shared/components/date-input/date-input.component';
 import { IconPickerComponent } from '../../shared/components/icon-picker/icon-picker.component';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
+import { SegmentedControlComponent, type SegmentedOption } from '../../shared/components/segmented-control/segmented-control.component';
 import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
 import { TextInputComponent } from '../../shared/components/text-input/text-input.component';
+
+const FREQUENCY_OPTIONS: readonly SegmentedOption<PaymentFrequency>[] = [
+  { value: 'monthly', label: 'Mensual' },
+  { value: 'biweekly', label: 'Quincenal' },
+  { value: 'weekly', label: 'Semanal' },
+];
 
 @Component({
   selector: 'app-monthly-payment-form-modal',
@@ -18,6 +25,7 @@ import { TextInputComponent } from '../../shared/components/text-input/text-inpu
     DateInputComponent,
     IconPickerComponent,
     NumberInputComponent,
+    SegmentedControlComponent,
     SelectInputComponent,
     TextInputComponent,
   ],
@@ -36,6 +44,7 @@ export class MonthlyPaymentFormModalComponent implements OnInit {
 
   protected readonly icons = MATERIAL_ICONS;
   protected readonly categories = EXPENSE_CATEGORIES_DEFAULT;
+  protected readonly frequencyOptions = FREQUENCY_OPTIONS;
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly name = signal('');
@@ -45,6 +54,7 @@ export class MonthlyPaymentFormModalComponent implements OnInit {
   protected readonly pocketId = signal<number>(0);
   protected readonly category = signal<ExpenseCategory>(EXPENSE_CATEGORIES_DEFAULT[0]);
   protected readonly isRecurring = signal(true);
+  protected readonly frequency = signal<PaymentFrequency>('monthly');
   protected readonly icon = signal('event');
 
   protected readonly submitLabel = computed(() => (this.payment() ? 'Guardar cambios' : 'Agregar pago'));
@@ -59,6 +69,7 @@ export class MonthlyPaymentFormModalComponent implements OnInit {
       this.pocketId.set(initial.pocketId ?? 0);
       this.category.set((initial.expenseCategory as ExpenseCategory) ?? EXPENSE_CATEGORIES_DEFAULT[0]);
       this.isRecurring.set(initial.isRecurring);
+      this.frequency.set(initial.frequency ?? 'monthly');
       this.icon.set(initial.icon ?? 'event');
     } else {
       this.dueDate.set(this.defaultDueDate());
@@ -115,6 +126,7 @@ export class MonthlyPaymentFormModalComponent implements OnInit {
       expenseCategory: this.category(),
       priority: initial?.priority ?? 0,
       isRecurring: this.isRecurring(),
+      frequency: this.isRecurring() ? this.frequency() : undefined,
       month: this.month(),
       year: this.year(),
       icon: this.icon(),
