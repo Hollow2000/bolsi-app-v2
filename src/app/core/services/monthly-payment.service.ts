@@ -64,12 +64,11 @@ export class MonthlyPaymentService {
     if (!source) {
       throw new Error('El método de pago seleccionado no existe.');
     }
-    if (source.type === 'credit') {
-      throw new Error('Para pagar, selecciona una cuenta de efectivo o débito.');
-    }
 
-    // Validate sufficient balance
-    const available = source.currentBalance ?? 0;
+    // Validate sufficient balance based on type
+    const available = source.type === 'credit'
+      ? (source.availableCredit ?? 0)
+      : (source.currentBalance ?? 0);
     if (amountPaid > available) {
       throw new Error(`Saldo insuficiente. Disponible: ${available.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}`);
     }
@@ -82,37 +81,18 @@ export class MonthlyPaymentService {
     };
     await database.monthlyPayments.put(updated);
 
-    // 2. Check if the payment is linked to a credit card.
-    const linkedMethod = payment.paymentMethodId !== undefined
-      ? await this.paymentMethods.getById(payment.paymentMethodId)
-      : undefined;
-
-    if (linkedMethod?.type === 'credit') {
-      // Credit card payment → transfer from source to card.
-      // Increases availableCredit (paying off the card frees credit).
-      await this.transferService.create({
-        fromPaymentMethodId: sourcePaymentMethodId,
-        toPaymentMethodId: payment.paymentMethodId!,
-        amount: amountPaid,
-        date: this.todayIso(),
-        description: payment.name,
-        month: payment.month,
-        year: payment.year,
-      });
-    } else {
-      // Non-credit payment (rent, utilities, etc.) → expense.
-      await this.expenseService.create({
-        date: this.todayIso(),
-        description: payment.name,
-        amount: amountPaid,
-        paymentMethodId: sourcePaymentMethodId,
-        pocketId: payment.pocketId ?? 0,
-        category: payment.expenseCategory ?? 'Other',
-        month: payment.month,
-        year: payment.year,
-        isInstallment: false,
-      });
-    }
+    // 2. Create expense using the source payment method
+    await this.expenseService.create({
+      date: this.todayIso(),
+      description: payment.name,
+      amount: amountPaid,
+      paymentMethodId: sourcePaymentMethodId,
+      pocketId: payment.pocketId ?? 0,
+      category: payment.expenseCategory ?? 'Other',
+      month: payment.month,
+      year: payment.year,
+      isInstallment: false,
+    });
   }
 
   /**

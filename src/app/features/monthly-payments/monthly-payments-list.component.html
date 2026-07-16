@@ -1,6 +1,6 @@
     <div class="app-screen">
       <header class="app-screen-header">
-        <h1>Pagos mensuales</h1>
+        <h1>Pagos recurrentes</h1>
         <span class="screen-period">{{ periodLabel() }}</span>
       </header>
       <app-install-prompt />
@@ -109,6 +109,12 @@
             </option>
           }
         </app-select-input>
+        @if (selectedSourceBalance(); as balance) {
+          <p class="balance-info">
+            {{ sourcePaymentMethodId() === 0 ? '' : (balance >= 0 ? 'Disponible: ' : 'Deuda: ') }}
+            <strong>{{ balance | mexicanCurrency }}</strong>
+          </p>
+        }
         @if (markAsPaidError(); as message) {
           <p class="modal-error" role="alert">{{ message }}</p>
         }

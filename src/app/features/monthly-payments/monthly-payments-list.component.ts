@@ -70,8 +70,17 @@ export class MonthlyPaymentsListComponent {
   protected readonly markAsPaidError = signal<string | null>(null);
 
   protected readonly sourcePaymentMethods = computed(() =>
-    this.paymentMethods().filter((method) => method.type !== 'credit'),
+    this.paymentMethods(),
   );
+
+  protected readonly selectedSourceBalance = computed(() => {
+    const id = this.sourcePaymentMethodId();
+    const method = this.paymentMethods().find((m) => m.id === id);
+    if (!method) return null;
+    return method.type === 'credit'
+      ? (method.availableCredit ?? 0)
+      : (method.currentBalance ?? 0);
+  });
 
   protected readonly totals = computed(() => {
     const items = this.payments();
@@ -180,7 +189,7 @@ export class MonthlyPaymentsListComponent {
   protected openMarkAsPaid(payment: MonthlyPayment): void {
     this.markingAsPaid.set(payment);
     this.amountToPay.set(payment.amount - payment.amountPaid);
-    // Pre-select the payment's configured method if it's non-credit
+    // Pre-select the payment's configured method
     const configured = this.sourcePaymentMethods().find(
       (m) => m.id === payment.paymentMethodId,
     );
