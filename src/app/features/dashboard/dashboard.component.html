@@ -82,29 +82,20 @@
         <app-income-vs-expenses-widget [data]="incomeVsExpenses()" />
 
         @if (showScheduledSavingBanner()) {
-          <div class="scheduled-savings-banner">
-            <div class="banner-content">
-              <span class="material-symbols-outlined icon banner-icon" aria-hidden="true">savings</span>
-              <div class="banner-text">
-                <p class="banner-title">Ahorros programados pendientes</p>
-                <p class="banner-subtitle">
-                  Tienes {{ dueScheduledSavings().length }} ahorro(s) por ejecutar este mes
-                </p>
-              </div>
-            </div>
-            <div class="banner-actions">
+          <app-card title="Ahorros programados">
+            <ul class="app-list">
               @for (pending of dueScheduledSavings(); track pending.account.id) {
-                <button
-                  class="banner-action-btn"
-                  type="button"
-                  (click)="executeScheduledSaving(pending)"
-                >
-                  <span class="banner-action-name">{{ pending.account.name }}</span>
-                  <span class="banner-action-amount">{{ pending.pendingAmount | mexicanCurrency }}</span>
-                </button>
+                <li class="scheduled-saving-item" (click)="openConfirmScheduledSaving(pending)">
+                  <span class="material-symbols-outlined icon scheduled-saving-icon" aria-hidden="true">savings</span>
+                  <div class="scheduled-saving-info">
+                    <span class="scheduled-saving-name">{{ pending.account.name }}</span>
+                    <span class="scheduled-saving-freq">{{ frequencyLabel(pending.config.frequency) }}</span>
+                  </div>
+                  <span class="scheduled-saving-amount">{{ pending.pendingAmount | mexicanCurrency }}</span>
+                </li>
               }
-            </div>
-          </div>
+            </ul>
+          </app-card>
         }
       </main>
     </div>
@@ -185,5 +176,26 @@
           (cancel)="closeQuickSavingsForm()"
           (saved)="onQuickSavingsSaved()"
         />
+      </app-bottom-sheet>
+    }
+
+    @if (confirmScheduledSavingOpen()) {
+      <app-bottom-sheet title="Confirmar ahorro programado" (close)="closeConfirmScheduledSaving()">
+        <div class="confirm-scheduled-form">
+          <p class="confirm-scheduled-name">{{ confirmScheduledSavingAccount()?.name }}</p>
+          <app-number-input
+            label="Monto"
+            [value]="confirmScheduledSavingAmount()"
+            (valueChange)="confirmScheduledSavingAmount.set($event)"
+            placeholder="0.00"
+          />
+          @if (confirmScheduledSavingError()) {
+            <p class="form-error" role="alert">{{ confirmScheduledSavingError() }}</p>
+          }
+          <div class="modal-actions">
+            <button appButton variant="secondary" type="button" (click)="closeConfirmScheduledSaving()">Cancelar</button>
+            <button appButton variant="primary" type="button" (click)="confirmAndExecuteScheduledSaving()">Confirmar</button>
+          </div>
+        </div>
       </app-bottom-sheet>
     }

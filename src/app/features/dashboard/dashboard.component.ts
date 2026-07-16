@@ -25,6 +25,7 @@ import type { SavingsAccount } from '../../core/models/savings-account.model';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { CardComponent } from '../../shared/components/card/card.component';
+import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
 import { SpeedDialFabComponent } from '../../shared/components/speed-dial-fab/speed-dial-fab.component';
 import { TemplateSelectorComponent } from '../../shared/components/template-selector/template-selector.component';
 import { ToastService } from '../../shared/services/toast.service';
@@ -44,12 +45,14 @@ import { QuickSavingsFormComponent } from '../../shared/components/quick-savings
   selector: 'app-dashboard',
   imports: [
     BottomSheetComponent,
+    ButtonDirective,
     CardComponent,
     CreditCardStatusWidgetComponent,
     EditIncomeModalComponent,
     ExpenseFormModalComponent,
     IncomeVsExpensesWidgetComponent,
     MexicanCurrencyPipe,
+    NumberInputComponent,
     PocketSummaryWidgetComponent,
     SpeedDialFabComponent,
     TemplateSelectorComponent,
@@ -106,6 +109,12 @@ export class DashboardComponent {
   protected readonly savingsAccounts = signal<SavingsAccount[]>([]);
   protected readonly dueScheduledSavings = signal<PendingScheduledSaving[]>([]);
   protected readonly showScheduledSavingBanner = signal(false);
+
+  protected readonly confirmScheduledSavingOpen = signal(false);
+  protected readonly confirmScheduledSavingAccount = signal<SavingsAccount | null>(null);
+  protected readonly confirmScheduledSavingAmount = signal(0);
+  protected readonly confirmScheduledSavingPaymentMethodId = signal(0);
+  protected readonly confirmScheduledSavingError = signal<string | null>(null);
 
   protected readonly periodLabel = computed(() => {
     const monthNames = [
@@ -503,6 +512,60 @@ export class DashboardComponent {
       await this.loadAll(month, year);
     } catch (error) {
       this.toast.show(error instanceof Error ? error.message : 'Error al ejecutar ahorro.');
+    }
+  }
+
+  protected frequencyLabel(frequency: string): string {
+    switch (frequency) {
+      case 'monthly': return 'Mensual';
+      case 'biweekly': return 'Quincenal';
+      case 'weekly': return 'Semanal';
+      default: return '';
+    }
+  }
+
+  protected openConfirmScheduledSaving(pending: PendingScheduledSaving): void {
+    this.confirmScheduledSavingAccount.set(pending.account);
+    this.confirmScheduledSavingAmount.set(pending.pendingAmount);
+    this.confirmScheduledSavingPaymentMethodId.set(pending.config.paymentMethodId);
+    this.confirmScheduledSavingError.set(null);
+    this.confirmScheduledSavingOpen.set(true);
+  }
+
+  protected closeConfirmScheduledSaving(): void {
+    this.confirmScheduledSavingOpen.set(false);
+    this.confirmScheduledSavingAccount.set(null);
+    this.confirmScheduledSavingError.set(null);
+  }
+
+  protected async confirmAndExecuteScheduledSaving(): Promise<void> {
+    const account = this.confirmScheduledSavingAccount();
+    const amount = this.confirmScheduledSavingAmount();
+    if (!account || account.id === undefined) return;
+
+    if (amount <= 0) {
+      this.confirmScheduledSavingError.set('El monto debe ser mayor a 0.');
+      return;
+    }
+
+    const pending = this.dueScheduledSavings().find((p) => p.account.id === account.id);
+    if (!pending) return;
+
+    try {
+      // Execute with custom amount by depositing directly
+      await this.savingsService.deposit(
+        account.id,
+        amount,
+        pending.config.paymentMethodId,
+        `Ahorro programado: ${account.name}`,
+      );
+      this.toast.show(`Ahorro "${account.name}" ejecutado.`);
+      this.closeConfirmScheduledSaving();
+      const month = this.currentMonth();
+      const year = this.currentYear();
+      await this.loadAll(month, year);
+    } catch (error) {
+      this.confirmScheduledSavingError.set(error instanceof Error ? error.message : 'Error al ejecutar ahorro.');
     }
   }
 }

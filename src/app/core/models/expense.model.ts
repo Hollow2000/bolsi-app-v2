@@ -1,6 +1,7 @@
 export interface Expense {
   id?: number;
   date: string;
+  applicationDate?: string;
   description: string;
   amount: number;
   paymentMethodId: number;

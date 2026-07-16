@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 
 import { EXPENSE_CATEGORIES_DEFAULT, INCOME_CATEGORIES_DEFAULT } from '../../core/services/catalog.service';
 import type { Expense } from '../../core/models/expense.model';
@@ -11,12 +12,14 @@ import { PocketService } from '../../core/services/pocket.service';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { CardComponent } from '../../shared/components/card/card.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { DateInputComponent } from '../../shared/components/date-input/date-input.component';
 import { ExpenseFormModalComponent } from './expense-form-modal.component';
 import { FabComponent } from '../../shared/components/fab/fab.component';
 import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
 import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
 import { ToastService } from '../../shared/services/toast.service';
 import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
+import { ButtonDirective } from '../../shared/components/button/button.directive';
 
 interface FilterState {
   readonly pocketId: number;
@@ -38,8 +41,10 @@ const NO_CATEGORY = '';
   selector: 'app-expenses-list',
   imports: [
     BottomSheetComponent,
+    ButtonDirective,
     CardComponent,
     ConfirmDialogComponent,
+    DateInputComponent,
     ExpenseFormModalComponent,
     FabComponent,
     MexicanCurrencyPipe,
@@ -56,6 +61,7 @@ export class ExpensesListComponent {
   private readonly paymentMethodService = inject(PaymentMethodService);
   private readonly pocketService = inject(PocketService);
   private readonly toast = inject(ToastService);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly allCategories = [...new Set([...EXPENSE_CATEGORIES_DEFAULT, ...INCOME_CATEGORIES_DEFAULT])];
 
@@ -76,6 +82,10 @@ export class ExpensesListComponent {
   protected readonly confirmOpen = signal(false);
   protected readonly confirmMessage = signal('');
   protected readonly confirmAction = signal<(() => void) | null>(null);
+
+  protected readonly applicationDateOpen = signal(false);
+  protected readonly applicationDateExpense = signal<Expense | null>(null);
+  protected readonly applicationDateValue = signal('');
 
   protected readonly filteredExpenses = computed(() => {
     const filter = this.filters();
@@ -103,7 +113,7 @@ export class ExpensesListComponent {
     return Array.from(groups.entries()).map(([date, items]) => ({
       date,
       label: this.formatDayLabel(date),
-      expenses: items,
+      expenses: items.sort((a, b) => (b.id ?? 0) - (a.id ?? 0)),
       total: Math.round(items.reduce((sum, e) => sum + e.amount, 0) * 100) / 100,
     }));
   });
@@ -262,6 +272,42 @@ export class ExpensesListComponent {
     }
   }
 
+  protected isCreditExpense(expense: Expense): boolean {
+    const method = this.paymentMethods().find((m) => m.id === expense.paymentMethodId);
+    return method?.type === 'credit';
+  }
+
+  protected getEffectiveDate(expense: Expense): string {
+    return expense.applicationDate ?? expense.date;
+  }
+
+  protected openApplicationDate(expense: Expense): void {
+    this.applicationDateExpense.set(expense);
+    this.applicationDateValue.set(expense.applicationDate ?? expense.date);
+    this.applicationDateOpen.set(true);
+  }
+
+  protected closeApplicationDate(): void {
+    this.applicationDateOpen.set(false);
+    this.applicationDateExpense.set(null);
+  }
+
+  protected async saveApplicationDate(): Promise<void> {
+    const expense = this.applicationDateExpense();
+    if (!expense) return;
+    try {
+      await this.expenseService.update(expense, {
+        ...expense,
+        applicationDate: this.applicationDateValue(),
+      });
+      this.toast.show('Fecha de aplicación actualizada.');
+      this.closeApplicationDate();
+      await this.loadExpenses(this.currentMonth(), this.currentYear());
+    } catch (error) {
+      this.toast.show(error instanceof Error ? error.message : 'No se pudo actualizar.');
+    }
+  }
+
   private async load(): Promise<void> {
     const [methods, pockets] = await Promise.all([
       this.paymentMethodService.getAll(),
@@ -269,6 +315,16 @@ export class ExpensesListComponent {
     ]);
     this.paymentMethods.set(methods);
     this.pockets.set(pockets);
+
+    // Read query params for pre-filtering
+    const queryPaymentMethodId = this.route.snapshot.queryParamMap.get('paymentMethodId');
+    if (queryPaymentMethodId) {
+      const id = Number(queryPaymentMethodId);
+      if (!isNaN(id) && id > 0) {
+        this.filters.update((f) => ({ ...f, paymentMethodId: id }));
+      }
+    }
+
     await this.loadExpenses(this.currentMonth(), this.currentYear());
   }
 

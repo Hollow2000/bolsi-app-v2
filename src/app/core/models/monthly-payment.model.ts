@@ -1,3 +1,5 @@
+export type PaymentFrequency = 'monthly' | 'biweekly' | 'weekly';
+
 export interface MonthlyPayment {
   id?: number;
   name: string;
@@ -11,6 +13,7 @@ export interface MonthlyPayment {
   pocketId?: number;
   priority: number;
   isRecurring: boolean;
+  frequency?: PaymentFrequency;
   month: number;
   year: number;
   icon?: string;

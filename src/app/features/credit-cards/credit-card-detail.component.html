@@ -153,30 +153,19 @@
 
           <section>
             <header class="section-header">
-              <h2 class="section-title">Gastos recientes</h2>
-              <button class="toggle-hidden-btn" type="button" (click)="toggleHidden()">
-                {{ showHidden() ? 'Ocultar movimientos ocultos' : 'Mostrar movimientos ocultos' }}
-              </button>
+              <h2 class="section-title">Gastos</h2>
             </header>
-            @if (displayExpenses.length === 0) {
-              <app-card>
-                <p class="empty">Sin gastos registrados este mes.</p>
-              </app-card>
-            } @else {
-              <ul class="app-list" aria-label="Gastos recientes">
-                @for (expense of displayExpenses; track expense.id) {
-                  <li>
-                    <app-list-item
-                      [icon]="expense.hidden ? 'visibility_off' : 'shopping_bag'"
-                      [title]="expense.description"
-                      [subtitle]="expense.date + ' · ' + expense.category"
-                      [amount]="(expense.amount | mexicanCurrency) ?? ''"
-                      [tone]="expense.hidden ? 'default' : 'expense'"
-                    />
-                  </li>
-                }
-              </ul>
-            }
+            <app-card>
+              <p class="card-text">
+                Consulta todos los gastos realizados con esta tarjeta.
+              </p>
+              <div class="section-actions">
+                <a appButton variant="secondary" routerLink="/expenses" [queryParams]="{paymentMethodId: card()?.id}">
+                  <span class="material-symbols-outlined icon icon--small" aria-hidden="true">receipt_long</span>
+                  Ver gastos de esta tarjeta
+                </a>
+              </div>
+            </app-card>
           </section>
         </main>
       </div>

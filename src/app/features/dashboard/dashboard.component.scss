@@ -103,71 +103,58 @@
         padding: var(--space-4) 0;
       }
 
-      .scheduled-savings-banner {
-        background: var(--color-primary-soft);
-        border: 1px solid var(--color-primary);
-        border-radius: var(--radius-lg);
-        padding: var(--space-3);
-        margin-top: var(--space-3);
-      }
-
-      .banner-content {
+      .scheduled-saving-item {
         display: flex;
         align-items: center;
         gap: var(--space-3);
-        margin-bottom: var(--space-3);
+        padding: var(--space-2) 0;
+        cursor: pointer;
+        border-bottom: 1px solid var(--border-subtle);
       }
-
-      .banner-icon {
+      .scheduled-saving-item:last-child { border-bottom: none; }
+      .scheduled-saving-icon {
         color: var(--color-primary);
-        font-size: 24px;
+        font-size: 20px;
       }
-
-      .banner-text {
+      .scheduled-saving-info {
         flex: 1;
-      }
-
-      .banner-title {
-        margin: 0;
-        font-weight: 600;
-        color: var(--text-primary);
-      }
-
-      .banner-subtitle {
-        margin: 0;
-        font-size: var(--text-size-small);
-        color: var(--text-secondary);
-      }
-
-      .banner-actions {
         display: flex;
         flex-direction: column;
-        gap: var(--space-2);
       }
-
-      .banner-action-btn {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: var(--space-2) var(--space-3);
-        background: var(--surface);
-        border: 1px solid var(--border-default);
-        border-radius: var(--radius-md);
-        cursor: pointer;
-        transition: background 0.15s ease;
-      }
-
-      .banner-action-btn:hover {
-        background: var(--surface-alt);
-      }
-
-      .banner-action-name {
+      .scheduled-saving-name {
         font-weight: 500;
         color: var(--text-primary);
       }
-
-      .banner-action-amount {
+      .scheduled-saving-freq {
+        font-size: var(--text-size-small);
+        color: var(--text-secondary);
+      }
+      .scheduled-saving-amount {
         font-family: var(--font-mono);
         font-weight: 600;
-        color: var(--color-primary);
+        color: var(--text-primary);
+      }
+      .confirm-scheduled-form {
+        padding: var(--space-4);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+      }
+      .confirm-scheduled-name {
+        margin: 0;
+        font-size: var(--text-size-large);
+        font-weight: 600;
+        color: var(--text-primary);
+        text-align: center;
+      }
+      .form-error {
+        margin: 0;
+        color: var(--color-danger);
+        font-size: var(--text-size-small);
+        text-align: center;
+      }
+      .modal-actions {
+        display: flex;
+        gap: var(--space-2);
+        justify-content: flex-end;
       }

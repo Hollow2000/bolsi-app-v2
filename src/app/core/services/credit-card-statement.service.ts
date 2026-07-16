@@ -139,6 +139,7 @@ export class CreditCardStatementService {
     const range = this.calculatePeriodRange(period, closingDay);
 
     // Direct expenses in the billing period date range
+    // Prioritize applicationDate (when bank confirms) over date (operation date)
     const allExpenses = await database.expenses
       .where('paymentMethodId')
       .equals(card.id)
@@ -148,8 +149,8 @@ export class CreditCardStatementService {
         (expense) =>
           !expense.isInstallment &&
           !expense.hidden &&
-          expense.date >= range.startIso &&
-          expense.date <= range.endIso,
+          (expense.applicationDate ?? expense.date) >= range.startIso &&
+          (expense.applicationDate ?? expense.date) <= range.endIso,
       )
       .reduce((sum, expense) => sum + expense.amount, 0);
 
@@ -193,13 +194,14 @@ export class CreditCardStatementService {
       .toArray();
 
     // Direct charges in current period (non-installment, non-hidden)
+    // Prioritize applicationDate over date
     const directCharges = allExpenses
       .filter(
         (expense) =>
           !expense.isInstallment &&
           !expense.hidden &&
-          expense.date >= range.startIso &&
-          expense.date <= range.endIso,
+          (expense.applicationDate ?? expense.date) >= range.startIso &&
+          (expense.applicationDate ?? expense.date) <= range.endIso,
       )
       .reduce((sum, expense) => sum + expense.amount, 0);
 

@@ -104,6 +104,16 @@
                     <div class="expense-right">
                       <span class="expense-amount">{{ (expense.amount | mexicanCurrency) ?? '' }}</span>
                       <div class="expense-actions">
+                        @if (isCreditExpense(expense)) {
+                          <button
+                            class="app-icon-button"
+                            type="button"
+                            aria-label="Asignar fecha de aplicación"
+                            (click)="openApplicationDate(expense)"
+                          >
+                            <span class="material-symbols-outlined icon icon--small" aria-hidden="true">event</span>
+                          </button>
+                        }
                         <button
                           class="app-icon-button"
                           type="button"
@@ -162,5 +172,25 @@
           (confirmed)="onConfirm()"
           (cancelled)="onCancelConfirm()"
         />
+      </app-bottom-sheet>
+    }
+
+    @if (applicationDateOpen()) {
+      <app-bottom-sheet title="Fecha de aplicación" (close)="closeApplicationDate()">
+        <div class="form-content">
+          <p class="form-hint">
+            La fecha de aplicación es cuando el banco confirma la transacción.
+            Se usa para el corte de la tarjeta.
+          </p>
+          <app-date-input
+            label="Fecha de aplicación"
+            [value]="applicationDateValue()"
+            (valueChange)="applicationDateValue.set($event)"
+          />
+          <div class="modal-actions">
+            <button appButton variant="secondary" type="button" (click)="closeApplicationDate()">Cancelar</button>
+            <button appButton variant="primary" type="button" (click)="saveApplicationDate()">Guardar</button>
+          </div>
+        </div>
       </app-bottom-sheet>
     }

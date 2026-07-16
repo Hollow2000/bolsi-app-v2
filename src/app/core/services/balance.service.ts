@@ -88,7 +88,7 @@ export class BalanceService {
    */
   private async sumBillableDebt(
     methods: readonly PaymentMethod[],
-    allExpenses: readonly { paymentMethodId: number; amount: number; date: string; isInstallment: boolean; hidden?: boolean }[],
+    allExpenses: readonly { paymentMethodId: number; amount: number; date: string; applicationDate?: string; isInstallment: boolean; hidden?: boolean }[],
     allTransfers: readonly { toPaymentMethodId: number; amount: number; month: number; year: number; isCreditCardPayment?: boolean; billingPeriodMonth?: number; billingPeriodYear?: number }[],
     month: number,
     year: number,
@@ -116,6 +116,7 @@ export class BalanceService {
         total += cardDebt;
       } else {
         // Before cutoff: direct charges + installments - transfers
+        // Prioritize applicationDate over date for credit card period filtering
         const range = this.calculateActivePeriod(card, today);
         const directSum = allExpenses
           .filter(
@@ -123,8 +124,8 @@ export class BalanceService {
               expense.paymentMethodId === card.id &&
               !expense.isInstallment &&
               !expense.hidden &&
-              expense.date >= range.startIso &&
-              expense.date <= range.endIso,
+              (expense.applicationDate ?? expense.date) >= range.startIso &&
+              (expense.applicationDate ?? expense.date) <= range.endIso,
           )
           .reduce((sum, expense) => sum + expense.amount, 0);
         const installmentPlans = await database.installmentPlans

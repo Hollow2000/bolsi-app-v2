@@ -112,8 +112,9 @@ export class MonthlyPaymentService {
   /**
    * BR-11: when a month closes, every `isRecurring` payment of that
    * month is copied into the next month with `paid = false`,
-   * `amountPaid = 0` and the due date rolled forward by one month.
+   * `amountPaid = 0` and the due date rolled forward.
    * Payment-method balances are intentionally left untouched.
+   * Supports monthly, biweekly, and weekly frequencies.
    */
   async replicateRecurring(
     originMonth: number,
@@ -128,17 +129,66 @@ export class MonthlyPaymentService {
     if (recurring.length === 0) {
       return 0;
     }
-    const copies: MonthlyPayment[] = recurring.map((payment) => {
+
+    const copies: MonthlyPayment[] = [];
+
+    for (const payment of recurring) {
       const { id: _id, ...rest } = payment;
-      return {
-        ...rest,
-        paid: false,
-        amountPaid: 0,
-        dueDate: this.shiftDueDateByOneMonth(payment.dueDate, targetMonth, targetYear),
-        month: targetMonth,
-        year: targetYear,
-      };
-    });
+      const frequency = payment.frequency ?? 'monthly';
+
+      if (frequency === 'biweekly') {
+        // Create 2 copies: one for first half (day 1-15), one for second half (day 16-31)
+        const baseDay = this.extractDay(payment.dueDate);
+        const firstDay = Math.min(baseDay, 15);
+        const secondDay = Math.min(baseDay + 15, this.lastDayOfMonth(targetYear, targetMonth));
+
+        copies.push({
+          ...rest,
+          paid: false,
+          amountPaid: 0,
+          dueDate: this.buildDate(targetYear, targetMonth, firstDay),
+          month: targetMonth,
+          year: targetYear,
+          frequency: 'biweekly',
+        });
+        copies.push({
+          ...rest,
+          paid: false,
+          amountPaid: 0,
+          dueDate: this.buildDate(targetYear, targetMonth, secondDay),
+          month: targetMonth,
+          year: targetYear,
+          frequency: 'biweekly',
+        });
+      } else if (frequency === 'weekly') {
+        // Create 4 copies: one for each week of the month
+        const baseDay = this.extractDay(payment.dueDate);
+        for (let week = 0; week < 4; week++) {
+          const day = Math.min(baseDay + (week * 7), this.lastDayOfMonth(targetYear, targetMonth));
+          copies.push({
+            ...rest,
+            paid: false,
+            amountPaid: 0,
+            dueDate: this.buildDate(targetYear, targetMonth, day),
+            month: targetMonth,
+            year: targetYear,
+            frequency: 'weekly',
+          });
+        }
+      } else {
+        // Monthly: single copy
+        copies.push({
+          ...rest,
+          paid: false,
+          amountPaid: 0,
+          dueDate: this.shiftDueDateByOneMonth(payment.dueDate, targetMonth, targetYear),
+          month: targetMonth,
+          year: targetYear,
+          frequency: 'monthly',
+        });
+      }
+    }
+
     await database.monthlyPayments.bulkAdd(copies);
     return copies.length;
   }
@@ -184,6 +234,22 @@ export class MonthlyPaymentService {
     const mm = String(targetMonth).padStart(2, '0');
     const dd = String(safeDay).padStart(2, '0');
     return `${targetYear}-${mm}-${dd}`;
+  }
+
+  private extractDay(dateStr: string): number {
+    const parts = dateStr.split('-').map(Number);
+    return parts.length === 3 ? parts[2] : 1;
+  }
+
+  private buildDate(year: number, month: number, day: number): string {
+    const safeDay = Math.min(day, this.lastDayOfMonth(year, month));
+    const mm = String(month).padStart(2, '0');
+    const dd = String(safeDay).padStart(2, '0');
+    return `${year}-${mm}-${dd}`;
+  }
+
+  private lastDayOfMonth(year: number, month: number): number {
+    return new Date(year, month, 0).getDate();
   }
 
   private todayIso(): string {
