@@ -1,0 +1,30 @@
+@if (entries().length === 0) {
+  <app-card title="Presupuestos">
+    <p class="empty-message">No tienes presupuestos configurados este mes.</p>
+  </app-card>
+} @else {
+  <app-card title="Presupuestos">
+    <ul class="budget-list" aria-label="Uso de presupuestos">
+      @for (entry of entries(); track entry.id) {
+        <li class="budget-item">
+          <div class="budget-item__head">
+            <span class="budget-item__category">{{ entry.category }}</span>
+            <span class="budget-item__percent" [class.budget-item__percent--over]="entry.ratio >= 1">
+              {{ (entry.ratio * 100).toFixed(0) }}%
+            </span>
+          </div>
+          @if (entry.pocketName) {
+            <p class="budget-item__pocket">{{ entry.pocketName }}</p>
+          }
+          <app-progress-bar [value]="entry.actual" [max]="entry.estimatedAmount || 1" />
+          <p class="budget-item__numbers">
+            <span>{{ entry.actual | mexicanCurrency }} de {{ entry.estimatedAmount | mexicanCurrency }}</span>
+            <span [class.budget-item__available--over]="entry.actual > entry.estimatedAmount">
+              {{ (entry.estimatedAmount - entry.actual) | mexicanCurrency }} libre
+            </span>
+          </p>
+        </li>
+      }
+    </ul>
+  </app-card>
+}

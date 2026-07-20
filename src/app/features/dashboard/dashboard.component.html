@@ -81,6 +81,8 @@
 
         <app-income-vs-expenses-widget [data]="incomeVsExpenses()" />
 
+        <app-budget-usage-widget [entries]="budgetEntries()" />
+
         @if (showScheduledSavingBanner()) {
           <app-card title="Ahorros programados">
             <ul class="app-list">

@@ -21,6 +21,7 @@ import { PocketService } from '../../core/services/pocket.service';
 import { SettingsService } from '../../core/services/settings.service';
 import { TransferService } from '../../core/services/transfer.service';
 import { SavingsService, type PendingScheduledSaving } from '../../core/services/savings.service';
+import { BudgetService } from '../../core/services/budget.service';
 import type { SavingsAccount } from '../../core/models/savings-account.model';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
@@ -35,6 +36,7 @@ import { CreditCardStatusWidgetComponent, type CreditCardStatusEntry } from './w
 import { IncomeVsExpensesWidgetComponent } from './widgets/income-vs-expenses-widget.component';
 import { PocketSummaryWidgetComponent, type PocketSummaryEntry } from './widgets/pocket-summary-widget.component';
 import { UrgentPaymentsWidgetComponent } from './widgets/urgent-payments-widget.component';
+import { BudgetUsageWidgetComponent, type BudgetUsageEntry } from './widgets/budget-usage-widget.component';
 import { ExpenseFormModalComponent } from '../expenses/expense-form-modal.component';
 import { EditIncomeModalComponent } from '../income/edit-income-modal.component';
 import { TransferFormModalComponent } from '../transfers/transfer-form-modal.component';
@@ -46,6 +48,7 @@ import { QuickSavingsFormComponent } from '../../shared/components/quick-savings
   selector: 'app-dashboard',
   imports: [
     BottomSheetComponent,
+    BudgetUsageWidgetComponent,
     ButtonDirective,
     CardComponent,
     CreditCardStatusWidgetComponent,
@@ -81,6 +84,7 @@ export class DashboardComponent {
   private readonly expenseTemplateService = inject(ExpenseTemplateService);
   private readonly transferService = inject(TransferService);
   private readonly savingsService = inject(SavingsService);
+  private readonly budgetService = inject(BudgetService);
   private readonly toast = inject(ToastService);
 
   protected readonly userName = signal('');
@@ -99,6 +103,7 @@ export class DashboardComponent {
   protected readonly monthlyExpenses = signal(0);
   protected readonly pocketBaseIncome = signal(0);
   protected readonly creditCardEntries = signal<CreditCardStatusEntry[]>([]);
+  protected readonly budgetEntries = signal<BudgetUsageEntry[]>([]);
 
   protected readonly currentMonth = signal(new Date().getMonth() + 1);
   protected readonly currentYear = signal(new Date().getFullYear());
@@ -221,6 +226,19 @@ export class DashboardComponent {
       this.expensesByPocket.set(this.buildExpensesByPocket(expenses, month, year));
       this.creditCardEntries.set(
         this.buildCreditCardEntries(methods, expenses, installmentPlans, allTransfers, month, year),
+      );
+
+      // Load budget progress
+      const budgetProgress = await this.budgetService.getProgressForMonth(month, year, expenses);
+      this.budgetEntries.set(
+        budgetProgress.map((bp) => ({
+          id: bp.budget.id ?? 0,
+          category: bp.budget.category,
+          estimatedAmount: bp.budget.estimatedAmount,
+          actual: bp.actual,
+          ratio: bp.ratio,
+          pocketName: pockets.find((p) => p.id === bp.budget.pocketId)?.name ?? '',
+        })),
       );
 
       // Load savings accounts
