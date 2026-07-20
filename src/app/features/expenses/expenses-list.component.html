@@ -65,9 +65,9 @@
             (valueChange)="setCategoryFilter($any($event))"
           >
             <option [value]="''" [selected]="filters().category === ''">Todas las categorías</option>
-            @for (category of allCategories; track category) {
-              <option [value]="category" [selected]="filters().category === category">
-                {{ category }}
+            @for (category of allCategories(); track category.id) {
+              <option [value]="category.name" [selected]="filters().category === category.name">
+                {{ category.name }}
               </option>
             }
           </app-select-input>

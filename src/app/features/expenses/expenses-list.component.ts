@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { EXPENSE_CATEGORIES_DEFAULT, INCOME_CATEGORIES_DEFAULT } from '../../core/services/catalog.service';
+import type { CatalogItem } from '../../core/models/catalog.model';
 import type { Expense } from '../../core/models/expense.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';
+import { CatalogService } from '../../core/services/catalog.service';
 import { ExpenseService } from '../../core/services/expense.service';
 import { ExpenseTemplateService } from '../../core/services/expense-template.service';
 import { PaymentMethodService } from '../../core/services/payment-method.service';
@@ -60,10 +61,11 @@ export class ExpensesListComponent {
   private readonly templateService = inject(ExpenseTemplateService);
   private readonly paymentMethodService = inject(PaymentMethodService);
   private readonly pocketService = inject(PocketService);
+  private readonly catalogService = inject(CatalogService);
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
 
-  protected readonly allCategories = [...new Set([...EXPENSE_CATEGORIES_DEFAULT, ...INCOME_CATEGORIES_DEFAULT])];
+  protected readonly allCategories = signal<CatalogItem[]>([]);
 
   protected readonly expenses = signal<Expense[]>([]);
   protected readonly paymentMethods = signal<PaymentMethod[]>([]);
@@ -309,12 +311,15 @@ export class ExpensesListComponent {
   }
 
   private async load(): Promise<void> {
-    const [methods, pockets] = await Promise.all([
+    const [methods, pockets, expenseCategories, incomeCategories] = await Promise.all([
       this.paymentMethodService.getAll(),
       this.pocketService.getAll(),
+      this.catalogService.getByType('expense'),
+      this.catalogService.getByType('income'),
     ]);
     this.paymentMethods.set(methods);
     this.pockets.set(pockets);
+    this.allCategories.set([...expenseCategories, ...incomeCategories]);
 
     // Read query params for pre-filtering
     const queryPaymentMethodId = this.route.snapshot.queryParamMap.get('paymentMethodId');
