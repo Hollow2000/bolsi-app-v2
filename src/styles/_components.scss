@@ -402,12 +402,18 @@ select.app-form-input {
 .app-list-item__subtitle {
   font-size: var(--text-size-small);
   color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .app-list-item__amount {
   font-size: var(--text-size-base);
   font-weight: 600;
   white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 70px;
+  text-align: right;
 }
 
 .app-list-item__amount--expense {
