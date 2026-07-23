@@ -72,7 +72,7 @@
               @if (periodCharges().length === 0 && periodRefunds().length === 0) {
                 <p class="empty">No hay cargos directos en este período.</p>
               } @else {
-                <ul class="app-list">
+                <ul class="app-list charges-list">
                   @for (charge of periodCharges(); track charge.id) {
                     <li class="app-list-item">
                       <app-list-item
