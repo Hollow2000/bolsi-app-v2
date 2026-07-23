@@ -147,6 +147,10 @@
   flex-shrink: 0;
 }
 
+.expense-actions .app-icon-button {
+  min-width: 0;
+}
+
 .app-icon-button--refunded {
   color: var(--color-success);
   opacity: 0.7;

@@ -107,25 +107,14 @@
                       </div>
                     </div>
                     <div class="expense-actions">
-                      @if (expense.refunded) {
-                        <button
-                          class="app-icon-button app-icon-button--refunded"
-                          type="button"
-                          aria-label="Ver reembolso"
-                          (click)="openRefundDetail(expense)"
-                        >
-                          <span class="material-symbols-outlined icon icon--small" aria-hidden="true">replay</span>
-                        </button>
-                      } @else {
-                        <button
-                          class="app-icon-button"
-                          type="button"
-                          aria-label="Registrar reembolso"
-                          (click)="openRefund(expense)"
-                        >
-                          <span class="material-symbols-outlined icon icon--small" aria-hidden="true">replay</span>
-                        </button>
-                      }
+                      <button
+                        class="app-icon-button"
+                        type="button"
+                        aria-label="Guardar como plantilla"
+                        (click)="saveAsTemplate(expense)"
+                      >
+                        <span class="material-symbols-outlined icon icon--small" aria-hidden="true">bookmark_add</span>
+                      </button>
                       <button
                         class="app-icon-button"
                         type="button"
@@ -229,10 +218,17 @@
               <span>Fecha de aplicación</span>
             </button>
           }
-          <button class="more-menu__item" type="button" (click)="saveAsTemplate(moreMenuExpense()!); closeMoreMenu()">
-            <span class="material-symbols-outlined icon" aria-hidden="true">bookmark_add</span>
-            <span>Guardar como plantilla</span>
-          </button>
+          @if (moreMenuExpense()!.refunded) {
+            <button class="more-menu__item" type="button" (click)="openRefundDetail(moreMenuExpense()!); closeMoreMenu()">
+              <span class="material-symbols-outlined icon" aria-hidden="true">replay</span>
+              <span>Ver reembolso</span>
+            </button>
+          } @else {
+            <button class="more-menu__item" type="button" (click)="openRefund(moreMenuExpense()!); closeMoreMenu()">
+              <span class="material-symbols-outlined icon" aria-hidden="true">replay</span>
+              <span>Registrar reembolso</span>
+            </button>
+          }
           <button class="more-menu__item more-menu__item--danger" type="button" (click)="confirmDelete(moreMenuExpense()!); closeMoreMenu()">
             <span class="material-symbols-outlined icon" aria-hidden="true">delete</span>
             <span>Eliminar</span>
