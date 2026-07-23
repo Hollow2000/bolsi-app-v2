@@ -344,10 +344,7 @@ select.app-form-input {
   gap: var(--space-3);
   padding: var(--space-2) var(--space-4);
   min-width: 0;
-}
-
-.app-list-item:last-child {
-  border-bottom: none;
+  width: 100%;
 }
 
 // Wrapper for list rows that need action buttons alongside
@@ -413,8 +410,6 @@ select.app-form-input {
   font-weight: 600;
   white-space: nowrap;
   flex-shrink: 0;
-  width: 90px;
-  min-width: 90px;
   text-align: right;
 }
 
