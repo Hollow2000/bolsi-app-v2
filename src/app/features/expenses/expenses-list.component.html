@@ -97,67 +97,51 @@
                       <span class="material-symbols-outlined icon">{{ expense.icon || 'receipt' }}</span>
                     </div>
                     <div class="expense-content">
-                      <span class="expense-title">{{ expense.description }}</span>
-                      <span class="expense-detail">{{ getPocketName(expense.pocketId) }} · {{ expense.category }}</span>
-                      <span class="expense-detail">{{ getMethodName(expense.paymentMethodId) }}</span>
-                    </div>
-                    <div class="expense-right">
-                      <span class="expense-amount">{{ (expense.amount | mexicanCurrency) ?? '' }}</span>
-                      <div class="expense-actions">
-                        @if (isCreditExpense(expense)) {
-                          <button
-                            class="app-icon-button"
-                            type="button"
-                            aria-label="Asignar fecha de aplicación"
-                            (click)="openApplicationDate(expense)"
-                          >
-                            <span class="material-symbols-outlined icon icon--small" aria-hidden="true">event</span>
-                          </button>
-                        }
-                        @if (expense.refunded) {
-                          <button
-                            class="app-icon-button app-icon-button--refunded"
-                            type="button"
-                            aria-label="Ver reembolso"
-                            (click)="openRefundDetail(expense)"
-                          >
-                            <span class="material-symbols-outlined icon icon--small" aria-hidden="true">replay</span>
-                          </button>
-                        } @else {
-                          <button
-                            class="app-icon-button"
-                            type="button"
-                            aria-label="Registrar reembolso"
-                            (click)="openRefund(expense)"
-                          >
-                            <span class="material-symbols-outlined icon icon--small" aria-hidden="true">replay</span>
-                          </button>
-                        }
-                        <button
-                          class="app-icon-button"
-                          type="button"
-                          aria-label="Guardar como plantilla"
-                          (click)="saveAsTemplate(expense)"
-                        >
-                          <span class="material-symbols-outlined icon icon--small" aria-hidden="true">bookmark_add</span>
-                        </button>
-                        <button
-                          class="app-icon-button"
-                          type="button"
-                          aria-label="Editar gasto"
-                          (click)="openEdit(expense)"
-                        >
-                          <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
-                        </button>
-                        <button
-                          class="app-icon-button"
-                          type="button"
-                          aria-label="Eliminar gasto"
-                          (click)="confirmDelete(expense)"
-                        >
-                          <span class="material-symbols-outlined icon icon--small" aria-hidden="true">delete</span>
-                        </button>
+                      <div class="expense-main">
+                        <span class="expense-title">{{ expense.description }}</span>
+                        <span class="expense-amount">{{ (expense.amount | mexicanCurrency) ?? '' }}</span>
                       </div>
+                      <div class="expense-meta">
+                        <span class="expense-detail">{{ getPocketName(expense.pocketId) }} · {{ expense.category }}</span>
+                        <span class="expense-detail">{{ getMethodName(expense.paymentMethodId) }}</span>
+                      </div>
+                    </div>
+                    <div class="expense-actions">
+                      @if (expense.refunded) {
+                        <button
+                          class="app-icon-button app-icon-button--refunded"
+                          type="button"
+                          aria-label="Ver reembolso"
+                          (click)="openRefundDetail(expense)"
+                        >
+                          <span class="material-symbols-outlined icon icon--small" aria-hidden="true">replay</span>
+                        </button>
+                      } @else {
+                        <button
+                          class="app-icon-button"
+                          type="button"
+                          aria-label="Registrar reembolso"
+                          (click)="openRefund(expense)"
+                        >
+                          <span class="material-symbols-outlined icon icon--small" aria-hidden="true">replay</span>
+                        </button>
+                      }
+                      <button
+                        class="app-icon-button"
+                        type="button"
+                        aria-label="Editar gasto"
+                        (click)="openEdit(expense)"
+                      >
+                        <span class="material-symbols-outlined icon icon--small" aria-hidden="true">edit</span>
+                      </button>
+                      <button
+                        class="app-icon-button app-icon-button--more"
+                        type="button"
+                        aria-label="Más acciones"
+                        (click)="toggleMoreMenu(expense)"
+                      >
+                        <span class="material-symbols-outlined icon icon--small" aria-hidden="true">more_vert</span>
+                      </button>
                     </div>
                   </li>
                 }
@@ -233,5 +217,26 @@
           (deleteConfirmed)="onRefundDeleted()"
           (cancel)="closeRefundDetail()"
         />
+      </app-bottom-sheet>
+    }
+
+    @if (moreMenuOpen() && moreMenuExpense()) {
+      <app-bottom-sheet [title]="moreMenuExpense()!.description" (close)="closeMoreMenu()">
+        <div class="more-menu">
+          @if (isCreditExpense(moreMenuExpense()!)) {
+            <button class="more-menu__item" type="button" (click)="openApplicationDate(moreMenuExpense()!); closeMoreMenu()">
+              <span class="material-symbols-outlined icon" aria-hidden="true">event</span>
+              <span>Fecha de aplicación</span>
+            </button>
+          }
+          <button class="more-menu__item" type="button" (click)="saveAsTemplate(moreMenuExpense()!); closeMoreMenu()">
+            <span class="material-symbols-outlined icon" aria-hidden="true">bookmark_add</span>
+            <span>Guardar como plantilla</span>
+          </button>
+          <button class="more-menu__item more-menu__item--danger" type="button" (click)="confirmDelete(moreMenuExpense()!); closeMoreMenu()">
+            <span class="material-symbols-outlined icon" aria-hidden="true">delete</span>
+            <span>Eliminar</span>
+          </button>
+        </div>
       </app-bottom-sheet>
     }

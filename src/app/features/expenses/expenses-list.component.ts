@@ -101,6 +101,9 @@ export class ExpensesListComponent {
   protected readonly refundDetailOpen = signal(false);
   protected readonly viewingRefund = signal<Refund | null>(null);
 
+  protected readonly moreMenuOpen = signal(false);
+  protected readonly moreMenuExpense = signal<Expense | null>(null);
+
   protected readonly filteredExpenses = computed(() => {
     const filter = this.filters();
     return this.expenses()
@@ -320,6 +323,21 @@ export class ExpensesListComponent {
     } catch (error) {
       this.toast.show(error instanceof Error ? error.message : 'No se pudo actualizar.');
     }
+  }
+
+  protected toggleMoreMenu(expense: Expense): void {
+    if (this.moreMenuExpense()?.id === expense.id) {
+      this.moreMenuOpen.set(false);
+      this.moreMenuExpense.set(null);
+    } else {
+      this.moreMenuExpense.set(expense);
+      this.moreMenuOpen.set(true);
+    }
+  }
+
+  protected closeMoreMenu(): void {
+    this.moreMenuOpen.set(false);
+    this.moreMenuExpense.set(null);
   }
 
   protected openRefund(expense: Expense): void {

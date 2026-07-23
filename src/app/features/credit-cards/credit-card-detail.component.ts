@@ -7,6 +7,7 @@ import { database } from '../../core/database/bolsi.database';
 import type { Expense } from '../../core/models/expense.model';
 import type { InstallmentPlan } from '../../core/models/installment-plan.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
+import type { Refund } from '../../core/models/refund.model';
 import type { Transfer } from '../../core/models/transfer.model';
 import { CreditCardStatementService } from '../../core/services/credit-card-statement.service';
 import { ExpenseService } from '../../core/services/expense.service';
@@ -83,6 +84,7 @@ export class CreditCardDetailComponent {
   protected readonly card = signal<PaymentMethod | null>(null);
   protected readonly paymentMethods = signal<PaymentMethod[]>([]);
   protected readonly periodDirectCharges = signal<Expense[]>([]);
+  protected readonly periodRefunds = signal<Refund[]>([]);
   protected readonly periodInstallments = signal<InstallmentPlan[]>([]);
   protected readonly upcomingInstallments = signal<InstallmentPlan[]>([]);
   protected readonly expensesById = signal<Map<number, Expense>>(new Map());
@@ -127,12 +129,17 @@ export class CreditCardDetailComponent {
 
   protected readonly periodCharges = computed(() => this.periodDirectCharges());
 
+  protected readonly periodRefundsTotal = computed(() =>
+    this.periodRefunds().reduce((sum, r) => sum + r.amount, 0),
+  );
+
   protected readonly periodChargesTotal = computed(() => {
     const direct = this.periodDirectCharges().reduce((sum, charge) => sum + charge.amount, 0);
     const installments = this.periodInstallments()
       .filter((plan) => !plan.paid)
       .reduce((sum, plan) => sum + (plan.customAmount ?? plan.amount), 0);
-    return Math.round((direct + installments) * 100) / 100;
+    const refunds = this.periodRefundsTotal();
+    return Math.round((direct + installments - refunds) * 100) / 100;
   });
 
   protected readonly amountToPay = computed(() => {
@@ -406,6 +413,16 @@ export class CreditCardDetailComponent {
       (expense) => !expense.isInstallment && !expense.hidden && (expense.applicationDate ?? expense.date) >= range.startIso && (expense.applicationDate ?? expense.date) <= range.endIso,
     );
     this.periodDirectCharges.set(inRange);
+
+    // Refunds for this card in the period
+    const allRefunds = await database.refunds
+      .where('originalPaymentMethodId')
+      .equals(id)
+      .toArray();
+    const refundsInRange = allRefunds.filter(
+      (refund) => refund.date >= range.startIso && refund.date <= range.endIso,
+    );
+    this.periodRefunds.set(refundsInRange);
 
     const month = this.currentMonth();
     const year = this.currentYear();

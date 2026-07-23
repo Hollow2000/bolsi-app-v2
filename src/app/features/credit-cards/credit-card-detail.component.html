@@ -63,7 +63,13 @@
                 <span class="period-total__label">Total del período</span>
                 <span class="period-total__amount">{{ periodChargesTotal() | mexicanCurrency }}</span>
               </p>
-              @if (periodCharges().length === 0) {
+              @if (periodRefundsTotal() > 0) {
+                <p class="period-refund">
+                  <span class="period-refund__label">Reembolsos aplicados</span>
+                  <span class="period-refund__amount">-{{ periodRefundsTotal() | mexicanCurrency }}</span>
+                </p>
+              }
+              @if (periodCharges().length === 0 && periodRefunds().length === 0) {
                 <p class="empty">No hay cargos directos en este período.</p>
               } @else {
                 <ul class="app-list">
@@ -75,6 +81,17 @@
                         [subtitle]="charge.date + ' · ' + charge.category"
                         [amount]="(charge.amount | mexicanCurrency) ?? ''"
                         tone="expense"
+                      />
+                    </li>
+                  }
+                  @for (refund of periodRefunds(); track refund.id) {
+                    <li class="app-list-item">
+                      <app-list-item
+                        icon="replay"
+                        [title]="'Reembolso' + (refund.description ? ': ' + refund.description : '')"
+                        [subtitle]="refund.date"
+                        [amount]="('-' + (refund.amount | mexicanCurrency))"
+                        tone="income"
                       />
                     </li>
                   }
