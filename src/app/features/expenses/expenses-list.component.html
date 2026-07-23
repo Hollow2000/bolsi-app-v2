@@ -114,6 +114,25 @@
                             <span class="material-symbols-outlined icon icon--small" aria-hidden="true">event</span>
                           </button>
                         }
+                        @if (expense.refunded) {
+                          <button
+                            class="app-icon-button app-icon-button--refunded"
+                            type="button"
+                            aria-label="Ver reembolso"
+                            (click)="openRefundDetail(expense)"
+                          >
+                            <span class="material-symbols-outlined icon icon--small" aria-hidden="true">replay</span>
+                          </button>
+                        } @else {
+                          <button
+                            class="app-icon-button"
+                            type="button"
+                            aria-label="Registrar reembolso"
+                            (click)="openRefund(expense)"
+                          >
+                            <span class="material-symbols-outlined icon icon--small" aria-hidden="true">replay</span>
+                          </button>
+                        }
                         <button
                           class="app-icon-button"
                           type="button"
@@ -192,5 +211,27 @@
             <button appButton variant="primary" type="button" (click)="saveApplicationDate()">Guardar</button>
           </div>
         </div>
+      </app-bottom-sheet>
+    }
+
+    @if (refundFormOpen() && refundExpense()) {
+      <app-bottom-sheet title="Registrar reembolso" (close)="closeRefundForm()">
+        <app-refund-form-modal
+          [expense]="refundExpense()!"
+          [paymentMethods]="paymentMethods()"
+          (cancel)="closeRefundForm()"
+          (saved)="onRefundSaved($event)"
+        />
+      </app-bottom-sheet>
+    }
+
+    @if (refundDetailOpen() && viewingRefund()) {
+      <app-bottom-sheet title="Detalle de reembolso" (close)="closeRefundDetail()">
+        <app-refund-detail
+          [refund]="viewingRefund()!"
+          [paymentMethods]="paymentMethods()"
+          (deleteConfirmed)="onRefundDeleted()"
+          (cancel)="closeRefundDetail()"
+        />
       </app-bottom-sheet>
     }

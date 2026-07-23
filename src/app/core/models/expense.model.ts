@@ -14,4 +14,5 @@ export interface Expense {
   installmentMonths?: number;
   monthlyInstallmentAmount?: number;
   hidden?: boolean;
+  refunded?: boolean;
 }

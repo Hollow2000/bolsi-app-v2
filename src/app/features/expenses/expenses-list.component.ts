@@ -5,11 +5,13 @@ import type { CatalogItem } from '../../core/models/catalog.model';
 import type { Expense } from '../../core/models/expense.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';
+import type { Refund } from '../../core/models/refund.model';
 import { CatalogService } from '../../core/services/catalog.service';
 import { ExpenseService } from '../../core/services/expense.service';
 import { ExpenseTemplateService } from '../../core/services/expense-template.service';
 import { PaymentMethodService } from '../../core/services/payment-method.service';
 import { PocketService } from '../../core/services/pocket.service';
+import { RefundService } from '../../core/services/refund.service';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { CardComponent } from '../../shared/components/card/card.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -17,6 +19,8 @@ import { DateInputComponent } from '../../shared/components/date-input/date-inpu
 import { ExpenseFormModalComponent } from './expense-form-modal.component';
 import { FabComponent } from '../../shared/components/fab/fab.component';
 import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
+import { RefundFormModalComponent } from '../../shared/components/refund-form-modal/refund-form-modal.component';
+import { RefundDetailComponent } from '../../shared/components/refund-detail/refund-detail.component';
 import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
 import { ToastService } from '../../shared/services/toast.service';
 import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
@@ -49,6 +53,8 @@ const NO_CATEGORY = '';
     ExpenseFormModalComponent,
     FabComponent,
     MexicanCurrencyPipe,
+    RefundFormModalComponent,
+    RefundDetailComponent,
     SelectInputComponent,
     InstallPromptComponent,
   ],
@@ -62,6 +68,7 @@ export class ExpensesListComponent {
   private readonly paymentMethodService = inject(PaymentMethodService);
   private readonly pocketService = inject(PocketService);
   private readonly catalogService = inject(CatalogService);
+  private readonly refundService = inject(RefundService);
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
 
@@ -88,6 +95,11 @@ export class ExpensesListComponent {
   protected readonly applicationDateOpen = signal(false);
   protected readonly applicationDateExpense = signal<Expense | null>(null);
   protected readonly applicationDateValue = signal('');
+
+  protected readonly refundFormOpen = signal(false);
+  protected readonly refundExpense = signal<Expense | null>(null);
+  protected readonly refundDetailOpen = signal(false);
+  protected readonly viewingRefund = signal<Refund | null>(null);
 
   protected readonly filteredExpenses = computed(() => {
     const filter = this.filters();
@@ -307,6 +319,53 @@ export class ExpensesListComponent {
       await this.loadExpenses(this.currentMonth(), this.currentYear());
     } catch (error) {
       this.toast.show(error instanceof Error ? error.message : 'No se pudo actualizar.');
+    }
+  }
+
+  protected openRefund(expense: Expense): void {
+    this.refundExpense.set(expense);
+    this.refundFormOpen.set(true);
+  }
+
+  protected closeRefundForm(): void {
+    this.refundFormOpen.set(false);
+    this.refundExpense.set(null);
+  }
+
+  protected async onRefundSaved(refund: Omit<Refund, 'id'>): Promise<void> {
+    try {
+      await this.refundService.create(refund);
+      this.toast.show('Reembolso registrado.');
+      this.closeRefundForm();
+      await this.loadExpenses(this.currentMonth(), this.currentYear());
+    } catch (error) {
+      this.toast.show(error instanceof Error ? error.message : 'No se pudo registrar el reembolso.');
+    }
+  }
+
+  protected async openRefundDetail(expense: Expense): Promise<void> {
+    const refund = await this.refundService.getByExpenseId(expense.id!);
+    if (refund) {
+      this.viewingRefund.set(refund);
+      this.refundDetailOpen.set(true);
+    }
+  }
+
+  protected closeRefundDetail(): void {
+    this.refundDetailOpen.set(false);
+    this.viewingRefund.set(null);
+  }
+
+  protected async onRefundDeleted(): Promise<void> {
+    const refund = this.viewingRefund();
+    if (!refund) return;
+    try {
+      await this.refundService.delete(refund.id!);
+      this.toast.show('Reembolso eliminado.');
+      this.closeRefundDetail();
+      await this.loadExpenses(this.currentMonth(), this.currentYear());
+    } catch (error) {
+      this.toast.show(error instanceof Error ? error.message : 'No se pudo eliminar el reembolso.');
     }
   }
 

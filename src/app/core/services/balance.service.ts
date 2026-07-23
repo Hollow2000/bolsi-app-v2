@@ -145,7 +145,19 @@ export class BalanceService {
               !transfer.isCreditCardPayment,
           )
           .reduce((sum, transfer) => sum + transfer.amount, 0);
-        const cardDebt = Math.max(0, directSum + installmentSum - transfersReceived);
+        // Refunds reduce the debt
+        const refundsForCard = await database.refunds
+          .where('originalPaymentMethodId')
+          .equals(card.id)
+          .toArray();
+        const refundsSum = refundsForCard
+          .filter(
+            (refund) =>
+              refund.date >= range.startIso &&
+              refund.date <= range.endIso,
+          )
+          .reduce((sum, refund) => sum + refund.amount, 0);
+        const cardDebt = Math.max(0, directSum + installmentSum - transfersReceived - refundsSum);
         total += cardDebt;
       }
     }

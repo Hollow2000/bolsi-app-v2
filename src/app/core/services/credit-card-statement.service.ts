@@ -168,7 +168,20 @@ export class CreditCardStatementService {
       )
       .reduce((sum, plan) => sum + (plan.customAmount ?? plan.amount), 0);
 
-    return this.round(directSum + installmentSum);
+    // Refunds in the billing period
+    const allRefunds = await database.refunds
+      .where('originalPaymentMethodId')
+      .equals(card.id)
+      .toArray();
+    const refundSum = allRefunds
+      .filter(
+        (refund) =>
+          refund.date >= range.startIso &&
+          refund.date <= range.endIso,
+      )
+      .reduce((sum, refund) => sum + refund.amount, 0);
+
+    return this.round(directSum + installmentSum - refundSum);
   }
 
   /**
@@ -222,7 +235,15 @@ export class CreditCardStatementService {
     const paymentsReceived = allTransfers
       .reduce((sum, transfer) => sum + transfer.amount, 0);
 
-    return this.round(creditLimit - directCharges - unpaidInstallments + paymentsReceived);
+    // All refunds (reduce debt)
+    const allRefunds = await database.refunds
+      .where('originalPaymentMethodId')
+      .equals(card.id)
+      .toArray();
+    const refundsTotal = allRefunds
+      .reduce((sum, refund) => sum + refund.amount, 0);
+
+    return this.round(creditLimit - directCharges - unpaidInstallments + paymentsReceived + refundsTotal);
   }
 
   /**

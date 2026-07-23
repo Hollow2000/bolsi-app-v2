@@ -138,6 +138,11 @@
   gap: var(--space-1);
 }
 
+.app-icon-button--refunded {
+  color: var(--color-success);
+  opacity: 0.7;
+}
+
 .day-header {
   display: flex;
   align-items: center;
