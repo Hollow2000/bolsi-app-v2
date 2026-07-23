@@ -74,7 +74,7 @@
               } @else {
                 <ul class="app-list charges-list">
                   @for (charge of periodCharges(); track charge.id) {
-                    <li class="app-list-item">
+                    <li class="app-list-row">
                       <app-list-item
                         icon="shopping_bag"
                         [title]="charge.description"
@@ -85,7 +85,7 @@
                     </li>
                   }
                   @for (refund of periodRefunds(); track refund.id) {
-                    <li class="app-list-item">
+                    <li class="app-list-row">
                       <app-list-item
                         icon="replay"
                         [title]="'Reembolso' + (refund.description ? ': ' + refund.description : '')"
@@ -155,7 +155,7 @@
             } @else {
               <ul class="app-list">
                 @for (entry of upcomingCharges(); track entry.plan.id) {
-                  <li class="app-list-item">
+                  <li class="app-list-row">
                     <app-list-item
                       icon="event_upcoming"
                       [title]="entry.label"

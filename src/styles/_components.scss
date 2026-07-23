@@ -342,7 +342,8 @@ select.app-form-input {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  min-width: 0;
 }
 
 .app-list-item:last-child {
@@ -388,6 +389,7 @@ select.app-form-input {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  overflow: hidden;
 }
 
 .app-list-item__title {
