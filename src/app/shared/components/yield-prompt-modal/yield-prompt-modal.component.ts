@@ -41,7 +41,7 @@ import { ToastService } from '../../services/toast.service';
           appButton
           type="button"
           class="yield-prompt__btn yield-prompt__btn--skip"
-          (click)="skip.emit()"
+          (click)="skipDefinitely()"
         >
           Omitir
         </button>
@@ -137,6 +137,17 @@ export class YieldPromptModalComponent {
     this.yieldAmount.set(Math.max(0, yieldAmount));
   }
 
+  protected async skipDefinitely(): Promise<void> {
+    if (this.account().id === undefined) return;
+    try {
+      await this.savingsService.addYield(this.account().id!, 0);
+      this.toast.show(`Rendimiento de ${this.account().name} omitido.`);
+      this.saved.emit();
+    } catch (error) {
+      this.errorMessage.set(error instanceof Error ? error.message : 'No se pudo omitir el rendimiento.');
+    }
+  }
+
   protected async save(): Promise<void> {
     const acc = this.account();
     if (acc.id === undefined) return;
@@ -155,7 +166,7 @@ export class YieldPromptModalComponent {
     }
 
     if (yieldAmt === 0) {
-      this.skip.emit();
+      this.skipDefinitely();
       return;
     }
 
