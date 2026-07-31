@@ -1,16 +1,14 @@
-import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 
 import type { Refund } from '../../../core/models/refund.model';
 import type { PaymentMethod } from '../../../core/models/payment-method.model';
 import { ButtonDirective } from '../../components/button/button.directive';
-import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-dialog.component';
 import { MexicanCurrencyPipe } from '../../pipes/mexican-currency.pipe';
 
 @Component({
   selector: 'app-refund-detail',
   imports: [
     ButtonDirective,
-    ConfirmDialogComponent,
     MexicanCurrencyPipe,
   ],
   template: `
