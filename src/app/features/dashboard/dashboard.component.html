@@ -208,7 +208,7 @@
             <p class="form-error" role="alert">{{ confirmScheduledSavingError() }}</p>
           }
           <div class="modal-actions">
-            <button appButton variant="secondary" type="button" (click)="closeConfirmScheduledSaving()">Cancelar</button>
+            <button appButton variant="secondary" type="button" (click)="skipCurrentScheduledSaving()">Omitir</button>
             <button appButton variant="primary" type="button" (click)="confirmAndExecuteScheduledSaving()">Confirmar</button>
           </div>
         </div>

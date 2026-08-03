@@ -285,6 +285,28 @@ export class SavingsService {
     });
   }
 
+  async skipScheduleSaving(savingsAccountId: number,month: number, year: number, occurrenceIndex: number): Promise<void> {
+    const account = await database.savingsAccounts.get(savingsAccountId);
+    if (!account) {
+      throw new Error('Cuenta de ahorro no encontrada.');
+    }
+
+    const config = account.scheduledSaving;
+    if (!config) {
+      throw new Error('Esta cuenta no tiene ahorro programado configurado.');
+    }
+    
+    const amount = 0;
+    await database.savingsExecutions.add({
+      savingsAccountId,
+      month,
+      year,
+      occurrenceIndex,
+      executedDate: new Date().toISOString().split('T')[0],
+      amount,
+    });
+  }
+
   async getDueScheduledSavings(month: number, year: number): Promise<PendingScheduledSaving[]> {
     const pending = await this.getAccountsScheduledForMonth(month, year);
     return pending.filter((p) => p.executedCount < p.occurrences);

@@ -609,4 +609,26 @@ export class DashboardComponent {
       this.confirmScheduledSavingError.set(error instanceof Error ? error.message : 'Error al ejecutar ahorro.');
     }
   }
+
+  protected async skipCurrentScheduledSaving(): Promise<void> {
+    const account = this.confirmScheduledSavingAccount();
+    const occurrenceIndex = this.confirmScheduledSavingOccurrenceIndex();
+    if (!account || account.id === undefined) return;
+
+    try {
+      await this.savingsService.skipScheduleSaving(
+        account.id,
+        this.currentMonth(),
+        this.currentYear(),
+        occurrenceIndex
+      );
+      this.toast.show(`Ahorro "${account.name}" omitido.`);
+      this.closeConfirmScheduledSaving();
+      const month = this.currentMonth();
+      const year = this.currentYear();
+      await this.loadAll(month, year);
+    } catch (error) {
+      this.confirmScheduledSavingError.set(error instanceof Error ? error.message : 'Error al ejecutar ahorro.');
+    }
+  }
 }
