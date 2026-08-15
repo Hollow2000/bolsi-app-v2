@@ -45,22 +45,11 @@
       }
     </app-select-input>
 
-    <div class="category-section">
-      <label class="category-label">Categoría</label>
-      <div class="category-grid">
-        @for (cat of categories(); track cat.id) {
-          <button
-            type="button"
-            class="category-chip"
-            [class.category-chip--selected]="category() === cat.name"
-            (click)="selectCategory(cat)"
-          >
-            <span class="material-symbols-outlined icon category-chip__icon" aria-hidden="true">{{ cat.icon }}</span>
-            <span class="category-chip__name">{{ cat.name }}</span>
-          </button>
-        }
-      </div>
-    </div>
+    <app-category-selector
+      type="expense"
+      [value]="category()"
+      (selected)="onCategorySelected($event)"
+    />
 
     @if (errorMessage(); as message) {
       <p class="modal-error" role="alert">{{ message }}</p>

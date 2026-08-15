@@ -4,8 +4,8 @@ import type { CatalogItem } from '../../core/models/catalog.model';
 import type { Expense } from '../../core/models/expense.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';
-import { CatalogService } from '../../core/services/catalog.service';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
+import { CategorySelectorComponent } from '../../shared/components/category-selector/category-selector.component';
 import { DateInputComponent } from '../../shared/components/date-input/date-input.component';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
 import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
@@ -23,6 +23,7 @@ import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
   selector: 'app-expense-form-modal',
   imports: [
     ButtonDirective,
+    CategorySelectorComponent,
     DateInputComponent,
     MexicanCurrencyPipe,
     NumberInputComponent,
@@ -34,15 +35,12 @@ import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExpenseFormModalComponent implements OnInit {
-  private readonly catalogService = inject(CatalogService);
-
   readonly paymentMethods = input.required<readonly PaymentMethod[]>();
   readonly pockets = input.required<readonly Pocket[]>();
   readonly expense = input<Expense | null>(null);
   readonly cancel = output<void>();
   readonly saved = output<Expense>();
 
-  protected readonly categories = signal<CatalogItem[]>([]);
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly description = signal('');
@@ -87,10 +85,7 @@ export class ExpenseFormModalComponent implements OnInit {
     return Math.round((this.amount() / months) * 100) / 100;
   });
 
-  async ngOnInit(): Promise<void> {
-    const cats = await this.catalogService.getByType('expense');
-    this.categories.set(cats);
-
+  ngOnInit(): void {
     const initial = this.expense();
     if (initial) {
       this.description.set(initial.description);
@@ -106,14 +101,10 @@ export class ExpenseFormModalComponent implements OnInit {
       }
     } else {
       this.date.set(this.todayIso());
-      if (cats.length > 0) {
-        this.category.set(cats[0].name);
-        this.selectedIcon.set(cats[0].icon);
-      }
     }
   }
 
-  protected selectCategory(cat: CatalogItem): void {
+  protected onCategorySelected(cat: CatalogItem): void {
     this.category.set(cat.name);
     this.selectedIcon.set(cat.icon);
   }

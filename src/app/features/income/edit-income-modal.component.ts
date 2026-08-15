@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, input, output, signal } from '@angular/core';
 
-import { INCOME_CATEGORIES_DEFAULT } from '../../core/services/catalog.service';
+import type { CatalogItem } from '../../core/models/catalog.model';
 import type { Income, IncomeFrequency, IncomeStatus } from '../../core/models/income.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
 import { assertCanReceiveIncome, validateIncomeFields } from '../../core/validations/income.validation';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
+import { CategorySelectorComponent } from '../../shared/components/category-selector/category-selector.component';
 import { DateInputComponent } from '../../shared/components/date-input/date-input.component';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
 import { SegmentedControlComponent, type SegmentedOption } from '../../shared/components/segmented-control/segmented-control.component';
@@ -31,6 +32,7 @@ const STATUS_OPTIONS: readonly SegmentedOption<IncomeStatus>[] = [
   selector: 'app-edit-income-modal',
   imports: [
     ButtonDirective,
+    CategorySelectorComponent,
     DateInputComponent,
     NumberInputComponent,
     SegmentedControlComponent,
@@ -47,7 +49,6 @@ export class EditIncomeModalComponent implements OnInit {
   readonly cancel = output<void>();
   readonly saved = output<Income>();
 
-  protected readonly categories = INCOME_CATEGORIES_DEFAULT;
   protected readonly frequencyOptions = FREQUENCY_OPTIONS;
   protected readonly statusOptions = STATUS_OPTIONS;
   protected readonly errorMessage = signal<string | null>(null);
@@ -56,7 +57,8 @@ export class EditIncomeModalComponent implements OnInit {
   protected readonly amount = signal(0);
   protected readonly date = signal('');
   protected readonly paymentMethodId = signal<number>(0);
-  protected readonly category = signal<string>(INCOME_CATEGORIES_DEFAULT[0]);
+  protected readonly category = signal('');
+  protected readonly categoryIcon = signal('category');
   protected readonly frequency = signal<IncomeFrequency>('monthly');
   protected readonly status = signal<IncomeStatus>('received');
 
@@ -73,6 +75,11 @@ export class EditIncomeModalComponent implements OnInit {
     } else {
       this.date.set(this.todayIso());
     }
+  }
+
+  protected onCategorySelected(cat: CatalogItem): void {
+    this.category.set(cat.name);
+    this.categoryIcon.set(cat.icon);
   }
 
   protected submitLabel(): string {

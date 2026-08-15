@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, input, output, signal } from '@angular/core';
 
-import { EXPENSE_CATEGORIES_DEFAULT, type ExpenseCategory } from '../../core/services/catalog.service';
+import type { CatalogItem } from '../../core/models/catalog.model';
 import type { Budget } from '../../core/models/budget.model';
 import type { Pocket } from '../../core/models/pocket.model';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
+import { CategorySelectorComponent } from '../../shared/components/category-selector/category-selector.component';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
 import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
 
@@ -17,6 +18,7 @@ import { SelectInputComponent } from '../../shared/components/select-input/selec
   selector: 'app-budget-form-modal',
   imports: [
     ButtonDirective,
+    CategorySelectorComponent,
     NumberInputComponent,
     SelectInputComponent,
   ],
@@ -32,20 +34,25 @@ export class BudgetFormModalComponent implements OnInit {
   readonly cancel = output<void>();
   readonly saved = output<Budget>();
 
-  protected readonly categories = EXPENSE_CATEGORIES_DEFAULT;
   protected readonly errorMessage = signal<string | null>(null);
 
-  protected readonly category = signal<ExpenseCategory>(EXPENSE_CATEGORIES_DEFAULT[0]);
+  protected readonly category = signal('');
+  protected readonly categoryIcon = signal('category');
   protected readonly pocketId = signal<number>(0);
   protected readonly estimatedAmount = signal(0);
 
   ngOnInit(): void {
     const initial = this.budget();
     if (initial) {
-      this.category.set(initial.category as ExpenseCategory);
+      this.category.set(initial.category);
       this.pocketId.set(initial.pocketId);
       this.estimatedAmount.set(initial.estimatedAmount);
     }
+  }
+
+  protected onCategorySelected(cat: CatalogItem): void {
+    this.category.set(cat.name);
+    this.categoryIcon.set(cat.icon);
   }
 
   protected onCancel(): void {

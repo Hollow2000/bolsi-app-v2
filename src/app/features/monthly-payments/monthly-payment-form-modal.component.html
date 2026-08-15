@@ -47,16 +47,11 @@
       }
     </app-select-input>
 
-    <app-select-input
-      label="Categoría"
-      [valueType]="'string'"
+    <app-category-selector
+      type="expense"
       [value]="category()"
-      (valueChange)="category.set($any($event))"
-    >
-      @for (item of categories; track item) {
-        <option [value]="item" [selected]="item === category()">{{ item }}</option>
-      }
-    </app-select-input>
+      (selected)="onCategorySelected($event)"
+    />
 
     <app-icon-picker
       label="Icono"

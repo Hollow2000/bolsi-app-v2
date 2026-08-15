@@ -4,8 +4,9 @@ import type { CatalogItem } from '../../core/models/catalog.model';
 import type { ExpenseTemplate } from '../../core/models/expense-template.model';
 import type { PaymentMethod } from '../../core/models/payment-method.model';
 import type { Pocket } from '../../core/models/pocket.model';
-import { CatalogService, MATERIAL_ICONS } from '../../core/services/catalog.service';
+import { MATERIAL_ICONS } from '../../core/services/catalog.service';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
+import { CategorySelectorComponent } from '../../shared/components/category-selector/category-selector.component';
 import { IconPickerComponent } from '../../shared/components/icon-picker/icon-picker.component';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
 import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
@@ -13,21 +14,18 @@ import { TextInputComponent } from '../../shared/components/text-input/text-inpu
 
 @Component({
   selector: 'app-template-form-modal',
-  imports: [ButtonDirective, IconPickerComponent, NumberInputComponent, SelectInputComponent, TextInputComponent],
+  imports: [ButtonDirective, CategorySelectorComponent, IconPickerComponent, NumberInputComponent, SelectInputComponent, TextInputComponent],
   templateUrl: './template-form-modal.component.html',
   styleUrl: './template-form-modal.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TemplateFormModalComponent implements OnInit {
-  private readonly catalogService = inject(CatalogService);
-
   readonly paymentMethods = input.required<readonly PaymentMethod[]>();
   readonly pockets = input.required<readonly Pocket[]>();
   readonly template = input<ExpenseTemplate | null>(null);
   readonly cancel = output<void>();
   readonly saved = output<ExpenseTemplate>();
 
-  protected readonly categories = signal<CatalogItem[]>([]);
   protected readonly icons = MATERIAL_ICONS;
   protected readonly errorMessage = signal<string | null>(null);
 
@@ -38,10 +36,7 @@ export class TemplateFormModalComponent implements OnInit {
   protected readonly category = signal('');
   protected readonly icon = signal<string>('star');
 
-  async ngOnInit(): Promise<void> {
-    const cats = await this.catalogService.getByType('expense');
-    this.categories.set(cats);
-
+  ngOnInit(): void {
     const initial = this.template();
     if (initial) {
       this.description.set(initial.description);
@@ -50,13 +45,10 @@ export class TemplateFormModalComponent implements OnInit {
       this.pocketId.set(initial.pocketId);
       this.category.set(initial.category);
       this.icon.set(initial.icon || 'star');
-    } else if (cats.length > 0) {
-      this.category.set(cats[0].name);
-      this.icon.set(cats[0].icon);
     }
   }
 
-  protected selectCategory(cat: CatalogItem): void {
+  protected onCategorySelected(cat: CatalogItem): void {
     this.category.set(cat.name);
     this.icon.set(cat.icon);
   }
