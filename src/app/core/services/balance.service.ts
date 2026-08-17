@@ -100,8 +100,10 @@ export class BalanceService {
       if (card.id === undefined) continue;
       const closingDay = card.statementClosingDay ?? 1;
 
-      if (today.getDate() >= closingDay && (card.statementBalance ?? 0) > 0) {
-        // After cutoff: use statementBalance - credit card payments for this billing period
+      if ((card.statementBalance ?? 0) > 0) {
+        // After a cutoff has been processed: use statementBalance minus
+        // credit card payments for its billing period. Date-independent so
+        // the debt stays visible after the calendar month changes.
         const billingPeriod = this.getCutoffPeriod(closingDay, today);
         const creditCardPayments = allTransfers
           .filter(

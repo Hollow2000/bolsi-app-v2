@@ -28,7 +28,7 @@ export class ExpenseService {
       .sort((a, b) => a.date.localeCompare(b.date));
   }
 
-  async create(expense: Expense): Promise<number> {
+  async create(expense: Expense, options?: { skipBalanceEffect?: boolean }): Promise<number> {
     this.assertValidFields(expense);
     const method = await this.assertPaymentMethodExists(expense.paymentMethodId);
     await this.assertPocketExists(expense.pocketId);
@@ -40,14 +40,16 @@ export class ExpenseService {
       this.assertInstallmentFields(expense);
     }
 
-    if (method.type === 'credit') {
-      const available = method.availableCredit ?? 0;
-      if (expense.amount > available) {
-        throw new Error('El gasto excede el crédito disponible de la tarjeta.');
+    if (!options?.skipBalanceEffect) {
+      if (method.type === 'credit') {
+        const available = method.availableCredit ?? 0;
+        if (expense.amount > available) {
+          throw new Error('El gasto excede el crédito disponible de la tarjeta.');
+        }
+        await this.paymentMethods.deductBalance(expense.paymentMethodId, expense.amount);
+      } else {
+        await this.paymentMethods.deductBalance(expense.paymentMethodId, expense.amount);
       }
-      await this.paymentMethods.deductBalance(expense.paymentMethodId, expense.amount);
-    } else {
-      await this.paymentMethods.deductBalance(expense.paymentMethodId, expense.amount);
     }
 
     const id = await database.expenses.add(expense) as number;
@@ -183,6 +185,9 @@ export class ExpenseService {
   }
 
   private async assertPocketExists(id: number): Promise<void> {
+    if (id === 0) {
+      return;
+    }
     const pocket = await this.pockets.getAll();
     if (!pocket.some((p) => p.id === id)) {
       throw new Error('El bolsillo seleccionado no existe.');

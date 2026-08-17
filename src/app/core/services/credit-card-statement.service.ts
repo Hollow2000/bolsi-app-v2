@@ -85,19 +85,13 @@ export class CreditCardStatementService {
 
   /**
    * Returns the amount to pay for a card.
-   * If statementBalance is set (after cutoff), returns it minus any payments made.
-   * Otherwise returns 0 (before cutoff).
+   * If statementBalance is set (after a cutoff), returns it minus any payments
+   * made for the corresponding billing period. Otherwise returns 0 (before the
+   * first cutoff). Matching is date-independent so the amount stays visible even
+   * after the calendar month changes.
    */
   getAmountToPay(card: PaymentMethod, transfers: readonly Transfer[]): number {
     if (card.type !== 'credit' || card.statementClosingDay === undefined) {
-      return 0;
-    }
-
-    const today = new Date();
-    const closingDay = card.statementClosingDay;
-
-    // Before cutoff: no amount to pay yet
-    if (today.getDate() < closingDay) {
       return 0;
     }
 
@@ -107,7 +101,7 @@ export class CreditCardStatementService {
     }
 
     // Sum credit card payments made for this billing period
-    const period = this.getCutoffPeriod(closingDay, today);
+    const period = this.getCutoffPeriod(card.statementClosingDay, new Date());
     const payments = transfers
       .filter(
         (t) =>

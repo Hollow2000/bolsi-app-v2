@@ -34,6 +34,8 @@ export const INCOME_CATEGORIES_DEFAULT = [
 export type ExpenseCategory = (typeof EXPENSE_CATEGORIES_DEFAULT)[number];
 export type IncomeCategory = (typeof INCOME_CATEGORIES_DEFAULT)[number];
 
+export const CARD_PAYMENT_CATEGORY = 'Pago de tarjeta';
+
 export const MATERIAL_ICONS = [
   'money_bag',
   'star',

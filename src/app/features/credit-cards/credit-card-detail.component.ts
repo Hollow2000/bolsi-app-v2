@@ -10,6 +10,7 @@ import type { PaymentMethod } from '../../core/models/payment-method.model';
 import type { Refund } from '../../core/models/refund.model';
 import type { Transfer } from '../../core/models/transfer.model';
 import { CreditCardStatementService } from '../../core/services/credit-card-statement.service';
+import { CARD_PAYMENT_CATEGORY } from '../../core/services/catalog.service';
 import { ExpenseService } from '../../core/services/expense.service';
 import { InstallmentPlanService } from '../../core/services/installment-plan.service';
 import { MonthlyPaymentService } from '../../core/services/monthly-payment.service';
@@ -293,6 +294,23 @@ export class CreditCardDetailComponent {
       this.paymentError.set(`El monto máximo a pagar es ${maxPay}.`);
       return;
     }
+
+    // Validate the source account has enough balance before paying.
+    const source = this.paymentMethods().find((pm) => pm.id === sourceId);
+    if (!source) {
+      this.paymentError.set('La cuenta seleccionada no existe.');
+      return;
+    }
+    const available = source.type === 'credit'
+      ? (source.availableCredit ?? 0)
+      : (source.currentBalance ?? 0);
+    if (amount > available) {
+      this.paymentError.set(
+        `Saldo insuficiente. Disponible: ${available.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}`,
+      );
+      return;
+    }
+
     this.savingPayment.set(true);
     this.paymentError.set(null);
     try {
@@ -312,6 +330,25 @@ export class CreditCardDetailComponent {
         billingPeriodMonth: billingPeriod.month,
         billingPeriodYear: billingPeriod.year,
       });
+
+      // Register the payment as an expense with a special category and no
+      // pocket, so it shows in the expense list without touching pockets.
+      await this.expenseService.create(
+        {
+          date: this.todayIso(),
+          description: draft.name.trim() || `Pago ${method.name}`,
+          amount,
+          paymentMethodId: sourceId,
+          pocketId: 0,
+          category: CARD_PAYMENT_CATEGORY,
+          icon: 'credit_card',
+          month: today.getMonth() + 1,
+          year: today.getFullYear(),
+          isInstallment: false,
+        },
+        { skipBalanceEffect: true },
+      );
+
       this.toast.show('Pago registrado. Se descontó de la cuenta seleccionada.');
       this.closePay();
       await this.load();
