@@ -132,10 +132,16 @@ Contexto del bug: al cambiar de mes, los pagos recurrentes no se replican solos 
 
 ## 6. DÓNDE ME QUEDÉ / ESTADO ACTUAL
 
-**Última tarea completada**: FASE A y FASE B completas. Cambios SIN commitear:
-- FASE A: `month.service.ts` (nuevo), `app-settings.model.ts` (`replicatedMonths`), `budget.service.ts` (`replicateBudgets`), `monthly-payment.service.ts` (`getByMonth` con dueDate, `markAsPaid` en mes real), `app.ts` (llama `monthService.autoReplicateIfNeeded()`), `settings.component.ts|html` (eliminado "Cierre de mes").
-- FASE B: `credit-card-statement.service.ts` (guardia de fecha eliminada en `getAmountToPay`), `balance.service.ts` (`sumBillableDebt` sin guardia de fecha), `catalog.service.ts` (`CARD_PAYMENT_CATEGORY`), `expense.service.ts` (`skipBalanceEffect`, `assertPocketExists` permite 0), `credit-card-detail.component.ts` (pago como gasto "Pago de tarjeta" sin bolsillo + validación de saldo).
-- Build verificado OK (`npx ng build`).
+### Estructura de ramas (importante)
+- **`master`** — contiene Fase A commiteada (`a013088`, commit `feat: replicación automática mensual de pagos recurrentes y presupuestos`): `month.service.ts` (nuevo), `app-settings.model.ts` (`replicatedMonths`), `budget.service.ts` (`replicateBudgets`), `monthly-payment.service.ts` (`getByMonth` con dueDate, `markAsPaid` en mes real), `app.ts` (hookup MonthService), `settings.component.ts|html` (eliminado "Cierre de mes"), `CONTEXT.md`.
+- **`feature/credit-cards`** — rama de trabajo para TODO el tema de tarjetas de crédito. Contiene:
+  - `d8e9ce9` — Fase B: `credit-card-statement.service.ts` (guardia de fecha eliminada en `getAmountToPay`), `balance.service.ts` (`sumBillableDebt` sin guardia de fecha), `catalog.service.ts` (`CARD_PAYMENT_CATEGORY`), `expense.service.ts` (`skipBalanceEffect`, `assertPocketExists` permite 0), `credit-card-detail.component.ts` (pago como gasto "Pago de tarjeta" sin bolsillo + validación de saldo).
+  - `a9be038` — Fix match estable de pagos: `getStatementPeriod()` nuevo en `credit-card-statement.service.ts` (usa `lastCutoffMonth/Year`, estable a través del cambio de mes); `getAmountToPay()` y `BalanceService.sumBillableDebt()` matchean contra `getStatementPeriod()`; `TransferService.create()` y `credit-card-detail.onSavePayment()` etiquetan pagos con el período del statement; `payment-methods-list.component.ts` muestra "A pagar" **neto** (statementBalance − pagos del período) cargando transfers.
+  - Build verificado OK (`npx ng build`). `version.ts` queda modificado sin commitear (autogenerado por el build).
+
+### Bug reportado por el usuario (zombies) y diagnóstico
+- El usuario registró pagos de cortes pendientes como **gastos provisionales de débito** (Sep 1/3), por lo que nunca tocaron el `statementBalance` de las tarjetas. Sus intentos de reconciliación (borrar gastos + pagar, o abonar saldo + pagar) no se reflejaban porque el match de pagos usaba `getCutoffPeriod(closingDay, hoy)` (cambiaba al cruzar el día de corte/mes), así que los pagos "se perdían" y la deuda volvía al `statementBalance` completo. El fix (commit `a9be038`) resuelve esto con el período estable.
+- **Pendiente de verificar por el usuario**: recrear el caso NU / Mercado Pago y confirmar que al pagar el neto, "A pagar" → $0 y la deuda exigible se descuenta.
 
 **Próximo paso (FASE C)**: correcciones de Gastos y listas (ver sección 5, FASE C):
 1. Gasto de retiro de ahorro como `hidden: true`.
@@ -144,7 +150,7 @@ Contexto del bug: al cambiar de mes, los pagos recurrentes no se replican solos 
 4. Crear/editar gasto sin bolsillo con advertencia/confirmación.
 5. Scroll en gastos recientes de débito/efectivo del detalle.
 6. Límites de caracteres (nombre 50, descripciones 100).
-7. Commitear los cambios de Fases A y B. **NO desplegar** (el usuario quiere probar antes).
+7. **NO desplegar** (el usuario quiere probar antes). Además, al terminar Fase C considerar merge de `feature/credit-cards` a master.
 
 **IMPORTANTE — No desplegar sin aprobación explícita del usuario.** El usuario dijo: *"no realices el deploy, quiero probarlo antes"*. Comando de deploy (NO ejecutar todavía): `npm run deploy`.
 
@@ -171,15 +177,17 @@ Antes de asumir que algo existe, VERIFICA en el repo: en resúmenes previos se a
 - `src/app/core/services/monthly-payment.service.ts` — pagos recurrentes (`create`, `getByMonth`, `markAsPaid`, `replicateRecurring`). `getByMonth` incluye pagos por dueDate; `markAsPaid` registra gasto en mes real.
 - `src/app/core/services/month.service.ts` — replicación automática mensual (`autoReplicateIfNeeded`) — NUEVO.
 - `src/app/core/services/budget.service.ts` — presupuestos (`getByMonth`, `replicateBudgets`, `getProgressForMonth`).
-- `src/app/core/services/credit-card-statement.service.ts` — cortes, `amountToPay` (sin guardia de fecha), `getAvailableCredit`.
+- `src/app/core/services/credit-card-statement.service.ts` — cortes, `getStatementPeriod()` (período estable del statement), `amountToPay`, `getAvailableCredit`.
 - `src/app/core/services/expense.service.ts` — gastos; `create(expense, { skipBalanceEffect? })`, `assertPocketExists` permite bolsillo 0.
 - `src/app/core/services/catalog.service.ts` — catálogo dinámico + `CARD_PAYMENT_CATEGORY`.
 - `src/app/core/models/app-settings.model.ts` — modelo de settings (ya incluye `replicatedMonths`).
 - `src/app/features/settings/settings.component.ts|html` — "Cierre de mes" eliminado.
 - `src/app/shared/components/category-selector/category-selector.component.ts` — selector reutilizable (ya creado).
 - `src/app/features/expenses/expenses-list.component.ts|html` — lista de gastos (candidata para toggle de ocultos).
-- `src/app/features/credit-cards/credit-card-detail.component.ts|html` — detalle tarjeta, pago manual (gasto "Pago de tarjeta" sin bolsillo + validación de saldo).
-- `src/app/core/services/balance.service.ts` — `sumBillableDebt` sin guardia de fecha.
+- `src/app/features/credit-cards/credit-card-detail.component.ts|html` — detalle tarjeta, pago manual (gasto "Pago de tarjeta" sin bolsillo + validación de saldo + billingPeriod estable).
+- `src/app/features/credit-cards/payment-methods-list.component.ts|html` — listado de métodos; "A pagar" neto (statementBalance − pagos del período).
+- `src/app/core/services/transfer.service.ts` — transfers; `create()` etiqueta pagos de tarjeta con el período estable del statement.
+- `src/app/core/services/balance.service.ts` — `sumBillableDebt` sin guardia de fecha, matchea pagos contra `getStatementPeriod()`.
 - `src/app/features/savings/savings-detail.component.*` — transacciones de ahorro.
 - `src/app/features/dashboard/widgets/pocket-summary-widget.component.*` — barra de bolsillos (negativos).
 - `scripts/bump-version.js`, `scripts/generate-version.js` — versionado.
