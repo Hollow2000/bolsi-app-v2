@@ -4,6 +4,7 @@ import { database } from '../database/bolsi.database';
 import type { MonthlyBalance } from '../models/monthly-balance.model';
 import type { PaymentMethod } from '../models/payment-method.model';
 import { ExpenseService } from './expense.service';
+import { CreditCardStatementService } from './credit-card-statement.service';
 import { IncomeService } from './income.service';
 import { MonthlyPaymentService } from './monthly-payment.service';
 import { PaymentMethodService } from './payment-method.service';
@@ -38,6 +39,7 @@ interface DateRange {
 export class BalanceService {
   private readonly paymentMethods = inject(PaymentMethodService);
   private readonly expenseService = inject(ExpenseService);
+  private readonly creditCardStatement = inject(CreditCardStatementService);
   private readonly incomeService = inject(IncomeService);
   private readonly monthlyPayments = inject(MonthlyPaymentService);
   private readonly savingsService = inject(SavingsService);
@@ -102,9 +104,11 @@ export class BalanceService {
 
       if ((card.statementBalance ?? 0) > 0) {
         // After a cutoff has been processed: use statementBalance minus
-        // credit card payments for its billing period. Date-independent so
-        // the debt stays visible after the calendar month changes.
-        const billingPeriod = this.getCutoffPeriod(closingDay, today);
+        // credit card payments for its billing period. The period is the
+        // card's frozen statement period (lastCutoffMonth/Year), so the
+        // debt stays visible and payments keep matching after the calendar
+        // month changes.
+        const billingPeriod = this.creditCardStatement.getStatementPeriod(card);
         const creditCardPayments = allTransfers
           .filter(
             (transfer) =>
@@ -238,16 +242,5 @@ export class BalanceService {
 
   private round(value: number): number {
     return Math.round(value * 100) / 100;
-  }
-
-  private getCutoffPeriod(closingDay: number, today: Date): { month: number; year: number } {
-    if (today.getDate() >= closingDay) {
-      const nextMonth = today.getMonth() + 2;
-      if (nextMonth > 12) {
-        return { month: nextMonth - 12, year: today.getFullYear() + 1 };
-      }
-      return { month: nextMonth, year: today.getFullYear() };
-    }
-    return { month: today.getMonth() + 1, year: today.getFullYear() };
   }
 }

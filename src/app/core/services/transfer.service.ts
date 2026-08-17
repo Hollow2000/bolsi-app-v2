@@ -2,11 +2,13 @@ import { Injectable, inject } from '@angular/core';
 
 import { database } from '../database/bolsi.database';
 import type { Transfer } from '../models/transfer.model';
+import { CreditCardStatementService } from './credit-card-statement.service';
 import { PaymentMethodService } from './payment-method.service';
 
 @Injectable({ providedIn: 'root' })
 export class TransferService {
   private readonly paymentMethods = inject(PaymentMethodService);
+  private readonly creditCardStatement = inject(CreditCardStatementService);
 
   async getByMonth(month: number, year: number): Promise<Transfer[]> {
     const all = await database.transfers.toArray();
@@ -41,7 +43,7 @@ export class TransferService {
 
       if (today.getDate() >= closingDay && (to.statementBalance ?? 0) > 0) {
         // After cutoff: handle as payment + possible surplus
-        const billingPeriod = this.getCutoffPeriod(closingDay, today);
+        const billingPeriod = this.creditCardStatement.getStatementPeriod(to);
         const existingPayments = await this.getCreditCardPayments(
           to.id!,
           billingPeriod.month,
@@ -165,17 +167,6 @@ export class TransferService {
     for (const plan of toMark) {
       await database.installmentPlans.put({ ...plan, paid: true });
     }
-  }
-
-  private getCutoffPeriod(closingDay: number, today: Date): { month: number; year: number } {
-    if (today.getDate() >= closingDay) {
-      const nextMonth = today.getMonth() + 2;
-      if (nextMonth > 12) {
-        return { month: nextMonth - 12, year: today.getFullYear() + 1 };
-      }
-      return { month: nextMonth, year: today.getFullYear() };
-    }
-    return { month: today.getMonth() + 1, year: today.getFullYear() };
   }
 
   private validate(transfer: Transfer): void {

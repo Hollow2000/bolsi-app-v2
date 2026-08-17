@@ -84,6 +84,21 @@ export class CreditCardStatementService {
   }
 
   /**
+   * Returns the billing period that the current frozen statementBalance
+   * belongs to. Payments are tagged with this period when created and
+   * matched against it when computing the amount to pay. It is stable
+   * across calendar month changes: it only advances when a new cutoff is
+   * processed (which updates lastCutoffMonth/Year), so payments never
+   * "disappear" just because the calendar date crossed the closing day.
+   */
+  getStatementPeriod(card: PaymentMethod): { month: number; year: number } {
+    if (card.lastCutoffMonth !== undefined && card.lastCutoffYear !== undefined) {
+      return { month: card.lastCutoffMonth, year: card.lastCutoffYear };
+    }
+    return this.getCutoffPeriod(card.statementClosingDay ?? 1, new Date());
+  }
+
+  /**
    * Returns the amount to pay for a card.
    * If statementBalance is set (after a cutoff), returns it minus any payments
    * made for the corresponding billing period. Otherwise returns 0 (before the
@@ -101,7 +116,7 @@ export class CreditCardStatementService {
     }
 
     // Sum credit card payments made for this billing period
-    const period = this.getCutoffPeriod(card.statementClosingDay, new Date());
+    const period = this.getStatementPeriod(card);
     const payments = transfers
       .filter(
         (t) =>

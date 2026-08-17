@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
+import { database } from '../../core/database/bolsi.database';
 import type { PaymentMethod, PaymentMethodType } from '../../core/models/payment-method.model';
+import type { Transfer } from '../../core/models/transfer.model';
+import { CreditCardStatementService } from '../../core/services/credit-card-statement.service';
 import { PaymentMethodService } from '../../core/services/payment-method.service';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { CardComponent } from '../../shared/components/card/card.component';
@@ -44,10 +47,12 @@ interface MethodGroup {
 })
 export class PaymentMethodsListComponent {
   private readonly service = inject(PaymentMethodService);
+  private readonly creditCardStatement = inject(CreditCardStatementService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
 
   protected readonly paymentMethods = signal<PaymentMethod[]>([]);
+  protected readonly allTransfers = signal<Transfer[]>([]);
   protected readonly editing = signal<PaymentMethod | null>(null);
   protected readonly confirmOpen = signal(false);
   protected readonly confirmMessage = signal('');
@@ -111,7 +116,7 @@ export class PaymentMethodsListComponent {
 
   protected subtitleFor(method: PaymentMethod): string {
     if (method.type === 'credit') {
-      const toPay = method.statementBalance ?? 0;
+      const toPay = this.amountToPayFor(method);
       return `Límite ${formatMexicanCurrency(method.creditLimit ?? 0)}  · A pagar ${formatMexicanCurrency(toPay)}`;
     }
     return `Saldo ${formatMexicanCurrency(method.currentBalance ?? 0)}`;
@@ -182,7 +187,7 @@ export class PaymentMethodsListComponent {
 
   private sumBalance(methods: PaymentMethod[], type: PaymentMethodType): number {
     if (type === 'credit') {
-      return methods.reduce((sum, m) => sum + (m.statementBalance ?? 0), 0);
+      return methods.reduce((sum, m) => sum + this.amountToPayFor(m), 0);
     }
     return methods.reduce((sum, m) => sum + (m.currentBalance ?? 0), 0);
   }
@@ -198,11 +203,20 @@ export class PaymentMethodsListComponent {
 
   private sumCreditToPay(methods: PaymentMethod[]): number {
     return Math.round(
-      methods.reduce((sum, m) => sum + (m.statementBalance ?? 0), 0) * 100,
+      methods.reduce((sum, m) => sum + this.amountToPayFor(m), 0) * 100,
     ) / 100;
   }
 
+  private amountToPayFor(method: PaymentMethod): number {
+    return this.creditCardStatement.getAmountToPay(method, this.allTransfers());
+  }
+
   private async load(): Promise<void> {
-    this.paymentMethods.set(await this.service.getAll());
+    const [methods, transfers] = await Promise.all([
+      this.service.getAll(),
+      database.transfers.toArray(),
+    ]);
+    this.paymentMethods.set(methods);
+    this.allTransfers.set(transfers);
   }
 }

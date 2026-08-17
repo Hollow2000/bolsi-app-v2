@@ -315,8 +315,7 @@ export class CreditCardDetailComponent {
     this.paymentError.set(null);
     try {
       const today = new Date();
-      const closingDay = method.statementClosingDay ?? 1;
-      const billingPeriod = this.getCutoffPeriod(closingDay, today);
+      const billingPeriod = this.creditCardStatement.getStatementPeriod(method);
 
       await this.transferService.create({
         fromPaymentMethodId: sourceId,
@@ -513,17 +512,6 @@ export class CreditCardDetailComponent {
       this.needsCutoff.set(false);
       this.cutoffAmount.set(0);
     }
-  }
-
-  private getCutoffPeriod(closingDay: number, today: Date): { month: number; year: number } {
-    if (today.getDate() >= closingDay) {
-      const nextMonth = today.getMonth() + 2;
-      if (nextMonth > 12) {
-        return { month: nextMonth - 12, year: today.getFullYear() + 1 };
-      }
-      return { month: nextMonth, year: today.getFullYear() };
-    }
-    return { month: today.getMonth() + 1, year: today.getFullYear() };
   }
 
   private calculatePeriodRange(): PeriodRange {
