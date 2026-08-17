@@ -3,7 +3,6 @@ import { RouterLink } from '@angular/router';
 
 import { APP_VERSION } from '../../../environments/version';
 import { DataPortabilityService } from '../../core/services/data-portability.service';
-import { MonthlyPaymentService } from '../../core/services/monthly-payment.service';
 import { SettingsService } from '../../core/services/settings.service';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { CardComponent } from '../../shared/components/card/card.component';
@@ -30,7 +29,6 @@ import { BottomSheetComponent } from '../../shared/components/bottom-sheet/botto
 })
 export class SettingsComponent {
   private readonly settingsService = inject(SettingsService);
-  private readonly monthlyPaymentService = inject(MonthlyPaymentService);
   private readonly dataPortability = inject(DataPortabilityService);
   private readonly toast = inject(ToastService);
 
@@ -51,35 +49,14 @@ export class SettingsComponent {
     try {
       const record = await this.settingsService.get();
       await this.settingsService.save({
+        ...record,
         userName: name,
         setupComplete: record?.setupComplete ?? true,
-        customExpenseCategories: record?.customExpenseCategories,
       });
       this.toast.show('Nombre actualizado.');
     } catch (error) {
       this.toast.show(error instanceof Error ? error.message : 'No se pudo guardar.');
     }
-  }
-
-  protected closeMonth(): void {
-    this.confirmMessage.set('¿Cerrar el mes actual? Los pagos recurrentes se replicarán al siguiente.');
-    this.confirmTone.set('destructive');
-    this.confirmAction.set(() => {
-      void (async () => {
-        const today = new Date();
-        const month = today.getMonth() + 1;
-        const year = today.getFullYear();
-        const nextMonth = month === 12 ? 1 : month + 1;
-        const nextYear = month === 12 ? year + 1 : year;
-        try {
-          const paymentCount = await this.monthlyPaymentService.replicateRecurring(month, year, nextMonth, nextYear);
-          this.toast.show(`${paymentCount} pago(s) recurrente(s) replicado(s) al siguiente mes.`);
-        } catch (error) {
-          this.toast.show(error instanceof Error ? error.message : 'No se pudo cerrar el mes.');
-        }
-      })();
-    });
-    this.confirmOpen.set(true);
   }
 
   protected async exportData(): Promise<void> {

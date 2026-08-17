@@ -40,6 +40,44 @@ export class BudgetService {
   }
 
   /**
+   * Copies every budget of the origin month into the target month.
+   * Existing budgets for the target month are left untouched.
+   * Returns the number of budgets created.
+   */
+  async replicateBudgets(
+    originMonth: number,
+    originYear: number,
+    targetMonth: number,
+    targetYear: number,
+  ): Promise<number> {
+    const origin = await this.getByMonth(originMonth, originYear);
+    if (origin.length === 0) {
+      return 0;
+    }
+    const existingTarget = await this.getByMonth(targetMonth, targetYear);
+    const existingKeys = new Set(existingTarget.map((b) => `${b.category}|${b.pocketId}`));
+
+    const copies: Budget[] = [];
+    for (const budget of origin) {
+      const key = `${budget.category}|${budget.pocketId}`;
+      if (existingKeys.has(key)) {
+        continue;
+      }
+      copies.push({
+        month: targetMonth,
+        year: targetYear,
+        category: budget.category,
+        pocketId: budget.pocketId,
+        estimatedAmount: budget.estimatedAmount,
+      });
+    }
+    if (copies.length > 0) {
+      await database.budgets.bulkAdd(copies);
+    }
+    return copies.length;
+  }
+
+  /**
    * Computes actual vs estimated for every budget in the given month.
    * The actual is the sum of expenses whose category and pocket match
    * the budget. pocketId = 0 means "all pockets".

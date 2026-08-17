@@ -7,6 +7,7 @@ import { filter, map } from 'rxjs/operators';
 import type { PaymentMethod } from './core/models/payment-method.model';
 import { CreditCardStatementService } from './core/services/credit-card-statement.service';
 import { CatalogService } from './core/services/catalog.service';
+import { MonthService } from './core/services/month.service';
 import { PaymentMethodService } from './core/services/payment-method.service';
 import { BottomSheetComponent } from './shared/components/bottom-sheet/bottom-sheet.component';
 import { ButtonDirective } from './shared/components/button/button.directive';
@@ -70,6 +71,7 @@ export class App implements OnInit {
   private readonly catalogService = inject(CatalogService);
   private readonly creditCardStatement = inject(CreditCardStatementService);
   private readonly paymentMethodService = inject(PaymentMethodService);
+  private readonly monthService = inject(MonthService);
   private readonly swUpdate = inject(SwUpdate);
 
   private readonly currentUrl = toSignal(
@@ -93,6 +95,7 @@ export class App implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.catalogService.initialize();
+    await this.monthService.autoReplicateIfNeeded();
     await this.checkCutoffs();
     this.checkForUpdates();
   }

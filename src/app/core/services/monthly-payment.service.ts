@@ -21,7 +21,11 @@ export class MonthlyPaymentService {
   async getByMonth(month: number, year: number): Promise<MonthlyPayment[]> {
     const all = await database.monthlyPayments.toArray();
     return all
-      .filter((payment) => payment.month === month && payment.year === year)
+      .filter(
+        (payment) =>
+          (payment.month === month && payment.year === year) ||
+          this.isDueInMonth(payment.dueDate, month, year),
+      )
       .sort((a, b) => this.urgencyRank(a) - this.urgencyRank(b) || a.dueDate.localeCompare(b.dueDate));
   }
 
@@ -81,7 +85,10 @@ export class MonthlyPaymentService {
     };
     await database.monthlyPayments.put(updated);
 
-    // 2. Create expense using the source payment method
+    // 2. Create expense using the source payment method.
+    //    The expense is recorded in the month the payment is due, so it
+    //    lands in the right month even if the payment was created earlier.
+    const due = this.monthFromDate(payment.dueDate);
     await this.expenseService.create({
       date: this.todayIso(),
       description: payment.name,
@@ -89,8 +96,8 @@ export class MonthlyPaymentService {
       paymentMethodId: sourcePaymentMethodId,
       pocketId: payment.pocketId ?? 0,
       category: payment.expenseCategory ?? 'Other',
-      month: payment.month,
-      year: payment.year,
+      month: due.month,
+      year: due.year,
       isInstallment: false,
     });
   }
@@ -225,6 +232,20 @@ export class MonthlyPaymentService {
   private extractDay(dateStr: string): number {
     const parts = dateStr.split('-').map(Number);
     return parts.length === 3 ? parts[2] : 1;
+  }
+
+  private isDueInMonth(dueDate: string, month: number, year: number): boolean {
+    const parts = dueDate.split('-').map(Number);
+    return parts.length === 3 && parts[0] === year && parts[1] === month;
+  }
+
+  private monthFromDate(dateStr: string): { month: number; year: number } {
+    const parts = dateStr.split('-').map(Number);
+    if (parts.length === 3) {
+      return { year: parts[0], month: parts[1] };
+    }
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() + 1 };
   }
 
   private buildDate(year: number, month: number, day: number): string {
