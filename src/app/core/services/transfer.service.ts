@@ -84,15 +84,23 @@ export class TransferService {
             await database.transfers.add(surplusTransfer);
           }
 
-          // Mark installments for the billing period as paid
-          await this.markInstallmentsPaid(to.id!, billingPeriod.month, billingPeriod.year);
+          // Mark installments for the period the frozen statement actually
+          // covers (the period before the statement label) as paid.
+          const covered = this.previousPeriod(billingPeriod.month, billingPeriod.year);
+          await this.markInstallmentsPaid(to.id!, covered.month, covered.year);
 
           return paymentAmount;
         }
       }
 
-      // Before cutoff or no statementBalance: normal transfer
-      await this.markInstallmentsPaid(to.id!, transfer.month, transfer.year);
+      // Before cutoff or no statementBalance: only settle installments covered
+      // by an existing frozen statement. Never mark the current month's
+      // installments as paid (e.g. when paying an old "zombie" statement).
+      if ((to.statementBalance ?? 0) > 0 && transfer.isCreditCardPayment) {
+        const period = this.creditCardStatement.getStatementPeriod(to);
+        const covered = this.previousPeriod(period.month, period.year);
+        await this.markInstallmentsPaid(to.id!, covered.month, covered.year);
+      }
     }
 
     const id = await database.transfers.add(transfer);
@@ -167,6 +175,13 @@ export class TransferService {
     for (const plan of toMark) {
       await database.installmentPlans.put({ ...plan, paid: true });
     }
+  }
+
+  private previousPeriod(month: number, year: number): { month: number; year: number } {
+    if (month === 1) {
+      return { month: 12, year: year - 1 };
+    }
+    return { month: month - 1, year };
   }
 
   private validate(transfer: Transfer): void {
