@@ -10,11 +10,6 @@ import { MonthlyPaymentService } from './monthly-payment.service';
 import { PaymentMethodService } from './payment-method.service';
 import { SavingsService } from './savings.service';
 
-interface DateRange {
-  readonly startIso: string;
-  readonly endIso: string;
-}
-
 /**
  * Computes the full balance breakdown defined by BR-04, BR-05 and
  * BR-06. The single `calculate(month, year)` entry point returns:
@@ -58,8 +53,6 @@ export class BalanceService {
       methods,
       allExpenses,
       allTransfers,
-      month,
-      year,
     );
     const pendingFixedPayments = this.sumPendingFixedPayments(methods, payments);
     const pendingScheduledSavings = await this.savingsService.getTotalPendingScheduledForMonth(month, year);
@@ -92,8 +85,6 @@ export class BalanceService {
     methods: readonly PaymentMethod[],
     allExpenses: readonly { paymentMethodId: number; amount: number; date: string; applicationDate?: string; isInstallment: boolean; hidden?: boolean }[],
     allTransfers: readonly { toPaymentMethodId: number; amount: number; month: number; year: number; isCreditCardPayment?: boolean; billingPeriodMonth?: number; billingPeriodYear?: number }[],
-    month: number,
-    year: number,
   ): Promise<number> {
     const creditCards = methods.filter((method) => method.type === 'credit');
     const today = new Date();
@@ -121,9 +112,11 @@ export class BalanceService {
         const cardDebt = Math.max(0, (card.statementBalance ?? 0) - creditCardPayments);
         total += cardDebt;
       } else {
-        // Before cutoff: direct charges + installments - transfers
-        // Prioritize applicationDate over date for credit card period filtering
-        const range = this.calculateActivePeriod(card, today);
+        // Before cutoff (or no frozen statement): compute the active period
+        // from the processed cutoff so charges keep counting until the cutoff
+        // is applied, and advance immediately once it is.
+        const range = this.creditCardStatement.getActivePeriod(card);
+        const label = this.creditCardStatement.getStatementPeriod(card);
         const directSum = allExpenses
           .filter(
             (expense) =>
@@ -139,15 +132,15 @@ export class BalanceService {
           .toArray();
         const installmentSum = installmentPlans
           .filter(
-            (plan) => plan.cutoffYear === year && plan.cutoffMonth === month && !plan.paid,
+            (plan) => plan.cutoffYear === label.year && plan.cutoffMonth === label.month && !plan.paid,
           )
           .reduce((sum, plan) => sum + (plan.customAmount ?? plan.amount), 0);
         const transfersReceived = allTransfers
           .filter(
             (transfer) =>
               transfer.toPaymentMethodId === card.id &&
-              transfer.month === month &&
-              transfer.year === year &&
+              transfer.month === label.month &&
+              transfer.year === label.year &&
               !transfer.isCreditCardPayment,
           )
           .reduce((sum, transfer) => sum + transfer.amount, 0);
@@ -168,32 +161,6 @@ export class BalanceService {
       }
     }
     return this.round(total);
-  }
-
-  /**
-   * BR-05: when today is on or before the closing day, the active
-   * period goes from the previous month's closing day + 1 to the
-   * current month's closing day; otherwise it goes from the current
-   * month's closing day + 1 to next month's closing day.
-   */
-  calculateActivePeriod(card: PaymentMethod, today: Date): DateRange {
-    const closingDay = card.statementClosingDay ?? 1;
-    const month = today.getMonth();
-    const year = today.getFullYear();
-
-    if (today.getDate() <= closingDay) {
-      const prevMonthIndex = month - 1;
-      const prevYear = prevMonthIndex < 0 ? year - 1 : year;
-      const start = new Date(prevYear, (prevMonthIndex + 12) % 12, closingDay + 1);
-      const end = new Date(year, month, closingDay);
-      return { startIso: this.toIsoDate(start), endIso: this.toIsoDate(end) };
-    }
-
-    const start = new Date(year, month, closingDay + 1);
-    const nextMonthIndex = month + 1;
-    const nextYear = nextMonthIndex > 11 ? year + 1 : year;
-    const end = new Date(nextYear, nextMonthIndex % 12, closingDay);
-    return { startIso: this.toIsoDate(start), endIso: this.toIsoDate(end) };
   }
 
   private sumAvailable(methods: readonly PaymentMethod[]): number {
@@ -231,13 +198,6 @@ export class BalanceService {
         .filter((income) => income.status === 'expected')
         .reduce((sum, income) => sum + income.amount, 0),
     );
-  }
-
-  private toIsoDate(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
   }
 
   private round(value: number): number {

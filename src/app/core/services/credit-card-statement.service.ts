@@ -99,6 +99,34 @@ export class CreditCardStatementService {
   }
 
   /**
+   * Returns the active billing period date range, derived from the
+   * processed cutoff (lastCutoffMonth/Year) rather than the calendar
+   * date. The range goes from the closing day of the period before the
+   * statement label to the closing day of the statement label itself.
+   *
+   * This makes the shown period stable across the cutoff transition:
+   * - Before a cutoff is processed, the range still covers the period
+   *   that just ended, so its charges keep counting in the debt.
+   * - Right after a cutoff is processed, the range advances immediately
+   *   (no waiting until the next calendar day).
+   */
+  getActivePeriod(card: PaymentMethod): { startIso: string; endIso: string } {
+    const closingDay = card.statementClosingDay ?? 1;
+    const label = this.getStatementPeriod(card);
+    const covered = this.previousPeriod(label.month, label.year);
+    const start = new Date(covered.year, covered.month - 1, closingDay + 1);
+    const end = new Date(label.year, label.month - 1, closingDay);
+    return { startIso: this.toIsoDate(start), endIso: this.toIsoDate(end) };
+  }
+
+  private previousPeriod(month: number, year: number): { month: number; year: number } {
+    if (month === 1) {
+      return { month: 12, year: year - 1 };
+    }
+    return { month: month - 1, year };
+  }
+
+  /**
    * Returns the amount to pay for a card.
    * If statementBalance is set (after a cutoff), returns it minus any payments
    * made for the corresponding billing period. Otherwise returns 0 (before the

@@ -7,6 +7,7 @@ import { filter, map } from 'rxjs/operators';
 import type { PaymentMethod } from './core/models/payment-method.model';
 import { CreditCardStatementService } from './core/services/credit-card-statement.service';
 import { CatalogService } from './core/services/catalog.service';
+import { DataRefreshService } from './core/services/data-refresh.service';
 import { MonthService } from './core/services/month.service';
 import { PaymentMethodService } from './core/services/payment-method.service';
 import { BottomSheetComponent } from './shared/components/bottom-sheet/bottom-sheet.component';
@@ -72,6 +73,7 @@ export class App implements OnInit {
   private readonly creditCardStatement = inject(CreditCardStatementService);
   private readonly paymentMethodService = inject(PaymentMethodService);
   private readonly monthService = inject(MonthService);
+  private readonly dataRefresh = inject(DataRefreshService);
   private readonly swUpdate = inject(SwUpdate);
 
   private readonly currentUrl = toSignal(
@@ -147,6 +149,7 @@ export class App implements OnInit {
     try {
       const today = new Date();
       await this.creditCardStatement.processCutoff(card, today);
+      this.dataRefresh.notify();
       this.toast.show(`Período de ${card.name} cerrado.`);
     } catch (error) {
       this.toast.show(error instanceof Error ? error.message : 'No se pudo cerrar el período.');

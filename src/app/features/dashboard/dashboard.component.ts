@@ -22,6 +22,7 @@ import { SettingsService } from '../../core/services/settings.service';
 import { TransferService } from '../../core/services/transfer.service';
 import { SavingsService, type PendingScheduledSaving } from '../../core/services/savings.service';
 import { BudgetService } from '../../core/services/budget.service';
+import { DataRefreshService } from '../../core/services/data-refresh.service';
 import type { SavingsAccount } from '../../core/models/savings-account.model';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
@@ -85,6 +86,7 @@ export class DashboardComponent {
   private readonly transferService = inject(TransferService);
   private readonly savingsService = inject(SavingsService);
   private readonly budgetService = inject(BudgetService);
+  private readonly dataRefresh = inject(DataRefreshService);
   private readonly toast = inject(ToastService);
 
   protected readonly userName = signal('');
@@ -170,6 +172,7 @@ export class DashboardComponent {
     effect(() => {
       const month = this.currentMonth();
       const year = this.currentYear();
+      this.dataRefresh.version();
       void this.loadAll(month, year);
     });
   }
@@ -191,6 +194,7 @@ export class DashboardComponent {
         installmentPlans,
         allTransfers,
         templates,
+        refunds,
       ] = await Promise.all([
         this.balanceService.calculate(month, year),
         this.pocketService.getAll(),
@@ -201,6 +205,7 @@ export class DashboardComponent {
         database.installmentPlans.toArray(),
         database.transfers.toArray(),
         this.expenseTemplateService.getAll(),
+        database.refunds.toArray(),
       ]);
       this.balance.set(balance);
       this.pockets.set(pockets);
@@ -225,7 +230,7 @@ export class DashboardComponent {
       );
       this.expensesByPocket.set(this.buildExpensesByPocket(expenses, month, year));
       this.creditCardEntries.set(
-        this.buildCreditCardEntries(methods, expenses, installmentPlans, allTransfers, month, year),
+        this.buildCreditCardEntries(methods, expenses, installmentPlans, allTransfers, refunds),
       );
 
       // Load budget progress
@@ -315,34 +320,41 @@ export class DashboardComponent {
     expenses: readonly Expense[],
     installmentPlans: readonly { paymentMethodId: number; amount: number; customAmount?: number; cutoffMonth: number; cutoffYear: number; paid: boolean }[],
     allTransfers: readonly Transfer[],
-    month: number,
-    year: number,
+    refunds: readonly { originalPaymentMethodId: number; amount: number; date: string }[],
   ): CreditCardStatusEntry[] {
-    const today = new Date();
     return methods
       .filter((method) => method.type === 'credit' && method.id !== undefined)
       .map((card) => {
         const cardId = card.id!;
-        const range = this.balanceService.calculateActivePeriod(card, today);
+        const range = this.creditCardStatement.getActivePeriod(card);
+        const label = this.creditCardStatement.getStatementPeriod(card);
         const directSum = expenses
           .filter(
             (expense) =>
               expense.paymentMethodId === cardId &&
               !expense.isInstallment &&
               !expense.hidden &&
-              expense.date >= range.startIso &&
-              expense.date <= range.endIso,
+              (expense.applicationDate ?? expense.date) >= range.startIso &&
+              (expense.applicationDate ?? expense.date) <= range.endIso,
           )
           .reduce((sum, expense) => sum + expense.amount, 0);
         const installmentSum = installmentPlans
           .filter(
             (plan) =>
               plan.paymentMethodId === cardId &&
-              plan.cutoffYear === year &&
-              plan.cutoffMonth === month &&
+              plan.cutoffYear === label.year &&
+              plan.cutoffMonth === label.month &&
               !plan.paid,
           )
           .reduce((sum, plan) => sum + (plan.customAmount ?? plan.amount), 0);
+        const refundSum = refunds
+          .filter(
+            (refund) =>
+              refund.originalPaymentMethodId === cardId &&
+              refund.date >= range.startIso &&
+              refund.date <= range.endIso,
+          )
+          .reduce((sum, refund) => sum + refund.amount, 0);
         const paymentDueDate = this.formatPaymentDate(
           this.creditCardStatement.getPaymentDueDate(card),
         );
@@ -352,7 +364,7 @@ export class DashboardComponent {
           name: card.name,
           availableCredit: card.availableCredit ?? 0,
           paymentDueDate,
-          periodCharges: Math.round((directSum + installmentSum) * 100) / 100,
+          periodCharges: Math.round((directSum + installmentSum - refundSum) * 100) / 100,
           statementClosingDay: card.statementClosingDay ?? 1,
           amountToPay,
         };

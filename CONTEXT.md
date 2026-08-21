@@ -146,6 +146,21 @@ Contexto del bug: al cambiar de mes, los pagos recurrentes no se replican solos 
 - El usuario registró pagos de cortes pendientes como **gastos provisionales de débito** (Sep 1/3), por lo que nunca tocaron el `statementBalance` de las tarjetas. Sus intentos de reconciliación (borrar gastos + pagar, o abonar saldo + pagar) no se reflejaban porque el match de pagos usaba `getCutoffPeriod(closingDay, hoy)` (cambiaba al cruzar el día de corte/mes), así que los pagos "se perdían" y la deuda volvía al `statementBalance` completo. El fix (commit `a9be038`) resuelve esto con el período estable.
 - **Segunda ronda de pruebas**: el usuario cargó respaldo de producción, borró los gastos provisionales y pagó los zombies. Dos problemas residuales: (1) la cuota MSI pendiente se marcaba como pagada al pagar el zombie (fix en `transfer.service.ts` con `previousPeriod`); (2) la deuda exigible no incluía los cargos del período actual de las tarjetas pagadas (fix: restaurar guardia `today >= closingDay` en `sumBillableDebt`). **Pendiente de verificar por el usuario**: NU "saldo usado del mes" = $4,354.34 y deuda exigible = $13,971.70.
 
+### Ronda 3 — Períodos de tarjeta basados en el corte, reactividad y consistencia del widget (sin commitear aun)
+Problemas reportados: (1) al pasar la fecha de corte sin aplicar el corte el "monto usado" desaparece/queda en limbo; (2) al aplicar el corte el balance no se actualiza hasta recargar; (3) tras el corte el período no avanza hasta el día siguiente; (5) al pagar no se refleja en el widget hasta recargar; (6) el "Usado" del widget no coincide con el detalle (no usa `applicationDate` ni resta reembolsos).
+
+**Cambios implementados:**
+- **`credit-card-statement.service.ts`**: nuevo `getActivePeriod(card)` que deriva el período activo de `getStatementPeriod` (label = `lastCutoffMonth/Year`) → `start = closingDay+1 del mes anterior al label`, `end = closingDay del label`. Resuelve #1 y #3: antes del corte el período sigue cubriendo los cargos del período recién cerrado (siguen contando en la deuda); tras el corte avanza de inmediato. Añadido helper `previousPeriod`.
+- **`balance.service.ts`**: la rama "en vivo" de `sumBillableDebt` ahora usa `getActivePeriod` + `getStatementPeriod` (gastos, cuotas, transfers y reembolsos alineados al período del corte). Se eliminaron los parámetros `month/year` de `sumBillableDebt` y el método muerto `calculateActivePeriod` + `DateRange` + `toIsoDate`.
+- **`credit-card-detail.component.ts`**: `calculatePeriodRange` ahora devuelve `getActivePeriod` (mantiene shape `{startIso, endIso, month, year}` con label). `onSavePayment` y `closePeriod` llaman `dataRefresh.notify()`.
+- **`dashboard.component.ts`**: `buildCreditCardEntries` usa `getActivePeriod`/`getStatementPeriod`, filtra con `(applicationDate ?? date)` y **resta reembolsos** (carga `database.refunds` en `loadAll`). El `effect` del constructor depende de `dataRefresh.version()`. Inyectado `DataRefreshService`.
+- **`app.ts`**: `confirmCutoff` llama `dataRefresh.notify()` (cubre el prompt global de corte).
+- **`data-refresh.service.ts`** (nuevo): señal de versión compartida con `notify()` para refrescar el dashboard en tiempo real.
+- **Tests nuevos**: `credit-card-statement.service.spec.ts` (`getActivePeriod`: rango con label, cruce de año, corte día 1, fallback) y `data-refresh.service.spec.ts`. `npm test` → **90 tests pasan**.
+- Build verificado OK (`npx ng build`). `version.ts` queda modificado sin commitear (autogenerado).
+
+**Pendiente de verificar por el usuario (ronda 3)**: que el widget "Usado" coincida con el detalle (gasto 26/7 con aplicación 27/7, corte 26), que el usado siga contando tras la fecha de corte sin aplicarlo, que tras aplicar el corte avance y que el balance/widget se actualicen al instante (corte desde prompt global y desde detalle, y pago desde detalle).
+
 **Próximo paso (FASE C)**: correcciones de Gastos y listas (ver sección 5, FASE C):
 1. Gasto de retiro de ahorro como `hidden: true`.
 2. Toggle de gastos ocultos en pantalla de Gastos + ocultar/mostrar manualmente.

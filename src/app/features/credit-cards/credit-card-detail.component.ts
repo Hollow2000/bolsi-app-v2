@@ -16,6 +16,7 @@ import { InstallmentPlanService } from '../../core/services/installment-plan.ser
 import { MonthlyPaymentService } from '../../core/services/monthly-payment.service';
 import { PaymentMethodService } from '../../core/services/payment-method.service';
 import { TransferService } from '../../core/services/transfer.service';
+import { DataRefreshService } from '../../core/services/data-refresh.service';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
@@ -75,6 +76,7 @@ export class CreditCardDetailComponent {
   private readonly monthlyPaymentService = inject(MonthlyPaymentService);
   private readonly paymentMethodService = inject(PaymentMethodService);
   private readonly transferService = inject(TransferService);
+  private readonly dataRefresh = inject(DataRefreshService);
   private readonly toast = inject(ToastService);
 
   private readonly cardId = toSignal(
@@ -349,6 +351,7 @@ export class CreditCardDetailComponent {
       );
 
       this.toast.show('Pago registrado. Se descontó de la cuenta seleccionada.');
+      this.dataRefresh.notify();
       this.closePay();
       await this.load();
     } catch (error) {
@@ -364,6 +367,7 @@ export class CreditCardDetailComponent {
     try {
       const today = new Date();
       const statementBalance = await this.creditCardStatement.processCutoff(method, today);
+      this.dataRefresh.notify();
       this.toast.show(`Período cerrado. Saldo al corte: ${new MexicanCurrencyPipe().transform(statementBalance)}`);
       await this.load();
     } catch (error) {
@@ -519,30 +523,13 @@ export class CreditCardDetailComponent {
     if (!method || method.statementClosingDay === undefined) {
       return { startIso: '', endIso: '', month: this.currentMonth(), year: this.currentYear() };
     }
-    const today = new Date();
-    const closingDay = method.statementClosingDay;
-    const month = today.getMonth() + 1;
-    const year = today.getFullYear();
-
-    if (today.getDate() <= closingDay) {
-      // Period started previous month (closingDay+1) and ends this month (closingDay).
-      const prev = new Date(year, month - 2, closingDay + 1);
-      const end = new Date(year, month - 1, closingDay);
-      return {
-        startIso: this.toIsoDate(prev),
-        endIso: this.toIsoDate(end),
-        month,
-        year,
-      };
-    }
-    // Period started this month (closingDay+1) and ends next month (closingDay).
-    const start = new Date(year, month - 1, closingDay + 1);
-    const next = new Date(year, month, closingDay);
+    const range = this.creditCardStatement.getActivePeriod(method);
+    const label = this.creditCardStatement.getStatementPeriod(method);
     return {
-      startIso: this.toIsoDate(start),
-      endIso: this.toIsoDate(next),
-      month: month === 12 ? 1 : month + 1,
-      year: month === 12 ? year + 1 : year,
+      startIso: range.startIso,
+      endIso: range.endIso,
+      month: label.month,
+      year: label.year,
     };
   }
 
