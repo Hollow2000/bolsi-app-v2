@@ -10,7 +10,7 @@
 - **Stack**: Angular 21 (standalone components, signals, `strict: true`), TypeScript 5.9, Dexie (IndexedDB) v4.4.4, PWA (Service Worker + `@angular/service-worker`), RxJS 7.
 - **Routing**: `HashLocationStrategy` (URLs tipo `#/...`).
 - **Deploy**: GitHub Pages en `https://<usuario>.github.io/bolsi-app-v2/` vía `npx ngh`.
-- **Versión actual**: `0.2.5` (git tag/commit `67fcd01`, último bump).
+- **Versión actual**: `0.2.8` (git tag/commit `f3084f6`, último bump).
 - **UI**: Español. Nombres de variables/código en inglés. Estilos SCSS. Iconos Material Symbols (`material-symbols-outlined`).
 - **Patrón**: componentes standalone con `changeDetection: ChangeDetectionStrategy.OnPush`, `input()`/`output()` por función, `computed()` para estado derivado, servicios con `providedIn: 'root'` e `inject()`.
 - **Convención**: NO agregar comentarios al código salvo que se pidan. Mantener componentes pequeños. Formularios reactivos.
@@ -196,11 +196,14 @@ Problemas reportados: (1) al llegar la fecha de corte de una tarjeta, el "monto 
 
 ### Estado de git actualizado (2026-08)
 - **`feature/credit-cards` fue mergeada a `master`** (fast-forward, HEAD = `c3a46a8`). Toda la Fase B + rondas 3/4 de tarjetas quedó en master.
-- **Deploy realizado por el usuario**: `npm run deploy` bumpó a **v0.2.7** (commit `b9f3f0e`, tag `v0.2.7`) y publicó en GitHub Pages. Push de `master` y tag `v0.2.7` a origin OK. Working tree limpio (se restauró `version.ts` autogenerado).
-- `npm test` → **90 tests pasan** en master tras el merge.
+- **Deploy v0.2.7 realizado por el usuario**: `npm run deploy` bumpó a **v0.2.7** (commit `b9f3f0e`, tag `v0.2.7`) y publicó en GitHub Pages. Push de `master` y tag `v0.2.7` a origin OK. Working tree limpio (se restauró `version.ts` autogenerado).
+- `npm test` → **90 tests pasan** en master tras el merge de tarjetas.
 
-### FASE F implementada (rama `feature/fase-f-dashboard-ingresos`)
-FASE F completa (dashboard y pagos + replicación de ingresos + respaldo JSON). Ver sección 5 para detalle. **Sin commitear ni desplegar todavía** — pendiente de revisión del usuario. `npm test` → **104 tests pasan**, build OK.
+### FASE F mergeada y desplegada (v0.2.8)
+- Rama `feature/fase-f-dashboard-ingresos` mergeada a `master` (fast-forward, commit `6098635`).
+- **Deploy realizado**: `npm run deploy` bumpó a **v0.2.8** (commit `f3084f6`, tag `v0.2.8`) y publicó en GitHub Pages. Push de `master` y tag `v0.2.8` a origin OK.
+- El usuario **confirmó** que la replicación de ingresos funciona y que los estilos de los widgets están correctos.
+- `npm test` → **104 tests pasan**, build OK.
 
 ### Próximo paso (después de FASE F)
 Siguen pendientes las **FASES C, D y E** (ver sección 5):
@@ -208,7 +211,7 @@ Siguen pendientes las **FASES C, D y E** (ver sección 5):
 - FASE D — Ahorros (ordenar transacciones descendente; NO tocar ahorros programados).
 - FASE E — Dashboard/UI (bolsillo negativo, layout ingresos/pagos, consistencia de listas).
 
-**NOTA**: el usuario ya aprobó el deploy de tarjetas (se hizo en v0.2.7). Para FASE F, preguntar antes de desplegar. Comando de deploy: `npm run deploy`. **Importante**: tras este fix de respaldo, si el usuario restaura un backup v1 antiguo, las tablas `transfers`/`refunds`/`catalogs` quedarán vacías (no existían en ese backup) — no es un error de import, es data que nunca se exportó.
+**NOTA**: deploy de FASE F aprobado por el usuario (se hizo en v0.2.8). Para próximas fases, preguntar antes de desplegar. Comando de deploy: `npm run deploy`. **Importante**: tras el fix de respaldo, si el usuario restaura un backup v1 antiguo, las tablas `transfers`/`refunds`/`catalogs` quedarán vacías (no existían en ese backup) — no es un error de import, es data que nunca se exportó.
 
 ### Nota de verificación (aprendida en la sesión)
 Antes de asumir que algo existe, VERIFICA en el repo: en resúmenes previos se asumió que `MonthService`, `replicateBudgets` y `replicatedMonths` ya existían, pero **NO existen** (grep da 0 resultados). El estado real está descrito arriba en las secciones 4-6.
