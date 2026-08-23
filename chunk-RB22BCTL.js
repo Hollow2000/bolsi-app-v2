@@ -1,0 +1,1 @@
+import{I as n,aa as i}from"./chunk-7XXQXRJG.js";var r=class e{_version=i(0);version=this._version.asReadonly();notify(){this._version.update(o=>o+1)}static \u0275fac=function(t){return new(t||e)};static \u0275prov=n({token:e,factory:e.\u0275fac,providedIn:"root"})};export{r as a};
