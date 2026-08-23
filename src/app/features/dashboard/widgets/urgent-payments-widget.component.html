@@ -5,13 +5,20 @@
     <ul class="app-list" aria-label="Pagos urgentes">
       @for (payment of items(); track payment.id) {
         <li class="urgent-row" [attr.data-urgency]="payment.urgency">
-          <app-list-item
-            [icon]="iconFor(payment)"
-            [title]="payment.name"
-            [subtitle]="subtitleFor(payment)"
-            [amount]="(payment.amount | mexicanCurrency) ?? ''"
-            tone="expense"
-          />
+          <button
+            type="button"
+            class="urgent-pay"
+            aria-label="Marcar como pagado: {{ payment.name }}"
+            (click)="markAsPaid.emit(payment.id)"
+          >
+            <app-list-item
+              [icon]="iconFor(payment)"
+              [title]="payment.name"
+              [subtitle]="subtitleFor(payment)"
+              [amount]="(payment.amount | mexicanCurrency) ?? ''"
+              tone="expense"
+            />
+          </button>
         </li>
       }
     </ul>

@@ -128,6 +128,22 @@ Contexto del bug: al cambiar de mes, los pagos recurrentes no se replican solos 
 17. **Ingresos y Pagos**: items con título+monto arriba y detalles debajo (una línea por item, igual que gastos).
 18. **Layout de listas**: verificar consistencia con el `list-item` optimizado.
 
+### FASE F — Dashboard y pagos (plan aprobado 2026-08) — ✅ COMPLETADA
+El usuario pidió estos 5 puntos (algunos descubiertos al probar el deploy v0.2.7). Implementados en la rama `feature/fase-f-dashboard-ingresos`. Detalles:
+
+19. **Widget "Pagos urgentes" del dashboard clickeable** — ✅ implementado (2ª versión): el elemento completo de cada pago es un `<button class="urgent-pay">` clickeable (sin botón "Pagar" separado) que emite `markAsPaid`; el dashboard navega a `/monthly-payments?pagar=<id>` (`onMarkPaymentAsPaid`) y `MonthlyPaymentsListComponent` lee el query param en `openRequestedMarkAsPaid()` (tras `load()`) y abre el bottom-sheet existente (`openMarkAsPaid`).
+20. **Botones del bottom-sheet "Marcar como pagado" sin estilos** — ✅ corregido: `ButtonDirective` agregada a `imports` de `MonthlyPaymentsListComponent`.
+21. **Alerta de cercanía de fecha de pago en widget de tarjetas** — ✅ implementado (2ª versión): `buildCreditCardEntries` envía `paymentDueDate` **ISO**; el widget calcula `daysUntilDue` y muestra `app-badge` **en la misma fila que los montos** (`.card-extra` con `flex-row` + `space-between`), rojo "Vence hoy" si `daysUntilDue === 0`, amarillo "Vence mañana" si `=== 1`; solo si `amountToPay > 0` (pagada = sin alerta). **Toda la tarjeta cambia de color**: `card-row--alert-danger` (fondo `color-danger-subtle` + borde danger) y `card-row--alert-warning` (fondo `color-warning-subtle` + borde warning). Badge más grande (`--text-size-small`).
+22. **Onboarding se omite al recargar** (bug) — ✅ corregido: `MonthService.autoReplicateIfNeeded()` hace early-return si no hay `record` o `!record.setupComplete`; al guardar usa `setupComplete: record?.setupComplete ?? false` (también en `settings.component.ts`).
+23. **IMPORTANTE — Replicación de ingresos mensuales/quincenales** — ✅ implementado:
+   - `IncomeService.replicateRecurring(originMonth, originYear, targetMonth, targetYear)` + función pura exportada `buildReplicatedIncomes(...)` (testeable).
+   - **Mensual**: copia con fecha +1 mes, `month/year` destino, `status: 'expected'`.
+   - **Quincenal**: agrupa el par (description+amount+paymentMethodId+category), usa la fecha más temprana como ancla y crea el **par** en el mes destino (día del ancla + 15 días), ambos `expected`.
+   - **Bug corregido (2ª ronda)**: las copias conservaban el `id` original del registro fuente → `bulkAdd` fallaba con ConstraintError (por eso no se replicaba nada). Fix: se elimina el `id` en las copias (`const { id: _id, ...rest }`) — misma técnica que `MonthlyPaymentService.replicateRecurring`.
+   - Tracking separado en `AppSettings.replicatedIncomeMonths` (migración: meses ya en `replicatedMonths` igual reciben ingresos). Integrado en `MonthService.autoReplicateIfNeeded`.
+   - Tests: `income.service.spec.ts` (9 tests de `buildReplicatedIncomes`, incluye strip de id) y `month.service.spec.ts` (5 tests de `autoReplicateIfNeeded`, incluye fix de onboarding y migración).
+24. **IMPORTANTE — Respaldo JSON incompleto** (agregado por el usuario) — ✅ corregido: `DataPortabilityService` solo exportaba 12 tablas; faltaban **`transfers`, `refunds` y `catalogs`**. Se agregaron al payload (versión bump a `BACKUP_VERSION = 2`), al `collect()`, al import (clear + bulkAdd vía mapping) y se hizo el import tolerante a backups v1 (tablas faltantes = vacías). `npm test` → **104 tests pasan**. Build verificado OK.
+
 ---
 
 ## 6. DÓNDE ME QUEDÉ / ESTADO ACTUAL
@@ -178,16 +194,21 @@ Problemas reportados: (1) al llegar la fecha de corte de una tarjeta, el "monto 
 
 **Pendiente de verificar por el usuario (ronda 4)**: al llegar la fecha de corte sin aplicar el corte, la Deuda exigible debe seguir mostrando el monto usado del mes; y en el mes siguiente debe aparecer el apartado "Pagos de tarjeta pendientes (meses anteriores)" restando en la proyección.
 
-**Próximo paso (FASE C)**: correcciones de Gastos y listas (ver sección 5, FASE C):
-1. Gasto de retiro de ahorro como `hidden: true`.
-2. Toggle de gastos ocultos en pantalla de Gastos + ocultar/mostrar manualmente.
-3. Editar gasto: validar saldo del bolsillo solo si cambia el monto.
-4. Crear/editar gasto sin bolsillo con advertencia/confirmación.
-5. Scroll en gastos recientes de débito/efectivo del detalle.
-6. Límites de caracteres (nombre 50, descripciones 100).
-7. **NO desplegar** (el usuario quiere probar antes). Además, al terminar Fase C considerar merge de `feature/credit-cards` a master.
+### Estado de git actualizado (2026-08)
+- **`feature/credit-cards` fue mergeada a `master`** (fast-forward, HEAD = `c3a46a8`). Toda la Fase B + rondas 3/4 de tarjetas quedó en master.
+- **Deploy realizado por el usuario**: `npm run deploy` bumpó a **v0.2.7** (commit `b9f3f0e`, tag `v0.2.7`) y publicó en GitHub Pages. Push de `master` y tag `v0.2.7` a origin OK. Working tree limpio (se restauró `version.ts` autogenerado).
+- `npm test` → **90 tests pasan** en master tras el merge.
 
-**IMPORTANTE — No desplegar sin aprobación explícita del usuario.** El usuario dijo: *"no realices el deploy, quiero probarlo antes"*. Comando de deploy (NO ejecutar todavía): `npm run deploy`.
+### FASE F implementada (rama `feature/fase-f-dashboard-ingresos`)
+FASE F completa (dashboard y pagos + replicación de ingresos + respaldo JSON). Ver sección 5 para detalle. **Sin commitear ni desplegar todavía** — pendiente de revisión del usuario. `npm test` → **104 tests pasan**, build OK.
+
+### Próximo paso (después de FASE F)
+Siguen pendientes las **FASES C, D y E** (ver sección 5):
+- FASE C — Gastos y listas (ocultos, toggle, editar sin bolsillo, scroll, límites de caracteres).
+- FASE D — Ahorros (ordenar transacciones descendente; NO tocar ahorros programados).
+- FASE E — Dashboard/UI (bolsillo negativo, layout ingresos/pagos, consistencia de listas).
+
+**NOTA**: el usuario ya aprobó el deploy de tarjetas (se hizo en v0.2.7). Para FASE F, preguntar antes de desplegar. Comando de deploy: `npm run deploy`. **Importante**: tras este fix de respaldo, si el usuario restaura un backup v1 antiguo, las tablas `transfers`/`refunds`/`catalogs` quedarán vacías (no existían en ese backup) — no es un error de import, es data que nunca se exportó.
 
 ### Nota de verificación (aprendida en la sesión)
 Antes de asumir que algo existe, VERIFICA en el repo: en resúmenes previos se asumió que `MonthService`, `replicateBudgets` y `replicatedMonths` ya existían, pero **NO existen** (grep da 0 resultados). El estado real está descrito arriba en las secciones 4-6.
@@ -225,4 +246,11 @@ Antes de asumir que algo existe, VERIFICA en el repo: en resúmenes previos se a
 - `src/app/core/services/balance.service.ts` — `sumBillableDebt` sin guardia de fecha, matchea pagos contra `getStatementPeriod()`.
 - `src/app/features/savings/savings-detail.component.*` — transacciones de ahorro.
 - `src/app/features/dashboard/widgets/pocket-summary-widget.component.*` — barra de bolsillos (negativos).
+- `src/app/features/dashboard/widgets/urgent-payments-widget.component.*` — pagos urgentes (FASE F: elemento completo clickeable + output `markAsPaid`).
+- `src/app/features/dashboard/widgets/credit-card-status-widget.component.*` — estado de tarjetas (FASE F: alerta de fecha de pago junto a montos + color de tarjeta).
+- `src/app/features/monthly-payments/monthly-payments-list.component.ts|html` — pagos recurrentes (FASE F: fix `ButtonDirective`, leer query param `pagar`).
+- `src/app/features/income/income-list.component.ts` — listado de ingresos (FASE F: verificación de replicación).
+- `src/app/core/services/income.service.ts` — ingresos (FASE F: `replicateRecurring` + `buildReplicatedIncomes` pura; strip de `id` en copias).
+- `src/app/core/models/app-settings.model.ts` — settings (FASE F: `replicatedMonths` + `replicatedIncomeMonths`).
+- `src/app/core/services/data-portability.service.ts` — respaldo JSON (FASE F: ahora exporta/importa `transfers`, `refunds`, `catalogs`; version 2).
 - `scripts/bump-version.js`, `scripts/generate-version.js` — versionado.

@@ -6,4 +6,5 @@ export interface AppSettings {
   customIncomeCategories?: string[];
   showHiddenMovements?: boolean;
   replicatedMonths?: string[];
+  replicatedIncomeMonths?: string[];
 }

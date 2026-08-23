@@ -1,8 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import type { MonthlyPayment } from '../../../core/models/monthly-payment.model';
-import { BadgeComponent } from '../../../shared/components/badge/badge.component';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ListItemComponent } from '../../../shared/components/list-item/list-item.component';
 import { MexicanCurrencyPipe } from '../../../shared/pipes/mexican-currency.pipe';
@@ -25,6 +24,7 @@ export interface UrgentPayment {
 })
 export class UrgentPaymentsWidgetComponent {
   readonly payments = input<readonly MonthlyPayment[]>([]);
+  readonly markAsPaid = output<number>();
 
   protected readonly items = computed<UrgentPayment[]>(() => {
     const today = new Date();

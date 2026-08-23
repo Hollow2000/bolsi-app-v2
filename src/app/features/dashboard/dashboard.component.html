@@ -81,7 +81,7 @@
 
         <app-pocket-summary-widget [entries]="pocketEntries()" />
 
-        <app-urgent-payments-widget [payments]="monthlyPayments()" />
+        <app-urgent-payments-widget [payments]="monthlyPayments()" (markAsPaid)="onMarkPaymentAsPaid($event)" />
 
         <app-credit-card-status-widget [items]="creditCardEntries()" />
 

@@ -117,6 +117,35 @@ export class IncomeService {
       await this.paymentMethods.addBalance(source.paymentMethodId, source.amount);
     }
   }
+
+  /**
+   * Copies recurring incomes (monthly / biweekly) from one month to the
+   * next so they keep appearing without manual re-entry. Replicated rows
+   * always start as `expected` so they never touch the payment-method
+   * balance again — the user marks them received when they actually land.
+   *
+   * - Monthly: one copy per source record, date shifted +1 month.
+   * - Biweekly: the pair is stored as two rows (BR-01). Group them by
+   *   (description + amount + paymentMethodId + category), use the
+   *   earliest date as the anchor, and rebuild the pair in the target
+   *   month (anchor date + 15 days).
+   *
+   * Returns the number of rows created.
+   */
+  async replicateRecurring(
+    originMonth: number,
+    originYear: number,
+    targetMonth: number,
+    targetYear: number,
+  ): Promise<number> {
+    const all = await database.incomes.toArray();
+    const copies = buildReplicatedIncomes(all, originMonth, originYear, targetMonth, targetYear);
+    if (copies.length === 0) {
+      return 0;
+    }
+    await database.incomes.bulkAdd(copies);
+    return copies.length;
+  }
 }
 
 function parseIsoDate(value: string): Date {
@@ -136,4 +165,99 @@ function deriveMonthAndYear(isoDate: string): { month: number; year: number } {
     throw new Error('Fecha inválida al derivar mes y año.');
   }
   return { year: parts[0], month: parts[1] };
+}
+
+function addDays(isoDate: string, days: number): string {
+  const date = parseIsoDate(isoDate);
+  date.setDate(date.getDate() + days);
+  return toIsoDate(date);
+}
+
+function lastDayOfMonth(year: number, month: number): number {
+  return new Date(year, month, 0).getDate();
+}
+
+export function buildReplicatedIncomes(
+  all: readonly Income[],
+  originMonth: number,
+  originYear: number,
+  targetMonth: number,
+  targetYear: number,
+): Income[] {
+  const recurring = all.filter(
+    (income) =>
+      income.month === originMonth &&
+      income.year === originYear &&
+      (income.frequency === 'monthly' || income.frequency === 'biweekly'),
+  );
+  if (recurring.length === 0) {
+    return [];
+  }
+
+  const copies: Income[] = [];
+
+  for (const income of recurring) {
+    if (income.frequency === 'biweekly') {
+      continue;
+    }
+    const { id: _id, ...rest } = income;
+    const shiftedDate = shiftByOneMonth(income.date, targetMonth, targetYear);
+    copies.push({
+      ...rest,
+      date: shiftedDate,
+      month: targetMonth,
+      year: targetYear,
+      status: 'expected',
+    });
+  }
+
+  const biweeklySources = new Map<string, Income>();
+  for (const income of recurring) {
+    if (income.frequency !== 'biweekly') {
+      continue;
+    }
+    const key = `${income.description}|${income.amount}|${income.paymentMethodId}|${income.category}`;
+    const existing = biweeklySources.get(key);
+    if (!existing || income.date < existing.date) {
+      biweeklySources.set(key, income);
+    }
+  }
+
+  for (const source of biweeklySources.values()) {
+    const { id: _id, ...rest } = source;
+    const anchorDate = shiftByOneMonth(source.date, targetMonth, targetYear);
+    const secondDate = addDays(anchorDate, 15);
+
+    copies.push({
+      ...rest,
+      date: anchorDate,
+      month: targetMonth,
+      year: targetYear,
+      status: 'expected',
+    });
+    copies.push({
+      ...rest,
+      date: secondDate,
+      month: parseIsoDate(secondDate).getMonth() + 1,
+      year: parseIsoDate(secondDate).getFullYear(),
+      status: 'expected',
+    });
+  }
+
+  return copies;
+}
+
+function shiftByOneMonth(
+  isoDate: string,
+  targetMonth: number,
+  targetYear: number,
+): string {
+  const parts = isoDate.split('-').map(Number);
+  if (parts.length !== 3) {
+    return isoDate;
+  }
+  const day = Math.min(parts[2], lastDayOfMonth(targetYear, targetMonth));
+  const mm = String(targetMonth).padStart(2, '0');
+  const dd = String(day).padStart(2, '0');
+  return `${targetYear}-${mm}-${dd}`;
 }

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 
 import { INCOME_CATEGORIES_DEFAULT } from '../../core/services/catalog.service';
 import type { MonthlyPayment } from '../../core/models/monthly-payment.model';
@@ -8,6 +9,7 @@ import { MonthlyPaymentService } from '../../core/services/monthly-payment.servi
 import { PaymentMethodService } from '../../core/services/payment-method.service';
 import { PocketService } from '../../core/services/pocket.service';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
+import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { CardComponent } from '../../shared/components/card/card.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { FabComponent } from '../../shared/components/fab/fab.component';
@@ -30,6 +32,7 @@ interface PaymentWithUrgency extends MonthlyPayment {
   selector: 'app-monthly-payments-list',
   imports: [
     BottomSheetComponent,
+    ButtonDirective,
     CardComponent,
     ConfirmDialogComponent,
     FabComponent,
@@ -51,6 +54,7 @@ export class MonthlyPaymentsListComponent {
   private readonly paymentMethodService = inject(PaymentMethodService);
   private readonly pocketService = inject(PocketService);
   private readonly toast = inject(ToastService);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly payments = signal<PaymentWithUrgency[]>([]);
   protected readonly paymentMethods = signal<PaymentMethod[]>([]);
@@ -270,6 +274,23 @@ export class MonthlyPaymentsListComponent {
     this.paymentMethods.set(methods);
     this.pockets.set(pockets);
     await this.loadPayments(this.currentMonth(), this.currentYear());
+    this.openRequestedMarkAsPaid();
+  }
+
+  private openRequestedMarkAsPaid(): void {
+    const raw = this.route.snapshot.queryParamMap.get('pagar');
+    if (raw === null) {
+      return;
+    }
+    const paymentId = Number(raw);
+    if (!Number.isInteger(paymentId)) {
+      return;
+    }
+    const payment = this.payments().find((p) => p.id === paymentId);
+    if (!payment) {
+      return;
+    }
+    this.openMarkAsPaid(payment);
   }
 
   private async loadPayments(month: number, year: number): Promise<void> {

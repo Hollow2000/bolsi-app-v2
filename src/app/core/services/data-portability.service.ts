@@ -18,10 +18,13 @@ export interface BackupPayload {
     readonly savingsAccounts: readonly unknown[];
     readonly savingsTransactions: readonly unknown[];
     readonly savingsExecutions: readonly unknown[];
+    readonly transfers: readonly unknown[];
+    readonly refunds: readonly unknown[];
+    readonly catalogs: readonly unknown[];
   };
 }
 
-const BACKUP_VERSION = 1;
+const BACKUP_VERSION = 2;
 
 /**
  * Export the full Dexie database to a JSON file the user can download,
@@ -47,9 +50,11 @@ export class DataPortabilityService {
   }
 
   async importFromPayload(payload: BackupPayload): Promise<void> {
-    if (payload.version !== BACKUP_VERSION) {
+    if (payload.version > BACKUP_VERSION) {
       throw new Error(`Versión de respaldo no soportada: ${payload.version}.`);
     }
+    const rows = (table: keyof BackupPayload['tables']): readonly unknown[] =>
+      payload.tables?.[table] ?? [];
     await database.transaction(
       'rw',
       [
@@ -65,6 +70,9 @@ export class DataPortabilityService {
         database.savingsAccounts,
         database.savingsTransactions,
         database.savingsExecutions,
+        database.transfers,
+        database.refunds,
+        database.catalogs,
       ],
       async () => {
         await database.paymentMethods.clear();
@@ -79,42 +87,34 @@ export class DataPortabilityService {
         await database.savingsAccounts.clear();
         await database.savingsTransactions.clear();
         await database.savingsExecutions.clear();
+        await database.transfers.clear();
+        await database.refunds.clear();
+        await database.catalogs.clear();
 
-        if (payload.tables.paymentMethods.length > 0) {
-          await database.paymentMethods.bulkAdd(payload.tables.paymentMethods as never);
-        }
-        if (payload.tables.expenses.length > 0) {
-          await database.expenses.bulkAdd(payload.tables.expenses as never);
-        }
-        if (payload.tables.installmentPlans.length > 0) {
-          await database.installmentPlans.bulkAdd(payload.tables.installmentPlans as never);
-        }
-        if (payload.tables.incomes.length > 0) {
-          await database.incomes.bulkAdd(payload.tables.incomes as never);
-        }
-        if (payload.tables.pockets.length > 0) {
-          await database.pockets.bulkAdd(payload.tables.pockets as never);
-        }
-        if (payload.tables.monthlyPayments.length > 0) {
-          await database.monthlyPayments.bulkAdd(payload.tables.monthlyPayments as never);
-        }
-        if (payload.tables.budgets.length > 0) {
-          await database.budgets.bulkAdd(payload.tables.budgets as never);
-        }
-        if (payload.tables.expenseTemplates.length > 0) {
-          await database.expenseTemplates.bulkAdd(payload.tables.expenseTemplates as never);
-        }
-        if (payload.tables.appSettings.length > 0) {
-          await database.appSettings.bulkAdd(payload.tables.appSettings as never);
-        }
-        if (payload.tables.savingsAccounts.length > 0) {
-          await database.savingsAccounts.bulkAdd(payload.tables.savingsAccounts as never);
-        }
-        if (payload.tables.savingsTransactions.length > 0) {
-          await database.savingsTransactions.bulkAdd(payload.tables.savingsTransactions as never);
-        }
-        if (payload.tables.savingsExecutions.length > 0) {
-          await database.savingsExecutions.bulkAdd(payload.tables.savingsExecutions as never);
+        const mappings: Array<
+          [keyof BackupPayload['tables'], { bulkAdd(items: readonly unknown[]): Promise<unknown> }]
+        > = [
+          ['paymentMethods', database.paymentMethods],
+          ['expenses', database.expenses],
+          ['installmentPlans', database.installmentPlans],
+          ['incomes', database.incomes],
+          ['pockets', database.pockets],
+          ['monthlyPayments', database.monthlyPayments],
+          ['budgets', database.budgets],
+          ['expenseTemplates', database.expenseTemplates],
+          ['appSettings', database.appSettings],
+          ['savingsAccounts', database.savingsAccounts],
+          ['savingsTransactions', database.savingsTransactions],
+          ['savingsExecutions', database.savingsExecutions],
+          ['transfers', database.transfers],
+          ['refunds', database.refunds],
+          ['catalogs', database.catalogs],
+        ];
+        for (const [key, table] of mappings) {
+          const items = rows(key);
+          if (items.length > 0) {
+            await table.bulkAdd(items as never);
+          }
         }
       },
     );
@@ -140,6 +140,9 @@ export class DataPortabilityService {
       savingsAccounts,
       savingsTransactions,
       savingsExecutions,
+      transfers,
+      refunds,
+      catalogs,
     ] = await Promise.all([
       database.paymentMethods.toArray(),
       database.expenses.toArray(),
@@ -153,6 +156,9 @@ export class DataPortabilityService {
       database.savingsAccounts.toArray(),
       database.savingsTransactions.toArray(),
       database.savingsExecutions.toArray(),
+      database.transfers.toArray(),
+      database.refunds.toArray(),
+      database.catalogs.toArray(),
     ]);
     return {
       version: BACKUP_VERSION,
@@ -170,6 +176,9 @@ export class DataPortabilityService {
         savingsAccounts,
         savingsTransactions,
         savingsExecutions,
+        transfers,
+        refunds,
+        catalogs,
       },
     };
   }

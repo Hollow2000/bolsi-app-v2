@@ -7,6 +7,21 @@
 }
 .urgent-row[data-urgency='overdue'] { background: var(--color-danger-subtle); }
 .urgent-row[data-urgency='soon'] { background: var(--color-warning-subtle); }
+.urgent-pay {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+.urgent-pay:hover { background: var(--surface-alternate); }
+.urgent-pay:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
 .see-all {
   display: block;
   text-align: center;

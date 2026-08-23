@@ -6,7 +6,11 @@
   <app-card title="Tarjetas de crédito">
     <ul class="card-list" aria-label="Estado de tarjetas">
       @for (card of items(); track card.id) {
-        <li class="card-row">
+        <li
+          class="card-row"
+          [class.card-row--alert-danger]="paymentAlert(card) === 'danger'"
+          [class.card-row--alert-warning]="paymentAlert(card) === 'warning'"
+        >
           <a class="card-link" [routerLink]="['/credit-cards', card.id]">
             <app-list-item
               icon="credit_card"
@@ -15,14 +19,24 @@
               [amount]="((card.amountToPay > 0 ? card.amountToPay : card.periodCharges) | mexicanCurrency) ?? ''"
             />
             <div class="card-extra">
-              @if (card.amountToPay > 0) {
-                <span class="card-extra__amount-to-pay">
-                  Por pagar: {{ card.amountToPay | mexicanCurrency }}
+              <div class="card-extra__amounts">
+                @if (card.amountToPay > 0) {
+                  <span class="card-extra__amount-to-pay">
+                    Por pagar: {{ card.amountToPay | mexicanCurrency }}
+                  </span>
+                }
+                <span class="card-extra__charges">
+                  Usado: {{ card.periodCharges | mexicanCurrency }}
                 </span>
+              </div>
+              @if (paymentAlert(card); as alert) {
+                <app-badge
+                  class="card-extra__alert"
+                  [tone]="alert"
+                  [icon]="alertIcon(alert)"
+                  [label]="alertLabel(alert)"
+                />
               }
-              <span class="card-extra__charges">
-                Usado: {{ card.periodCharges | mexicanCurrency }}
-              </span>
             </div>
           </a>
         </li>

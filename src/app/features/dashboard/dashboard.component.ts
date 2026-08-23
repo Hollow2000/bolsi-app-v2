@@ -355,9 +355,7 @@ export class DashboardComponent {
               refund.date <= range.endIso,
           )
           .reduce((sum, refund) => sum + refund.amount, 0);
-        const paymentDueDate = this.formatPaymentDate(
-          this.creditCardStatement.getPaymentDueDate(card),
-        );
+        const paymentDueDate = this.creditCardStatement.getPaymentDueDate(card);
         const amountToPay = this.creditCardStatement.getAmountToPay(card, allTransfers);
         return {
           id: cardId,
@@ -371,14 +369,14 @@ export class DashboardComponent {
       });
   }
 
-  private formatPaymentDate(iso: string): string {
-    if (!iso) return '—';
-    const [, mm, dd] = iso.split('-');
-    return `${dd}/${mm}`;
-  }
-
   protected openTransfer(): void {
     this.transferOpen.set(true);
+  }
+
+  protected onMarkPaymentAsPaid(paymentId: number): void {
+    void this.router.navigate(['/monthly-payments'], {
+      queryParams: { pagar: paymentId },
+    });
   }
 
   protected closeTransfer(): void {

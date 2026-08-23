@@ -19,6 +19,14 @@
   background: var(--surface);
   overflow: hidden;
 }
+.card-row--alert-danger {
+  border-color: var(--color-danger);
+  background: var(--color-danger-subtle);
+}
+.card-row--alert-warning {
+  border-color: var(--color-warning);
+  background: var(--color-warning-subtle);
+}
 .card-link {
   display: block;
   padding: var(--space-3);
@@ -31,8 +39,21 @@
   padding-top: var(--space-1);
   border-top: 1px solid var(--border-default);
   display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.card-extra__amounts {
+  display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  min-width: 0;
+}
+.card-extra__alert {
+  font-size: var(--text-size-small);
+  padding: var(--space-1) var(--space-3);
+  flex-shrink: 0;
 }
 .card-extra__amount-to-pay {
   font-size: var(--text-size-extra-small);

@@ -51,7 +51,7 @@ export class SettingsComponent {
       await this.settingsService.save({
         ...record,
         userName: name,
-        setupComplete: record?.setupComplete ?? true,
+        setupComplete: record?.setupComplete ?? false,
       });
       this.toast.show('Nombre actualizado.');
     } catch (error) {
