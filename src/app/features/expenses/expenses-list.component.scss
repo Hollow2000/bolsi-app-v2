@@ -51,6 +51,26 @@
   color: var(--text-secondary);
 }
 
+.hidden-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  padding: var(--space-1) 0;
+}
+
+.hidden-toggle__label {
+  font-size: var(--text-size-small);
+  color: var(--text-secondary);
+}
+
+.hidden-toggle input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
 .filters {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -78,6 +98,10 @@
 
 .expense-row:last-child {
   border-bottom: none;
+}
+
+.expense-row--hidden {
+  opacity: 0.55;
 }
 
 .expense-icon {

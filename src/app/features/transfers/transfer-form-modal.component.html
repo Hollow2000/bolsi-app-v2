@@ -2,6 +2,7 @@
       label="Descripción"
       placeholder="Ej. Pago de tarjeta, traspaso a ahorro"
       [value]="description()"
+      [maxlength]="100"
       (valueChange)="description.set($event)"
     />
 

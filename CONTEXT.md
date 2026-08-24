@@ -111,13 +111,13 @@ Contexto del bug: al cambiar de mes, los pagos recurrentes no se replican solos 
    - `assertPocketExists` ahora permite `pocketId === 0` (gasto sin bolsillo).
 7. **Validar saldo del método de origen** — ✅ implementado en `onSavePayment`: si el monto excede el saldo disponible (currentBalance o availableCredit según tipo), muestra error "Saldo insuficiente" y no registra el pago.
 
-### FASE C — Gastos y listas
-8. **Gasto de retiro de ahorro como oculto**: marcar el gasto generado por un retiro de ahorro como `hidden: true`.
-9. **Toggle de gastos ocultos** en pantalla de Gastos + ocultar/mostrar manualmente cada gasto.
-10. **Editar gasto**: solo validar saldo del bolsillo si cambia el monto (deducir/devolver la diferencia).
-11. **Crear/editar gasto sin bolsillo**: mostrar advertencia/confirmación.
-12. **Scroll en gastos recientes** de débito/efectivo en el detalle.
-13. **Límites de caracteres**: nombre 50, descripciones 100 (en formularios).
+### FASE C — Gastos y listas — ✅ COMPLETADA (rama `feature/fase-c-gastos`)
+8. **Gasto de retiro de ahorro como oculto** — ✅ implementado: `savings.service.ts withdraw()` marca el gasto de retiro con `hidden: true`; el depósito queda visible. **Corrección**: antes los movimientos de depósito/retiro solo se registraban como gasto si la cuenta de ahorro tenía bolsillo; ahora **siempre** se registran con `pocketId: account.pocketId ?? 0` (sin bolsillo también). No afecta el balance (`sumMonthExpenses` no filtra hidden).
+9. **Toggle de gastos ocultos** — ✅ implementado en `expenses-list`: signal local `showHidden` (sin persistir), `filteredExpenses` excluye `hidden` si `!showHidden`, y acción "Ocultar/Mostrar" en el menú "more" de cada gasto (`toggleHiddenExpense`). Filas ocultas se atenúan con `.expense-row--hidden`. **Corrección de posición**: ya NO es un botón en el header; ahora es un **checkbox con leyenda "Mostrar movimientos ocultos" debajo del card "Total del mes"** (`.hidden-toggle`).
+10. **Editar gasto: validar saldo solo si cambia el monto** — ✅ implementado: `expense-form-modal.onSave()` calcula el saldo disponible efectivo = `saldo actual + monto anterior` al editar (porque el gasto anterior se revierte primero y se devuelve su monto). Así, con saldo 55 y gasto 150, editar a 149 o 151 sí se permite (55+150−nuevo = saldo resultante ≥ 0). `expense.service.update()` valida crédito contra el **delta**.
+11. **Crear/editar gasto sin bolsillo con confirmación** — ✅ implementado: opción seleccionable "Sin bolsillo" en el select; el form emite `saved` con `pocketId === 0` y el **padre** **cierra el bottom-sheet del form** y abre un `ConfirmDialogComponent` en su propio bottom-sheet. Aplica en **ambos padres**: `expenses-list` (`pendingExpense`/`pendingOriginalExpense` + `persistPendingExpense`) y **`dashboard`** (FAB de gasto: `confirmExpenseOpen`/`pendingExpense` + `persistExpense`). `onConfirm`/`onCancel` limpian los pendientes. Ya no hay confirmación anidada sobrepuesta.
+12. **Scroll en gastos recientes del detalle** — ✅ implementado: `.app-list` en `payment-method-detail` con `max-height: 320px` + `overflow-y: auto`.
+13. **Límites de caracteres** — ✅ implementado: `TextInputComponent` ahora acepta `[maxlength]`. Descripción gasto/ingreso/transfer = 100; nombre pago recurrente/plantilla/bolsillo = 50.
 
 ### FASE D — Ahorros
 14. **Ordenar transacciones de ahorro por fecha descendente** + scroll en la lista (`savings-detail`).
@@ -205,9 +205,11 @@ Problemas reportados: (1) al llegar la fecha de corte de una tarjeta, el "monto 
 - El usuario **confirmó** que la replicación de ingresos funciona y que los estilos de los widgets están correctos.
 - `npm test` → **104 tests pasan**, build OK.
 
-### Próximo paso (después de FASE F)
-Siguen pendientes las **FASES C, D y E** (ver sección 5):
-- FASE C — Gastos y listas (ocultos, toggle, editar sin bolsillo, scroll, límites de caracteres).
+### FASE C implementada (rama `feature/fase-c-gastos`)
+FASE C completa (gastos y listas). Ver sección 5 para detalle. **Sin commitear ni desplegar todavía** — pendiente de revisión del usuario. `npm test` → **104 tests pasan**, build OK.
+
+### Próximo paso (después de FASE C)
+Siguen pendientes las **FASES D y E** (ver sección 5):
 - FASE D — Ahorros (ordenar transacciones descendente; NO tocar ahorros programados).
 - FASE E — Dashboard/UI (bolsillo negativo, layout ingresos/pagos, consistencia de listas).
 
@@ -242,7 +244,8 @@ Antes de asumir que algo existe, VERIFICA en el repo: en resúmenes previos se a
 - `src/app/core/models/app-settings.model.ts` — modelo de settings (ya incluye `replicatedMonths`).
 - `src/app/features/settings/settings.component.ts|html` — "Cierre de mes" eliminado.
 - `src/app/shared/components/category-selector/category-selector.component.ts` — selector reutilizable (ya creado).
-- `src/app/features/expenses/expenses-list.component.ts|html` — lista de gastos (candidata para toggle de ocultos).
+- `src/app/features/expenses/expenses-list.component.ts|html` — lista de gastos (FASE C: toggle de ocultos + ocultar/mostrar manual).
+- `src/app/features/expenses/expense-form-modal.component.ts|html` — form de gastos (FASE C: validar saldo solo si cambia monto + confirmación sin bolsillo + maxlength 100).
 - `src/app/features/credit-cards/credit-card-detail.component.ts|html` — detalle tarjeta, pago manual (gasto "Pago de tarjeta" sin bolsillo + validación de saldo + billingPeriod estable).
 - `src/app/features/credit-cards/payment-methods-list.component.ts|html` — listado de métodos; "A pagar" neto (statementBalance − pagos del período).
 - `src/app/core/services/transfer.service.ts` — transfers; `create()` etiqueta pagos de tarjeta con el período estable del statement.
@@ -256,4 +259,8 @@ Antes de asumir que algo existe, VERIFICA en el repo: en resúmenes previos se a
 - `src/app/core/services/income.service.ts` — ingresos (FASE F: `replicateRecurring` + `buildReplicatedIncomes` pura; strip de `id` en copias).
 - `src/app/core/models/app-settings.model.ts` — settings (FASE F: `replicatedMonths` + `replicatedIncomeMonths`).
 - `src/app/core/services/data-portability.service.ts` — respaldo JSON (FASE F: ahora exporta/importa `transfers`, `refunds`, `catalogs`; version 2).
+- `src/app/core/services/savings.service.ts` — ahorros (FASE C: gasto de retiro con `hidden: true`).
+- `src/app/core/services/expense.service.ts` — gastos (FASE C: `update()` valida saldo por delta).
+- `src/app/features/credit-cards/payment-method-detail.component.*` — detalle de método (FASE C: scroll en gastos recientes).
+- `src/app/shared/components/text-input/text-input.component.*` — input de texto (FASE C: soporta `maxlength`).
 - `scripts/bump-version.js`, `scripts/generate-version.js` — versionado.

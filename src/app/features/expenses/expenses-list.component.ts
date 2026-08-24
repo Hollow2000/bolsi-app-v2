@@ -86,11 +86,15 @@ export class ExpensesListComponent {
     category: NO_CATEGORY,
   });
 
+  protected readonly showHidden = signal(false);
+
   protected readonly modalOpen = signal(false);
   protected readonly editingExpense = signal<Expense | null>(null);
   protected readonly confirmOpen = signal(false);
   protected readonly confirmMessage = signal('');
   protected readonly confirmAction = signal<(() => void) | null>(null);
+  protected readonly pendingExpense = signal<Expense | null>(null);
+  protected readonly pendingOriginalExpense = signal<Expense | null>(null);
 
   protected readonly applicationDateOpen = signal(false);
   protected readonly applicationDateExpense = signal<Expense | null>(null);
@@ -106,8 +110,10 @@ export class ExpensesListComponent {
 
   protected readonly filteredExpenses = computed(() => {
     const filter = this.filters();
+    const showHidden = this.showHidden();
     return this.expenses()
       .filter((expense) => {
+        if (!showHidden && expense.hidden) return false;
         if (filter.pocketId !== NO_FILTER && expense.pocketId !== filter.pocketId) return false;
         if (filter.paymentMethodId !== NO_FILTER && expense.paymentMethodId !== filter.paymentMethodId) return false;
         if (filter.category !== NO_CATEGORY && expense.category !== filter.category) return false;
@@ -233,7 +239,25 @@ export class ExpensesListComponent {
     this.editingExpense.set(null);
   }
 
-  protected async onSaved(updated: Expense): Promise<void> {
+  protected onSaved(updated: Expense): void {
+    if (updated.pocketId === 0) {
+      const editing = this.editingExpense();
+      this.closeModal();
+      this.pendingExpense.set(updated);
+      this.pendingOriginalExpense.set(editing);
+      this.confirmMessage.set(
+        'Este gasto no se asignará a ningún bolsillo. ¿Deseas continuar?',
+      );
+      this.confirmAction.set(() => {
+        void this.persistPendingExpense();
+      });
+      this.confirmOpen.set(true);
+      return;
+    }
+    void this.persistExpense(updated);
+  }
+
+  private async persistExpense(updated: Expense): Promise<void> {
     const editing = this.editingExpense();
     try {
       if (editing) {
@@ -244,6 +268,25 @@ export class ExpensesListComponent {
         this.toast.show('Gasto registrado.');
       }
       this.closeModal();
+      await this.loadExpenses(this.currentMonth(), this.currentYear());
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudo guardar el gasto.';
+      this.toast.show(message);
+    }
+  }
+
+  private async persistPendingExpense(): Promise<void> {
+    const updated = this.pendingExpense();
+    if (!updated) return;
+    const original = this.pendingOriginalExpense();
+    try {
+      if (original) {
+        await this.expenseService.update(original, updated);
+        this.toast.show('Gasto actualizado.');
+      } else {
+        await this.expenseService.create(updated);
+        this.toast.show('Gasto registrado.');
+      }
       await this.loadExpenses(this.currentMonth(), this.currentYear());
     } catch (error) {
       const message = error instanceof Error ? error.message : 'No se pudo guardar el gasto.';
@@ -272,11 +315,15 @@ export class ExpensesListComponent {
     this.confirmAction()?.();
     this.confirmOpen.set(false);
     this.confirmAction.set(null);
+    this.pendingExpense.set(null);
+    this.pendingOriginalExpense.set(null);
   }
 
   protected onCancelConfirm(): void {
     this.confirmOpen.set(false);
     this.confirmAction.set(null);
+    this.pendingExpense.set(null);
+    this.pendingOriginalExpense.set(null);
   }
 
   protected async saveAsTemplate(expense: Expense): Promise<void> {
@@ -332,6 +379,24 @@ export class ExpensesListComponent {
     } else {
       this.moreMenuExpense.set(expense);
       this.moreMenuOpen.set(true);
+    }
+  }
+
+  protected toggleShowHidden(): void {
+    this.showHidden.update((value) => !value);
+  }
+
+  protected async toggleHiddenExpense(expense: Expense): Promise<void> {
+    try {
+      await this.expenseService.update(expense, {
+        ...expense,
+        hidden: !expense.hidden,
+      });
+      this.toast.show(expense.hidden ? 'Gasto visible.' : 'Gasto oculto.');
+      await this.loadExpenses(this.currentMonth(), this.currentYear());
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudo cambiar la visibilidad.';
+      this.toast.show(message);
     }
   }
 

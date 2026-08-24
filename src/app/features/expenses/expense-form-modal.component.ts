@@ -166,21 +166,23 @@ export class ExpenseFormModalComponent implements OnInit {
       this.errorMessage.set('Selecciona un método de pago.');
       return;
     }
-    if (pocketId === 0) {
-      this.errorMessage.set('Selecciona un bolsillo.');
-      return;
-    }
 
     const method = this.paymentMethods().find((m) => m.id === paymentMethodId);
+    const previous = this.expense();
     if (method) {
-      const available = method.type === 'credit' ? (method.availableCredit ?? 0) : (method.currentBalance ?? 0);
+      let available = method.type === 'credit' ? (method.availableCredit ?? 0) : (method.currentBalance ?? 0);
+      // When editing, the previous expense is reversed first (its amount is
+      // returned to the account), so the effective available balance is the
+      // current one plus the previous amount.
+      if (previous !== null) {
+        available += this.round(previous.amount);
+      }
       if (amount > available) {
         this.errorMessage.set(`El monto excede el saldo disponible (${available.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}).`);
         return;
       }
     }
 
-    const previous = this.expense();
     const installment = this.isInstallment() ? this.installmentMonths() : undefined;
     const updated: Expense = {
       ...(previous ?? {}),

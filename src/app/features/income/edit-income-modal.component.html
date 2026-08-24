@@ -1,6 +1,7 @@
     <app-text-input
       label="Descripción"
       [value]="description()"
+      [maxlength]="100"
       (valueChange)="description.set($event)"
     />
 

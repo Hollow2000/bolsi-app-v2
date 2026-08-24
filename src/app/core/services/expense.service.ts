@@ -107,7 +107,8 @@ export class ExpenseService {
 
     if (method.type === 'credit') {
       const available = method.availableCredit ?? 0;
-      if (updated.amount > available) {
+      const delta = updated.amount - previous.amount;
+      if (delta > available) {
         throw new Error('El gasto actualizado excede el crédito disponible de la tarjeta.');
       }
     }

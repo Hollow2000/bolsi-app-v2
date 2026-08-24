@@ -1,6 +1,7 @@
     <app-text-input
       label="Nombre"
       [value]="name()"
+      [maxlength]="50"
       (valueChange)="name.set($event)"
     />
 

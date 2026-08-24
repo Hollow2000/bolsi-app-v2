@@ -1,6 +1,7 @@
     <app-text-input
       label="Descripción"
       [value]="description()"
+      [maxlength]="100"
       (valueChange)="description.set($event)"
     />
 
@@ -48,7 +49,7 @@
       [value]="pocketId()"
       (valueChange)="pocketId.set($any($event))"
     >
-      <option value="0" disabled [selected]="pocketId() === 0">Selecciona un bolsillo</option>
+      <option value="0" [selected]="pocketId() === 0">Sin bolsillo</option>
       @for (pocket of pockets(); track pocket.id) {
         <option [value]="pocket.id" [selected]="pocket.id === pocketId()">
           {{ pocket.name }} ({{ pocket.percentage }}%)

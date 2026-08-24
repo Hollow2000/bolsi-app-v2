@@ -27,6 +27,7 @@ import type { SavingsAccount } from '../../core/models/savings-account.model';
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { ButtonDirective } from '../../shared/components/button/button.directive';
 import { CardComponent } from '../../shared/components/card/card.component';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
 import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
 import { SpeedDialFabComponent } from '../../shared/components/speed-dial-fab/speed-dial-fab.component';
@@ -52,6 +53,7 @@ import { QuickSavingsFormComponent } from '../../shared/components/quick-savings
     BudgetUsageWidgetComponent,
     ButtonDirective,
     CardComponent,
+    ConfirmDialogComponent,
     CreditCardStatusWidgetComponent,
     EditIncomeModalComponent,
     ExpenseFormModalComponent,
@@ -100,6 +102,8 @@ export class DashboardComponent {
   protected readonly incomeFormOpen = signal(false);
   protected readonly templateListOpen = signal(false);
   protected readonly editingExpense = signal<Expense | null>(null);
+  protected readonly confirmExpenseOpen = signal(false);
+  protected readonly pendingExpense = signal<Expense | null>(null);
   protected readonly monthlyIncome = signal(0);
   protected readonly monthlyPendingIncome = signal(0);
   protected readonly monthlyExpenses = signal(0);
@@ -406,7 +410,31 @@ export class DashboardComponent {
     this.expenseFormOpen.set(false);
   }
 
-  protected async onExpenseSaved(expense: Expense): Promise<void> {
+  protected onExpenseSaved(expense: Expense): void {
+    if (expense.pocketId === 0) {
+      this.closeExpenseForm();
+      this.pendingExpense.set(expense);
+      this.confirmExpenseOpen.set(true);
+      return;
+    }
+    void this.persistExpense(expense);
+  }
+
+  protected onCancelExpenseConfirm(): void {
+    this.confirmExpenseOpen.set(false);
+    this.pendingExpense.set(null);
+  }
+
+  protected onConfirmExpense(): void {
+    const expense = this.pendingExpense();
+    this.confirmExpenseOpen.set(false);
+    this.pendingExpense.set(null);
+    if (expense) {
+      void this.persistExpense(expense);
+    }
+  }
+
+  private async persistExpense(expense: Expense): Promise<void> {
     try {
       await this.expenseService.create(expense);
       this.toast.show('Gasto registrado.');

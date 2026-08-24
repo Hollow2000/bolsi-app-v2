@@ -13,6 +13,7 @@
       [disabled]="disabled()"
       [attr.autocomplete]="autocomplete()"
       [attr.inputmode]="inputmode() || null"
+      [attr.maxlength]="maxlength() ?? null"
       (input)="onInput($event)"
     />
     @if (error(); as message) {

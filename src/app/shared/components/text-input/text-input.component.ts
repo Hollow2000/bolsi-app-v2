@@ -30,6 +30,7 @@ export class TextInputComponent {
   readonly error = input<string | null>(null);
   readonly autocomplete = input<string>('off');
   readonly inputmode = input<'' | 'text' | 'email' | 'tel' | 'url' | 'numeric' | 'decimal' | 'search'>('');
+  readonly maxlength = input<number | null>(null);
   readonly fieldId = input<string>(nextTextInputId());
 
   protected onInput(event: Event): void {

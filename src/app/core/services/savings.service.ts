@@ -73,22 +73,20 @@ export class SavingsService {
       balance: account.balance + amount,
     });
 
-    // Add expense to pocket if configured
-    if (account.pocketId) {
-      const now = new Date();
-      await database.expenses.add({
-        date: this.toIsoDate(now),
-        description: description || `Depósito a ${account.name}`,
-        amount,
-        paymentMethodId: originPaymentMethodId,
-        pocketId: account.pocketId,
-        category: 'Ahorro',
-        icon: 'savings',
-        month: now.getMonth() + 1,
-        year: now.getFullYear(),
-        isInstallment: false,
-      });
-    }
+    // Register the deposit as an expense (even without a pocket assigned)
+    const now = new Date();
+    await database.expenses.add({
+      date: this.toIsoDate(now),
+      description: description || `Depósito a ${account.name}`,
+      amount,
+      paymentMethodId: originPaymentMethodId,
+      pocketId: account.pocketId ?? 0,
+      category: 'Ahorro',
+      icon: 'savings',
+      month: now.getMonth() + 1,
+      year: now.getFullYear(),
+      isInstallment: false,
+    });
   }
 
   async withdraw(savingsId: number, amount: number, destinationPaymentMethodId: number, description?: string): Promise<void> {
@@ -118,22 +116,21 @@ export class SavingsService {
       balance: account.balance - amount,
     });
 
-    // Subtract from pocket if configured (negative expense)
-    if (account.pocketId) {
-      const now = new Date();
-      await database.expenses.add({
-        date: this.toIsoDate(now),
-        description: description || `Retiro de ${account.name}`,
-        amount: -amount,
-        paymentMethodId: destinationPaymentMethodId,
-        pocketId: account.pocketId,
-        category: 'Ahorro',
-        icon: 'savings',
-        month: now.getMonth() + 1,
-        year: now.getFullYear(),
-        isInstallment: false,
-      });
-    }
+    // Register the withdrawal as a negative expense (even without a pocket assigned)
+    const now = new Date();
+    await database.expenses.add({
+      date: this.toIsoDate(now),
+      description: description || `Retiro de ${account.name}`,
+      amount: -amount,
+      paymentMethodId: destinationPaymentMethodId,
+      pocketId: account.pocketId ?? 0,
+      category: 'Ahorro',
+      icon: 'savings',
+      month: now.getMonth() + 1,
+      year: now.getFullYear(),
+      isInstallment: false,
+      hidden: true,
+    });
   }
 
   async addYield(savingsId: number, amount: number): Promise<void> {

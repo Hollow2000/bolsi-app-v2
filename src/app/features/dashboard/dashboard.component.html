@@ -143,6 +143,17 @@
       </app-bottom-sheet>
     }
 
+    @if (confirmExpenseOpen()) {
+      <app-bottom-sheet title="Confirmar" (close)="onCancelExpenseConfirm()">
+        <app-confirm-dialog
+          message="Este gasto no se asignará a ningún bolsillo. ¿Deseas continuar?"
+          confirmLabel="Sí, guardar sin bolsillo"
+          (confirmed)="onConfirmExpense()"
+          (cancelled)="onCancelExpenseConfirm()"
+        />
+      </app-bottom-sheet>
+    }
+
     @if (incomeFormOpen()) {
       <app-bottom-sheet title="Nuevo ingreso" (close)="closeIncomeForm()">
         <app-edit-income-modal
