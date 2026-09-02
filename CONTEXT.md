@@ -212,6 +212,9 @@ Problemas reportados: (1) al llegar la fecha de corte de una tarjeta, el "monto 
 - El usuario **confirmó** C1, C2 y C3; C4 se corrigió (confirmación también desde el FAB del dashboard, botón rojo).
 - `npm test` → **104 tests pasan**, build OK.
 
+### Fix de fecha de pago de tarjeta (rama `feature/fase-c-gastos`, SIN desplegar)
+- **Punto 25** (ver sección 5, FASE B): `getPaymentDueDate()` ya no salta al cambiar de mes; se ancla al período del statement y solo avanza con pago completo o corte. **Sin commitear el docs al master todavía** — la rama tiene el fix (`2d2ca15`) + merge de master (`a64b578`). `npm test` → **109 tests pasan**, build OK. **NO desplegar hasta que el usuario lo pruebe.**
+
 ### Próximo paso (después de FASE C)
 Siguen pendientes las **FASES D y E** (ver sección 5):
 - FASE D — Ahorros (ordenar transacciones descendente; NO tocar ahorros programados).
