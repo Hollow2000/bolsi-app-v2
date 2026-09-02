@@ -10,7 +10,7 @@
 - **Stack**: Angular 21 (standalone components, signals, `strict: true`), TypeScript 5.9, Dexie (IndexedDB) v4.4.4, PWA (Service Worker + `@angular/service-worker`), RxJS 7.
 - **Routing**: `HashLocationStrategy` (URLs tipo `#/...`).
 - **Deploy**: GitHub Pages en `https://<usuario>.github.io/bolsi-app-v2/` vía `npx ngh`.
-- **Versión actual**: `0.2.8` (git tag/commit `f3084f6`, último bump).
+- **Versión actual**: `0.2.9` (git tag/commit `15fe5e9`, último bump).
 - **UI**: Español. Nombres de variables/código en inglés. Estilos SCSS. Iconos Material Symbols (`material-symbols-outlined`).
 - **Patrón**: componentes standalone con `changeDetection: ChangeDetectionStrategy.OnPush`, `input()`/`output()` por función, `computed()` para estado derivado, servicios con `providedIn: 'root'` e `inject()`.
 - **Convención**: NO agregar comentarios al código salvo que se pidan. Mantener componentes pequeños. Formularios reactivos.
@@ -206,15 +206,18 @@ Problemas reportados: (1) al llegar la fecha de corte de una tarjeta, el "monto 
 - El usuario **confirmó** que la replicación de ingresos funciona y que los estilos de los widgets están correctos.
 - `npm test` → **104 tests pasan**, build OK.
 
-### FASE C implementada (rama `feature/fase-c-gastos`)
-FASE C completa (gastos y listas). Ver sección 5 para detalle. **Sin commitear ni desplegar todavía** — pendiente de revisión del usuario. `npm test` → **104 tests pasan**, build OK.
+### FASE C mergeada y desplegada (v0.2.9)
+- Rama `feature/fase-c-gastos` mergeada a `master` (fast-forward, commit `2040c19`).
+- **Deploy realizado**: `npm run deploy` bumpó a **v0.2.9** (commit `15fe5e9`, tag `v0.2.9`) y publicó en GitHub Pages. Push de `master` y tag `v0.2.9` a origin OK.
+- El usuario **confirmó** C1, C2 y C3; C4 se corrigió (confirmación también desde el FAB del dashboard, botón rojo).
+- `npm test` → **104 tests pasan**, build OK.
 
 ### Próximo paso (después de FASE C)
 Siguen pendientes las **FASES D y E** (ver sección 5):
 - FASE D — Ahorros (ordenar transacciones descendente; NO tocar ahorros programados).
 - FASE E — Dashboard/UI (bolsillo negativo, layout ingresos/pagos, consistencia de listas).
 
-**NOTA**: deploy de FASE F aprobado por el usuario (se hizo en v0.2.8). Para próximas fases, preguntar antes de desplegar. Comando de deploy: `npm run deploy`. **Importante**: tras el fix de respaldo, si el usuario restaura un backup v1 antiguo, las tablas `transfers`/`refunds`/`catalogs` quedarán vacías (no existían en ese backup) — no es un error de import, es data que nunca se exportó.
+**NOTA**: deploy de FASE C aprobado por el usuario (se hizo en v0.2.9). Para próximas fases, preguntar antes de desplegar. Comando de deploy: `npm run deploy`. **Importante**: tras el fix de respaldo, si el usuario restaura un backup v1 antiguo, las tablas `transfers`/`refunds`/`catalogs` quedarán vacías (no existían en ese backup) — no es un error de import, es data que nunca se exportó.
 
 ### Nota de verificación (aprendida en la sesión)
 Antes de asumir que algo existe, VERIFICA en el repo: en resúmenes previos se asumió que `MonthService`, `replicateBudgets` y `replicatedMonths` ya existían, pero **NO existen** (grep da 0 resultados). El estado real está descrito arriba en las secciones 4-6.
