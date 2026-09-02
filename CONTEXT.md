@@ -10,7 +10,7 @@
 - **Stack**: Angular 21 (standalone components, signals, `strict: true`), TypeScript 5.9, Dexie (IndexedDB) v4.4.4, PWA (Service Worker + `@angular/service-worker`), RxJS 7.
 - **Routing**: `HashLocationStrategy` (URLs tipo `#/...`).
 - **Deploy**: GitHub Pages en `https://<usuario>.github.io/bolsi-app-v2/` vía `npx ngh`.
-- **Versión actual**: `0.2.9` (git tag/commit `15fe5e9`, último bump).
+- **Versión actual**: `0.2.10` (git tag/commit `07156cb`, último bump).
 - **UI**: Español. Nombres de variables/código en inglés. Estilos SCSS. Iconos Material Symbols (`material-symbols-outlined`).
 - **Patrón**: componentes standalone con `changeDetection: ChangeDetectionStrategy.OnPush`, `input()`/`output()` por función, `computed()` para estado derivado, servicios con `providedIn: 'root'` e `inject()`.
 - **Convención**: NO agregar comentarios al código salvo que se pidan. Mantener componentes pequeños. Formularios reactivos.
@@ -212,8 +212,11 @@ Problemas reportados: (1) al llegar la fecha de corte de una tarjeta, el "monto 
 - El usuario **confirmó** C1, C2 y C3; C4 se corrigió (confirmación también desde el FAB del dashboard, botón rojo).
 - `npm test` → **104 tests pasan**, build OK.
 
-### Fix de fecha de pago de tarjeta (rama `feature/fase-c-gastos`, SIN desplegar)
-- **Punto 25** (ver sección 5, FASE B): `getPaymentDueDate()` ya no salta al cambiar de mes; se ancla al período del statement y solo avanza con pago completo o corte. **Sin commitear el docs al master todavía** — la rama tiene el fix (`2d2ca15`) + merge de master (`a64b578`). `npm test` → **109 tests pasan**, build OK. **NO desplegar hasta que el usuario lo pruebe.**
+### Fix de fecha de pago de tarjeta mergeado y desplegado (v0.2.10)
+- Rama `feature/fase-c-gastos` mergeada a `master` (fast-forward, commit `59fab43`).
+- **Punto 25** (ver sección 5, FASE B): `getPaymentDueDate()` ya no salta al cambiar de mes; se ancla al período del statement y solo avanza con pago completo o corte.
+- **Deploy realizado**: `npm run deploy` bumpó a **v0.2.10** (commit `07156cb`, tag `v0.2.10`) y publicó en GitHub Pages. Push de `master` y tag `v0.2.10` a origin OK.
+- `npm test` → **109 tests pasan**, build OK.
 
 ### Próximo paso (después de FASE C)
 Siguen pendientes las **FASES D y E** (ver sección 5):
