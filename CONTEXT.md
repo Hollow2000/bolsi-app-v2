@@ -10,7 +10,7 @@
 - **Stack**: Angular 21 (standalone components, signals, `strict: true`), TypeScript 5.9, Dexie (IndexedDB) v4.4.4, PWA (Service Worker + `@angular/service-worker`), RxJS 7.
 - **Routing**: `HashLocationStrategy` (URLs tipo `#/...`).
 - **Deploy**: GitHub Pages en `https://<usuario>.github.io/bolsi-app-v2/` vía `npx ngh`.
-- **Versión actual**: `0.2.10` (git tag/commit `07156cb`, último bump).
+- **Versión actual**: `0.2.11` (git tag/commit `0108d27`, último bump).
 - **UI**: Español. Nombres de variables/código en inglés. Estilos SCSS. Iconos Material Symbols (`material-symbols-outlined`).
 - **Patrón**: componentes standalone con `changeDetection: ChangeDetectionStrategy.OnPush`, `input()`/`output()` por función, `computed()` para estado derivado, servicios con `providedIn: 'root'` e `inject()`.
 - **Convención**: NO agregar comentarios al código salvo que se pidan. Mantener componentes pequeños. Formularios reactivos.
@@ -223,8 +223,12 @@ Problemas reportados: (1) al llegar la fecha de corte de una tarjeta, el "monto 
 - **Deploy realizado**: `npm run deploy` bumpó a **v0.2.10** (commit `07156cb`, tag `v0.2.10`) y publicó en GitHub Pages. Push de `master` y tag `v0.2.10` a origin OK.
 - `npm test` → **109 tests pasan**, build OK.
 
-### FASE D implementada (rama `feature/fase-d-ahorros`)
-FASE D completa (ahorros: orden descendente + scroll). Ver sección 5 para detalle. **Sin commitear ni desplegar todavía** — pendiente de revisión del usuario. `npm test` → **109 tests pasan**, build OK.
+### FASE D mergeada y desplegada (v0.2.11)
+- Rama `feature/fase-d-ahorros` mergeada a `master` (fast-forward, commit `76966cf`).
+- FASE D completa (ahorros: transacciones descendentes + scroll `36vh` + fix de fechas `Date` en respaldo).
+- **Deploy realizado**: `npm run deploy` bumpó a **v0.2.11** (commit `0108d27`, tag `v0.2.11`) y publicó en GitHub Pages. Push de `master` y tag `v0.2.11` a origin OK.
+- El usuario **confirmó** que funciona (ajustó el `max-height` de la lista a `36vh`).
+- `npm test` → **109 tests pasan**, build OK.
 
 ### Próximo paso (después de FASE D)
 Sigue pendiente la **FASE E** (ver sección 5):
