@@ -38,11 +38,13 @@ export class SavingsService {
   }
 
   async getTransactions(savingsId: number): Promise<SavingsTransaction[]> {
-    return database.savingsTransactions
+    const rows = await database.savingsTransactions
       .where('savingsId')
       .equals(savingsId)
-      .reverse()
-      .sortBy('date');
+      .toArray();
+    return rows.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
   }
 
   async deposit(savingsId: number, amount: number, originPaymentMethodId: number, description?: string): Promise<void> {

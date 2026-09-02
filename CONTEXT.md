@@ -120,9 +120,14 @@ Contexto del bug: al cambiar de mes, los pagos recurrentes no se replican solos 
 12. **Scroll en gastos recientes del detalle** — ✅ implementado: `.app-list` en `payment-method-detail` con `max-height: 320px` + `overflow-y: auto`.
 13. **Límites de caracteres** — ✅ implementado: `TextInputComponent` ahora acepta `[maxlength]`. Descripción gasto/ingreso/transfer = 100; nombre pago recurrente/plantilla/bolsillo = 50.
 
-### FASE D — Ahorros
-14. **Ordenar transacciones de ahorro por fecha descendente** + scroll en la lista (`savings-detail`).
-15. **NO tocar el sistema de ahorros programados** (el usuario lo hizo explícito).
+### FASE D — Ahorros — ✅ COMPLETADA (rama `feature/fase-d-ahorros`)
+14. **Ordenar transacciones de ahorro por fecha descendente** + scroll en la lista — ✅ implementado:
+   - `SavingsService.getTransactions()` ahora usa `toArray()` + ordenar **descendente** por fecha. Antes usaba `.reverse().sortBy('date')`, que en Dexie resultaba **ascendente** (la más vieja primero).
+   - `.transaction-list` en `savings-detail.component.scss` con `max-height: 36vh` + `overflow-y: auto` (scroll interno, patrón de FASE C5).
+   - Sin cambios en el componente ni el HTML (`filteredTransactions` respeta el orden del service).
+   - **Bug corregido (2ª ronda)**: el sort usaba `b.date.getTime()` directo y fallaba con `TypeError` cuando `date` era string (datos importados de backup JSON, donde `JSON.stringify` serializa `Date` como ISO string). Fix: normalizar con `new Date(b.date).getTime()` en el sort. El mensaje "Cuenta no encontrada" era un efecto secundario: `getTransactions()` fallaba dentro del `Promise.all` de `load()` y abortaba toda la carga.
+   - **Fix completo (opción B)**: `DataPortabilityService.normalizeRows()` ahora restaura el tipo `Date` al importar: `SavingsAccount.createdAt` y `SavingsTransaction.date` se convierten de string ISO a `Date`. Evita futuros crashes con código que asuma `Date`.
+15. **NO tocar el sistema de ahorros programados** — ✅ respetado (sin cambios en scheduled savings).
 
 ### FASE E — Dashboard / UI
 16. **Bolsillo con balance negativo**: no llenar la barra de progreso y mostrar el número en rojo (`pocket-summary-widget`).
@@ -218,9 +223,11 @@ Problemas reportados: (1) al llegar la fecha de corte de una tarjeta, el "monto 
 - **Deploy realizado**: `npm run deploy` bumpó a **v0.2.10** (commit `07156cb`, tag `v0.2.10`) y publicó en GitHub Pages. Push de `master` y tag `v0.2.10` a origin OK.
 - `npm test` → **109 tests pasan**, build OK.
 
-### Próximo paso (después de FASE C)
-Siguen pendientes las **FASES D y E** (ver sección 5):
-- FASE D — Ahorros (ordenar transacciones descendente; NO tocar ahorros programados).
+### FASE D implementada (rama `feature/fase-d-ahorros`)
+FASE D completa (ahorros: orden descendente + scroll). Ver sección 5 para detalle. **Sin commitear ni desplegar todavía** — pendiente de revisión del usuario. `npm test` → **109 tests pasan**, build OK.
+
+### Próximo paso (después de FASE D)
+Sigue pendiente la **FASE E** (ver sección 5):
 - FASE E — Dashboard/UI (bolsillo negativo, layout ingresos/pagos, consistencia de listas).
 
 **NOTA**: deploy de FASE C aprobado por el usuario (se hizo en v0.2.9). Para próximas fases, preguntar antes de desplegar. Comando de deploy: `npm run deploy`. **Importante**: tras el fix de respaldo, si el usuario restaura un backup v1 antiguo, las tablas `transfers`/`refunds`/`catalogs` quedarán vacías (no existían en ese backup) — no es un error de import, es data que nunca se exportó.
@@ -268,8 +275,9 @@ Antes de asumir que algo existe, VERIFICA en el repo: en resúmenes previos se a
 - `src/app/features/income/income-list.component.ts` — listado de ingresos (FASE F: verificación de replicación).
 - `src/app/core/services/income.service.ts` — ingresos (FASE F: `replicateRecurring` + `buildReplicatedIncomes` pura; strip de `id` en copias).
 - `src/app/core/models/app-settings.model.ts` — settings (FASE F: `replicatedMonths` + `replicatedIncomeMonths`).
-- `src/app/core/services/data-portability.service.ts` — respaldo JSON (FASE F: ahora exporta/importa `transfers`, `refunds`, `catalogs`; version 2).
-- `src/app/core/services/savings.service.ts` — ahorros (FASE C: gasto de retiro con `hidden: true`).
+- `src/app/core/services/data-portability.service.ts` — respaldo JSON (FASE F: exporta/importa `transfers`, `refunds`, `catalogs`; version 2; FASE D: `normalizeRows()` restaura `Date` en `savingsAccounts.createdAt` y `savingsTransactions.date`).
+- `src/app/core/services/savings.service.ts` — ahorros (FASE C: gasto de retiro con `hidden: true`; FASE D: `getTransactions()` descendente).
+- `src/app/features/savings/savings-detail.component.*` — detalle de ahorro (FASE D: `.transaction-list` con scroll interno).
 - `src/app/core/services/expense.service.ts` — gastos (FASE C: `update()` valida saldo por delta).
 - `src/app/features/credit-cards/payment-method-detail.component.*` — detalle de método (FASE C: scroll en gastos recientes).
 - `src/app/shared/components/text-input/text-input.component.*` — input de texto (FASE C: soporta `maxlength`).

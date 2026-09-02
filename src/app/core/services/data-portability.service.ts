@@ -113,11 +113,41 @@ export class DataPortabilityService {
         for (const [key, table] of mappings) {
           const items = rows(key);
           if (items.length > 0) {
-            await table.bulkAdd(items as never);
+            await table.bulkAdd(this.normalizeRows(key, items) as never);
           }
         }
       },
     );
+  }
+
+  /**
+   * JSON serialization turns `Date` values into ISO strings. Restore the
+   * expected types so imported data behaves like data created in-app
+   * (e.g. sorting by `.getTime()` or displaying via date pipes).
+   */
+  private normalizeRows(
+    key: keyof BackupPayload['tables'],
+    items: readonly unknown[],
+  ): unknown[] {
+    if (key === 'savingsAccounts') {
+      return items.map((row) => {
+        const account = row as { createdAt?: string | Date };
+        if (typeof account.createdAt === 'string') {
+          return { ...account, createdAt: new Date(account.createdAt) };
+        }
+        return account;
+      });
+    }
+    if (key === 'savingsTransactions') {
+      return items.map((row) => {
+        const tx = row as { date?: string | Date };
+        if (typeof tx.date === 'string') {
+          return { ...tx, date: new Date(tx.date) };
+        }
+        return tx;
+      });
+    }
+    return [...items];
   }
 
   async importFromFile(file: File): Promise<void> {

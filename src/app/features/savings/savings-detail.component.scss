@@ -160,6 +160,8 @@
   list-style: none;
   margin: 0;
   padding: 0;
+  max-height: 36vh;
+  overflow-y: auto;
 }
 
 .transaction-item {
