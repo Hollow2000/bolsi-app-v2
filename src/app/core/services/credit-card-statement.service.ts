@@ -141,6 +141,13 @@ export class CreditCardStatementService {
     return { month: month - 1, year };
   }
 
+  private nextPeriod(month: number, year: number): { month: number; year: number } {
+    if (month === 12) {
+      return { month: 1, year: year + 1 };
+    }
+    return { month: month + 1, year };
+  }
+
   /**
    * Returns the amount to pay for a card.
    * If statementBalance is set (after a cutoff), returns it minus any payments
@@ -310,21 +317,34 @@ export class CreditCardStatementService {
   /**
    * Calculates the payment due date: closingDay + creditDays,
    * optionally skipping holidays.
-   * The payment date is based on the current month's closing day,
-   * not the next period.
+   *
+   * The due date is anchored to the card's stable statement period
+   * (lastCutoffMonth/Year) instead of the calendar month, so it does not
+   * jump when the month changes. It only advances to the next period when:
+   *   1. The statement is fully paid (amountToPay reaches 0), or
+   *   2. The next cutoff is processed (getStatementPeriod advances).
    */
-  getPaymentDueDate(card: PaymentMethod): string {
+  getPaymentDueDate(card: PaymentMethod, transfers: readonly Transfer[] = []): string {
     if (card.statementClosingDay === undefined) {
       return '';
     }
-    const today = new Date();
     const closingDay = card.statementClosingDay;
     const creditDays = card.creditDays ?? 0;
 
-    // Use the current month's closing day (not the next period)
-    const closingDate = new Date(today.getFullYear(), today.getMonth(), closingDay);
+    let period = this.getStatementPeriod(card);
 
-    // Add credit days
+    // If the statement is fully paid, show the due date of the next period.
+    const statementBalance = card.statementBalance ?? 0;
+    const fullyPaid = statementBalance > 0 && this.getAmountToPay(card, transfers) <= 0;
+    if (fullyPaid) {
+      period = this.nextPeriod(period.month, period.year);
+    }
+
+    // The payment is due creditDays after the closing day of the month
+    // that precedes the statement period label.
+    const base = this.previousPeriod(period.month, period.year);
+    const closingDate = new Date(base.year, base.month - 1, closingDay);
+
     const dueDate = new Date(closingDate);
     dueDate.setDate(dueDate.getDate() + creditDays);
 

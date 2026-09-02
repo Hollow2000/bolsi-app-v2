@@ -359,7 +359,7 @@ export class DashboardComponent {
               refund.date <= range.endIso,
           )
           .reduce((sum, refund) => sum + refund.amount, 0);
-        const paymentDueDate = this.creditCardStatement.getPaymentDueDate(card);
+        const paymentDueDate = this.creditCardStatement.getPaymentDueDate(card, allTransfers);
         const amountToPay = this.creditCardStatement.getAmountToPay(card, allTransfers);
         return {
           id: cardId,

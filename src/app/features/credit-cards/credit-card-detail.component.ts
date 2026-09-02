@@ -229,7 +229,7 @@ export class CreditCardDetailComponent {
   protected paymentDueDate(): string {
     const method = this.card();
     if (!method) return '';
-    return this.creditCardStatement.getPaymentDueDate(method);
+    return this.creditCardStatement.getPaymentDueDate(method, this.allTransfers());
   }
 
   protected paymentDueDateLabel(): string {
@@ -252,7 +252,7 @@ export class CreditCardDetailComponent {
     if (!method) {
       return;
     }
-    const dueDate = this.creditCardStatement.getPaymentDueDate(method);
+    const dueDate = this.creditCardStatement.getPaymentDueDate(method, this.allTransfers());
     this.paymentDraft.set({
       name: `Pago ${method.name}`,
       amount: this.amountToPay(),
