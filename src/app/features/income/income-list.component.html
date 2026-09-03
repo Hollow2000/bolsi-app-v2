@@ -36,15 +36,20 @@
         } @else {
           <ul class="app-list" aria-label="Ingresos del mes">
             @for (income of incomes(); track income.id) {
-              <li class="app-list-row">
-                <app-list-item
-                  [icon]="income.status === 'received' ? 'arrow_downward' : 'schedule'"
-                  [title]="income.description"
-                  [subtitle]="subtitleFor(income)"
-                  [amount]="(income.amount | mexicanCurrency) ?? ''"
-                  [tone]="income.status === 'received' ? 'income' : 'default'"
-                />
-                <div class="item-actions">
+              <li class="income-row">
+                <div class="income-icon" aria-hidden="true">
+                  <span class="material-symbols-outlined icon">{{ income.status === 'received' ? 'arrow_downward' : 'schedule' }}</span>
+                </div>
+                <div class="income-content">
+                  <div class="income-main">
+                    <span class="income-title">{{ income.description }}</span>
+                    <span class="income-amount">{{ (income.amount | mexicanCurrency) ?? '' }}</span>
+                  </div>
+                  <div class="income-meta">
+                    <span class="income-detail">{{ subtitleFor(income) }}</span>
+                  </div>
+                </div>
+                <div class="income-actions">
                   @if (income.status === 'expected' && income.id !== undefined) {
                     <button
                       appIconButton

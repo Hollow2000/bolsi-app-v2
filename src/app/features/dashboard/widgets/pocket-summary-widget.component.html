@@ -14,9 +14,11 @@
             </span>
             <span class="pocket-summary__percent">{{ pocket.percentage }}%</span>
           </div>
-          <app-progress-bar [value]="pocket.used" [max]="pocket.assigned || 1" />
+          <app-progress-bar [value]="pocket.used < 0 ? 0 : pocket.used" [max]="pocket.assigned || 1" />
           <p class="pocket-summary__numbers">
-            <span>{{ pocket.used | mexicanCurrency }} de {{ pocket.assigned | mexicanCurrency }}</span>
+            <span
+              [class.pocket-summary__used--negative]="pocket.used < 0"
+            >{{ pocket.used | mexicanCurrency }} de {{ pocket.assigned | mexicanCurrency }}</span>
             <span [class.pocket-summary__available--over]="pocket.used > pocket.assigned">
               {{ (pocket.assigned - pocket.used) | mexicanCurrency }} libre
             </span>

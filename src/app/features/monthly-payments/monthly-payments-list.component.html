@@ -23,14 +23,19 @@
         } @else {
           <ul class="app-list" aria-label="Pagos del mes">
             @for (payment of payments(); track payment.id) {
-              <li class="app-list-row payment-row" [class]="urgencyClass(payment)">
-                <app-list-item
-                  [icon]="payment.paid ? 'check_circle' : iconFor(payment)"
-                  [title]="payment.name"
-                  [subtitle]="subtitleFor(payment)"
-                  [amount]="(payment.amount | mexicanCurrency) ?? ''"
-                  [tone]="payment.paid ? 'income' : 'expense'"
-                />
+              <li class="payment-row" [class]="urgencyClass(payment)">
+                <div class="payment-icon" aria-hidden="true">
+                  <span class="material-symbols-outlined icon">{{ payment.paid ? 'check_circle' : iconFor(payment) }}</span>
+                </div>
+                <div class="payment-content">
+                  <div class="payment-main">
+                    <span class="payment-title">{{ payment.name }}</span>
+                    <span class="payment-amount">{{ (payment.amount | mexicanCurrency) ?? '' }}</span>
+                  </div>
+                  <div class="payment-meta">
+                    <span class="payment-detail">{{ subtitleFor(payment) }}</span>
+                  </div>
+                </div>
                 <div class="item-actions">
                   @if (!payment.paid && payment.id !== undefined) {
                     <button

@@ -14,7 +14,6 @@ import { CardComponent } from '../../shared/components/card/card.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { FabComponent } from '../../shared/components/fab/fab.component';
 import { IconButtonDirective } from '../../shared/components/icon-button/icon-button.directive';
-import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
 import { SelectInputComponent } from '../../shared/components/select-input/select-input.component';
 import { TextInputComponent } from '../../shared/components/text-input/text-input.component';
@@ -37,7 +36,6 @@ interface PaymentWithUrgency extends MonthlyPayment {
     ConfirmDialogComponent,
     FabComponent,
     IconButtonDirective,
-    ListItemComponent,
     MexicanCurrencyPipe,
     MonthlyPaymentFormModalComponent,
     NumberInputComponent,

@@ -10,9 +10,8 @@ import { CardComponent } from '../../shared/components/card/card.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { FabComponent } from '../../shared/components/fab/fab.component';
 import { IconButtonDirective } from '../../shared/components/icon-button/icon-button.directive';
-import { ListItemComponent } from '../../shared/components/list-item/list-item.component';
 import { NumberInputComponent } from '../../shared/components/number-input/number-input.component';
-import { MexicanCurrencyPipe, formatMexicanCurrency } from '../../shared/pipes/mexican-currency.pipe';
+import { MexicanCurrencyPipe } from '../../shared/pipes/mexican-currency.pipe';
 import { ToastService } from '../../shared/services/toast.service';
 import { EditIncomeModalComponent } from './edit-income-modal.component';
 import { InstallPromptComponent } from '../../shared/components/install-prompt/install-prompt.component';
@@ -27,7 +26,6 @@ import { InstallPromptComponent } from '../../shared/components/install-prompt/i
     EditIncomeModalComponent,
     FabComponent,
     IconButtonDirective,
-    ListItemComponent,
     MexicanCurrencyPipe,
     NumberInputComponent,
     InstallPromptComponent,

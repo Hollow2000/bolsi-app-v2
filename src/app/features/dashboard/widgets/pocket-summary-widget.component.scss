@@ -41,4 +41,5 @@
   color: var(--text-secondary);
   margin: 0;
 }
+.pocket-summary__used--negative { color: var(--color-danger); }
 .pocket-summary__available--over { color: var(--color-danger); }

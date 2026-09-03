@@ -129,10 +129,10 @@ Contexto del bug: al cambiar de mes, los pagos recurrentes no se replican solos 
    - **Fix completo (opción B)**: `DataPortabilityService.normalizeRows()` ahora restaura el tipo `Date` al importar: `SavingsAccount.createdAt` y `SavingsTransaction.date` se convierten de string ISO a `Date`. Evita futuros crashes con código que asuma `Date`.
 15. **NO tocar el sistema de ahorros programados** — ✅ respetado (sin cambios en scheduled savings).
 
-### FASE E — Dashboard / UI
-16. **Bolsillo con balance negativo**: no llenar la barra de progreso y mostrar el número en rojo (`pocket-summary-widget`).
-17. **Ingresos y Pagos**: items con título+monto arriba y detalles debajo (una línea por item, igual que gastos).
-18. **Layout de listas**: verificar consistencia con el `list-item` optimizado.
+### FASE E — Dashboard / UI — ✅ COMPLETADA (rama `feature/fase-e-dashboard-ui`)
+16. **Bolsillo con balance negativo** — ✅ implementado en `pocket-summary-widget`: si `pocket.used < 0` (negativo, ej. por retiro de ahorro), la barra queda **vacía** (`[value]="0"`) y el monto "usado" se muestra **en rojo** (`.pocket-summary__used--negative`). Nota: el sobrepaso positivo (`used > assigned`) **sí llena la barra** — es correcto (no puede representar más del 100%). Aclaración del usuario: el problema original era el valor **negativo**, no el sobrepaso.
+17. **Ingresos y Pagos con layout de gastos** — ✅ implementado: `income-list` y `monthly-payments-list` ahora usan el patrón de `expenses-list` (icono | título + monto arriba en `space-between`, detalles debajo | acciones) en vez de `app-list-item` horizontal. Se eliminó el import sin uso de `ListItemComponent` en ambos. En pagos se mantienen los colores de urgencia (`urgency-overdue`/`urgency-soon`).
+18. **Layout de listas** — ✅ revisado (solo reporte): los widgets del dashboard (`urgent-payments` y `credit-card-status`) usan `app-list-item` con monto a la derecha, consistente con el list-item optimizado. No se requirieron cambios adicionales.
 
 ### FASE F — Dashboard y pagos (plan aprobado 2026-08) — ✅ COMPLETADA
 El usuario pidió estos 5 puntos (algunos descubiertos al probar el deploy v0.2.7). Implementados en la rama `feature/fase-f-dashboard-ingresos`. Detalles:
@@ -230,9 +230,13 @@ Problemas reportados: (1) al llegar la fecha de corte de una tarjeta, el "monto 
 - El usuario **confirmó** que funciona (ajustó el `max-height` de la lista a `36vh`).
 - `npm test` → **109 tests pasan**, build OK.
 
-### Próximo paso (después de FASE D)
-Sigue pendiente la **FASE E** (ver sección 5):
-- FASE E — Dashboard/UI (bolsillo negativo, layout ingresos/pagos, consistencia de listas).
+### FASE E implementada (rama `feature/fase-e-dashboard-ui`)
+FASE E completa (dashboard/UI: bolsillo negativo, layout ingresos/pagos, consistencia de listas). Ver sección 5 para detalle. **Sin commitear ni desplegar todavía** — pendiente de revisión del usuario. `npm test` → **109 tests pasan**, build OK.
+
+### Próximo paso (después de FASE E)
+FASES A–F del plan original están completas. Próximos candidatos (pendientes):
+- **Extra de tarjetas (ronda 4)**: tests con `fake-indexeddb` para `balance.service` (escenarios A/B/C del limbo de corte).
+- Cualquier bug/nueva solicitud que el usuario reporte.
 
 **NOTA**: deploy de FASE C aprobado por el usuario (se hizo en v0.2.9). Para próximas fases, preguntar antes de desplegar. Comando de deploy: `npm run deploy`. **Importante**: tras el fix de respaldo, si el usuario restaura un backup v1 antiguo, las tablas `transfers`/`refunds`/`catalogs` quedarán vacías (no existían en ese backup) — no es un error de import, es data que nunca se exportó.
 
@@ -275,8 +279,9 @@ Antes de asumir que algo existe, VERIFICA en el repo: en resúmenes previos se a
 - `src/app/features/dashboard/widgets/pocket-summary-widget.component.*` — barra de bolsillos (negativos).
 - `src/app/features/dashboard/widgets/urgent-payments-widget.component.*` — pagos urgentes (FASE F: elemento completo clickeable + output `markAsPaid`).
 - `src/app/features/dashboard/widgets/credit-card-status-widget.component.*` — estado de tarjetas (FASE F: alerta de fecha de pago junto a montos + color de tarjeta).
-- `src/app/features/monthly-payments/monthly-payments-list.component.ts|html` — pagos recurrentes (FASE F: fix `ButtonDirective`, leer query param `pagar`).
-- `src/app/features/income/income-list.component.ts` — listado de ingresos (FASE F: verificación de replicación).
+- `src/app/features/monthly-payments/monthly-payments-list.component.ts|html` — pagos recurrentes (FASE F: fix `ButtonDirective`, leer query param `pagar`; FASE E: layout de gastos).
+- `src/app/features/income/income-list.component.ts|html` — listado de ingresos (FASE F: verificación de replicación; FASE E: layout de gastos).
+- `src/app/features/dashboard/widgets/pocket-summary-widget.component.*` — barra de bolsillos (FASE E: negativo = barra vacía + usado en rojo).
 - `src/app/core/services/income.service.ts` — ingresos (FASE F: `replicateRecurring` + `buildReplicatedIncomes` pura; strip de `id` en copias).
 - `src/app/core/models/app-settings.model.ts` — settings (FASE F: `replicatedMonths` + `replicatedIncomeMonths`).
 - `src/app/core/services/data-portability.service.ts` — respaldo JSON (FASE F: exporta/importa `transfers`, `refunds`, `catalogs`; version 2; FASE D: `normalizeRows()` restaura `Date` en `savingsAccounts.createdAt` y `savingsTransactions.date`).
