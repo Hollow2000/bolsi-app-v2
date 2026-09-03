@@ -10,7 +10,7 @@
 - **Stack**: Angular 21 (standalone components, signals, `strict: true`), TypeScript 5.9, Dexie (IndexedDB) v4.4.4, PWA (Service Worker + `@angular/service-worker`), RxJS 7.
 - **Routing**: `HashLocationStrategy` (URLs tipo `#/...`).
 - **Deploy**: GitHub Pages en `https://<usuario>.github.io/bolsi-app-v2/` vía `npx ngh`.
-- **Versión actual**: `0.2.11` (git tag/commit `0108d27`, último bump).
+- **Versión actual**: `0.2.12` (git tag/commit `9d987ee`, último bump).
 - **UI**: Español. Nombres de variables/código en inglés. Estilos SCSS. Iconos Material Symbols (`material-symbols-outlined`).
 - **Patrón**: componentes standalone con `changeDetection: ChangeDetectionStrategy.OnPush`, `input()`/`output()` por función, `computed()` para estado derivado, servicios con `providedIn: 'root'` e `inject()`.
 - **Convención**: NO agregar comentarios al código salvo que se pidan. Mantener componentes pequeños. Formularios reactivos.
@@ -230,8 +230,12 @@ Problemas reportados: (1) al llegar la fecha de corte de una tarjeta, el "monto 
 - El usuario **confirmó** que funciona (ajustó el `max-height` de la lista a `36vh`).
 - `npm test` → **109 tests pasan**, build OK.
 
-### FASE E implementada (rama `feature/fase-e-dashboard-ui`)
-FASE E completa (dashboard/UI: bolsillo negativo, layout ingresos/pagos, consistencia de listas). Ver sección 5 para detalle. **Sin commitear ni desplegar todavía** — pendiente de revisión del usuario. `npm test` → **109 tests pasan**, build OK.
+### FASE E mergeada y desplegada (v0.2.12)
+- Rama `feature/fase-e-dashboard-ui` mergeada a `master` (fast-forward, commit `78ffb01`).
+- FASE E completa (dashboard/UI: bolsillo negativo, layout de gastos en ingresos y pagos, revisión de listas).
+- **Deploy realizado**: `npm run deploy` bumpó a **v0.2.12** (commit `9d987ee`, tag `v0.2.12`) y publicó en GitHub Pages. Push de `master` y tag `v0.2.12` a origin OK.
+- El usuario **confirmó** que funciona.
+- `npm test` → **109 tests pasan**, build OK.
 
 ### Próximo paso (después de FASE E)
 FASES A–F del plan original están completas. Próximos candidatos (pendientes):
