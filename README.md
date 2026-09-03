@@ -1,59 +1,100 @@
-# BolsiAppGemini
+# Bolsi App
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.10.
+Control financiero personal **mobile-first**. Organiza tu dinero en bolsillos, controla gastos, ingresos, tarjetas de crédito, pagos recurrentes, presupuestos y ahorros. Interfaz en español, funciona como **PWA instalable** y guarda todos los datos localmente en el navegador (IndexedDB).
 
-## Development server
+> Sitio desplegado: <https://hollow2000.github.io/bolsi-app-v2/>
 
-To start a local development server, run:
+---
 
-```bash
-ng serve
+## Características
+
+- **Dashboard**: balance del mes, proyección de fin de mes, desglose de deuda y widgets (estado de bolsillos, pagos urgentes, estado de tarjetas de crédito).
+- **Bolsillos**: reparto del ingreso en porcentajes, con barra de progreso y manejo de balance negativo.
+- **Gastos**: categoría, bolsillo, método de pago, gastos ocultos, gastos sin bolsillo con confirmación, plantillas, y validación de saldo disponible.
+- **Ingresos**: registro mensual/quincenal con **replicación automática entre meses**.
+- **Tarjetas de crédito**: día de corte y de pago, **períodos de statement**, cierre de período, pagos que se registran como gasto "Pago de tarjeta", alertas "Vence hoy/mañana", planes MSI (meses sin intereses).
+- **Pagos recurrentes**: renta, servicios, etc. con frecuencia `monthly` | `biweekly` | `weekly` y replicación automática mes a mes.
+- **Presupuestos**: por categoría/bolsillo/mes, con replicación entre meses.
+- **Ahorros**: cuentas con saldo separado del balance general, depósitos/retiros/rendimientos y **ahorros programados**.
+- **Transferencias** entre métodos de pago.
+- **Reembolsos**: restan de cargos y de deuda facturable.
+- **Catálogo dinámico** de categorías de gastos/ingresos (con iconos).
+- **Historial** de movimientos.
+- **Respaldo y restauración** en JSON (exporta todas las tablas).
+- **Onboarding** inicial y **PWA** con actualizaciones automáticas.
+
+## Stack técnico
+
+- **Angular 21** — componentes standalone, señales (`signals`), `changeDetection: OnPush`, detección de cambios *zoneless* y `strict: true`.
+- **TypeScript 5.9**
+- **Dexie** (IndexedDB) v4.4.4 — persistencia local.
+- **RxJS 7**
+- **PWA** con `@angular/service-worker`.
+- **SCSS** con sistema de diseño propio (ver [`design.md`](design.md)).
+- **Vitest** para pruebas unitarias.
+- Iconos: Google **Material Symbols**.
+
+## Arquitectura
+
+```
+src/app/
+├── core/
+│   ├── database/     # Esquema Dexie (BolsiDB, versión 11)
+│   ├── guards/       # Guardas de onboarding
+│   ├── models/       # Modelos tipados
+│   ├── services/     # Lógica de negocio
+│   └── validations/
+├── features/         # Módulos por dominio (lazy-loaded)
+└── shared/           # Componentes, pipes y servicios reutilizables
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+- **Lazy loading** por feature route y `HashLocationStrategy` (URLs tipo `#/...`).
+- Servicios con `providedIn: 'root'` e `inject()`.
+- Componentes pequeños con `input()`/`output()` por función y `computed()` para estado derivado.
 
-## Code scaffolding
+## Modelo de datos (Dexie — `BolsiDB`)
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+| Tabla | Uso |
+|---|---|
+| `paymentMethods` | Cuentas/tarjetas (débito, crédito, efectivo) |
+| `expenses` | Gastos (mes, categoría, bolsillo, método, MSI, ocultos) |
+| `incomes` | Ingresos |
+| `installmentPlans` | Planes a meses sin intereses |
+| `pockets` | Bolsillos (porcentajes) |
+| `monthlyPayments` | Pagos recurrentes |
+| `budgets` | Presupuestos |
+| `expenseTemplates` | Plantillas de gastos |
+| `transfers` | Transferencias entre métodos |
+| `appSettings` | Settings (single row) |
+| `savingsAccounts` | Cuentas de ahorro |
+| `savingsTransactions` | Depósitos/retiros/rendimientos de ahorro |
+| `catalogs` | Catálogo dinámico de categorías |
+| `savingsExecutions` | Ejecuciones de ahorro programado |
+| `refunds` | Reembolsos |
 
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+## Primeros pasos
 
 ```bash
-ng test
+npm install
+npm start        # ng serve --host 0.0.0.0  → http://localhost:4200/
 ```
 
-## Running end-to-end tests
+## Scripts
 
-For end-to-end (e2e) testing, run:
+| Comando | Descripción |
+|---|---|
+| `npm start` | Servidor de desarrollo |
+| `npm run build` | Build de desarrollo (regenera `src/environments/version.ts`) |
+| `npx ng build` | Verificación rápida de compilación |
+| `npm test` | Pruebas unitarias con Vitest |
+| `npm run bump` | Bump de versión patch + tag git |
+| `npm run bump:minor` | Bump minor |
+| `npm run deploy` | Bump + build prod (`--base-href /bolsi-app-v2/`) + publish a GitHub Pages |
 
-```bash
-ng e2e
-```
+## Deploy
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+El deploy se publica en **GitHub Pages** en `https://hollow2000.github.io/bolsi-app-v2/` usando `angular-cli-ghpages` (`npx ngh`). El comando `npm run deploy` bumpa la versión, construye en producción y publica.
 
-## Additional Resources
+## Diseño
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+La paleta de colores, tokens, tipografía y componentes base están documentados en [`design.md`](design.md).
