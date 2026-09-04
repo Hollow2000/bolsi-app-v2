@@ -4,7 +4,13 @@ import { setupCompleteGuard } from './core/guards/setup-complete.guard';
 import { setupRequiredGuard } from './core/guards/setup-required.guard';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'onboarding' },
+  { path: '', pathMatch: 'full', redirectTo: 'welcome' },
+  {
+    path: 'welcome',
+    canActivate: [setupCompleteGuard],
+    loadComponent: () =>
+      import('./features/welcome/welcome.component').then((m) => m.WelcomeComponent),
+  },
   {
     path: 'onboarding',
     canActivate: [setupCompleteGuard],

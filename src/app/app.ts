@@ -86,7 +86,12 @@ export class App implements OnInit {
 
   protected readonly showNavigation = computed(() => {
     const url = this.currentUrl();
-    return !url.startsWith('/onboarding') && url !== '/' && url !== '';
+    return (
+      !url.startsWith('/onboarding') &&
+      !url.startsWith('/welcome') &&
+      url !== '/' &&
+      url !== ''
+    );
   });
 
   protected readonly toastMessage = this.toast.message;

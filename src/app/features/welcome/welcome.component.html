@@ -1,0 +1,106 @@
+<div class="welcome">
+  <header class="welcome-hero">
+    <div class="welcome-hero__logo" aria-hidden="true">
+      <span class="material-symbols-outlined">savings</span>
+    </div>
+    <h1 class="welcome-hero__title">Bolsi</h1>
+    <p class="welcome-hero__tagline">Tu dinero, organizado en bolsillos.</p>
+    <p class="welcome-hero__subtitle">
+      Controla gastos, ingresos, tarjetas de crédito y ahorros en un solo lugar.
+      Todo privado, todo en tu bolsillo.
+    </p>
+    <span class="app-badge app-badge--primary welcome-hero__badge">
+      <span class="material-symbols-outlined" aria-hidden="true">offline_pin</span>
+      100% offline
+    </span>
+    <div class="welcome-hero__actions">
+      <a appButton variant="primary" routerLink="/onboarding">
+        <span class="material-symbols-outlined" aria-hidden="true">rocket_launch</span>
+        Comenzar ahora
+      </a>
+      <button appButton variant="secondary" type="button" (click)="scrollToFeatures(featuresSection)">
+        Cómo funciona
+      </button>
+    </div>
+  </header>
+
+  <main class="welcome-main">
+    <section class="welcome-benefits" aria-label="Beneficios de Bolsi">
+      @for (benefit of benefits; track benefit.title) {
+        <article class="welcome-card">
+          <div class="welcome-card__icon" aria-hidden="true">
+            <span class="material-symbols-outlined">{{ benefit.icon }}</span>
+          </div>
+          <h2 class="welcome-card__title">{{ benefit.title }}</h2>
+          <p class="welcome-card__description">{{ benefit.description }}</p>
+        </article>
+      }
+    </section>
+
+    <section #featuresSection class="welcome-section welcome-section--features">
+      <div class="welcome-section__header">
+        <h2 class="welcome-section__title">Todo lo que necesitas para ordenar tus finanzas</h2>
+        <p class="welcome-section__subtitle">
+          Bolsi reúne en una sola app lo que antes hacías en hojas de cálculo.
+        </p>
+      </div>
+
+      <div class="welcome-features">
+        @for (feature of features; track feature.title) {
+          <article class="welcome-card welcome-card--feature">
+            <div class="welcome-card__icon" aria-hidden="true">
+              <span class="material-symbols-outlined">{{ feature.icon }}</span>
+            </div>
+            <h3 class="welcome-card__title">{{ feature.title }}</h3>
+            <p class="welcome-card__description">{{ feature.description }}</p>
+          </article>
+        }
+      </div>
+    </section>
+
+    <section class="welcome-privacy">
+      <div class="welcome-privacy__icon" aria-hidden="true">
+        <span class="material-symbols-outlined">lock</span>
+      </div>
+      <h2 class="welcome-section__title">Tus datos son solo tuyos</h2>
+      <p class="welcome-section__subtitle">
+        Bolsi guarda tu información únicamente en tu dispositivo, sin servidores y sin necesidad
+        de crear una cuenta. Descarga un respaldo cuando quieras y restáuralo en cualquier otro
+        navegador o celular.
+      </p>
+    </section>
+
+    <section class="welcome-section">
+      <div class="welcome-section__header">
+        <h2 class="welcome-section__title">Empieza en 3 pasos</h2>
+        <p class="welcome-section__subtitle">Menos de 2 minutos y tu dinero queda repartido.</p>
+      </div>
+
+      <ol class="welcome-steps">
+        @for (step of steps; track step.title; let i = $index) {
+          <li class="welcome-step">
+            <span class="welcome-step__number" aria-hidden="true">{{ i + 1 }}</span>
+            <div class="welcome-step__icon" aria-hidden="true">
+              <span class="material-symbols-outlined">{{ step.icon }}</span>
+            </div>
+            <div class="welcome-step__content">
+              <h3 class="welcome-step__title">{{ step.title }}</h3>
+              <p class="welcome-step__description">{{ step.description }}</p>
+            </div>
+          </li>
+        }
+      </ol>
+    </section>
+
+    <section class="welcome-cta">
+      <h2 class="welcome-cta__title">Empieza gratis en 2 minutos</h2>
+      <p class="welcome-cta__subtitle">
+        Sin cuentas, sin servidores. Tu información nunca sale de tu dispositivo.
+      </p>
+      <a appButton variant="primary" routerLink="/onboarding">
+        <span class="material-symbols-outlined" aria-hidden="true">rocket_launch</span>
+        Crear mi Bolsi
+      </a>
+    </section>
+  </main>
+</div>
