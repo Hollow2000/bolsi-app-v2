@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { database } from '../database/bolsi.database';
 import type { MonthlyBalance } from '../models/monthly-balance.model';
 import type { PaymentMethod } from '../models/payment-method.model';
+import type { Transfer } from '../models/transfer.model';
 import { ExpenseService } from './expense.service';
 import { CreditCardStatementService } from './credit-card-statement.service';
 import { IncomeService } from './income.service';
@@ -54,17 +55,26 @@ export class BalanceService {
       allExpenses,
       allTransfers,
     );
+    const pendingCardDebtFromPreviousPeriods = this.sumPendingCardDebtFromPreviousPeriods(
+      methods,
+      allTransfers,
+    );
     const pendingFixedPayments = this.sumPendingFixedPayments(methods, payments);
     const pendingScheduledSavings = await this.savingsService.getTotalPendingScheduledForMonth(month, year);
     const pendingIncome = this.sumPendingIncome(incomes);
     const netBalanceThisMonth = this.round(
-      totalAvailable - billableDebtThisMonth - pendingFixedPayments - pendingScheduledSavings,
+      totalAvailable -
+        billableDebtThisMonth -
+        pendingCardDebtFromPreviousPeriods -
+        pendingFixedPayments -
+        pendingScheduledSavings,
     );
     const endOfMonthProjection = this.round(netBalanceThisMonth + pendingIncome);
 
     return {
       totalAvailable,
       billableDebtThisMonth,
+      pendingCardDebtFromPreviousPeriods,
       pendingFixedPayments,
       pendingScheduledSavings,
       pendingIncome,
@@ -91,14 +101,13 @@ export class BalanceService {
     let total = 0;
     for (const card of creditCards) {
       if (card.id === undefined) continue;
-      const closingDay = card.statementClosingDay ?? 1;
 
-      if (today.getDate() >= closingDay && (card.statementBalance ?? 0) > 0) {
-        // After the card's cutoff date has passed and a statement has been
-        // processed: use statementBalance minus credit card payments for its
-        // billing period. The period is the card's frozen statement period
-        // (lastCutoffMonth/Year), so the debt stays visible and payments keep
-        // matching after the calendar month changes.
+      if (this.creditCardStatement.isCutoffProcessed(card, today) && (card.statementBalance ?? 0) > 0) {
+        // The current period's cutoff has been processed: use statementBalance
+        // minus credit card payments for its billing period. The period is the
+        // card's frozen statement period (lastCutoffMonth/Year), so the debt
+        // stays visible and payments keep matching after the calendar month
+        // changes.
         const billingPeriod = this.creditCardStatement.getStatementPeriod(card);
         const creditCardPayments = allTransfers
           .filter(
@@ -161,6 +170,28 @@ export class BalanceService {
       }
     }
     return this.round(total);
+  }
+
+  /**
+   * Sums the amount still owed on credit card statements from periods whose
+   * cutoff has not been processed yet (i.e. the previous month's pending card
+   * payments). Cards whose cutoff is already processed are excluded because
+   * their statement is already counted inside billableDebtThisMonth.
+   */
+  private sumPendingCardDebtFromPreviousPeriods(
+    methods: readonly PaymentMethod[],
+    allTransfers: readonly Transfer[],
+  ): number {
+    const today = new Date();
+    return this.round(
+      methods
+        .filter((m) => m.type === 'credit' && m.id !== undefined)
+        .filter((card) => !this.creditCardStatement.isCutoffProcessed(card, today))
+        .reduce(
+          (sum, card) => sum + this.creditCardStatement.getAmountToPay(card, allTransfers),
+          0,
+        ),
+    );
   }
 
   private sumAvailable(methods: readonly PaymentMethod[]): number {

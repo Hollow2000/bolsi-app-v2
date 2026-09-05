@@ -47,6 +47,12 @@
                 <span class="breakdown-label">Deuda exigible (tarjetas)</span>
                 <span class="breakdown-value breakdown-value--expense">−{{ data.billableDebtThisMonth | mexicanCurrency }}</span>
               </li>
+              @if (data.pendingCardDebtFromPreviousPeriods > 0) {
+                <li>
+                  <span class="breakdown-label">Pagos de tarjeta pendientes (meses anteriores)</span>
+                  <span class="breakdown-value breakdown-value--expense">−{{ data.pendingCardDebtFromPreviousPeriods | mexicanCurrency }}</span>
+                </li>
+              }
               <li>
                 <span class="breakdown-label">Pagos fijos pendientes</span>
                 <span class="breakdown-value breakdown-value--expense">−{{ data.pendingFixedPayments | mexicanCurrency }}</span>

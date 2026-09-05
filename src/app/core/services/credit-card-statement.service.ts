@@ -99,6 +99,21 @@ export class CreditCardStatementService {
   }
 
   /**
+   * Returns true only when the cutoff for the current billing period has
+   * actually been processed (i.e. today is on/after the closing day and the
+   * statement has been frozen via processCutoff). When the closing day has
+   * arrived but the cutoff has not been applied yet, it returns false so the
+   * live period charges keep counting in the debt instead of being left in
+   * limbo.
+   */
+  isCutoffProcessed(card: PaymentMethod, today: Date): boolean {
+    if (card.type !== 'credit' || card.statementClosingDay === undefined) {
+      return false;
+    }
+    return today.getDate() >= card.statementClosingDay && !this.needsCutoff(card, today);
+  }
+
+  /**
    * Returns the active billing period date range, derived from the
    * processed cutoff (lastCutoffMonth/Year) rather than the calendar
    * date. The range goes from the closing day of the period before the

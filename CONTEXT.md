@@ -161,6 +161,23 @@ Problemas reportados: (1) al pasar la fecha de corte sin aplicar el corte el "mo
 
 **Pendiente de verificar por el usuario (ronda 3)**: que el widget "Usado" coincida con el detalle (gasto 26/7 con aplicación 27/7, corte 26), que el usado siga contando tras la fecha de corte sin aplicarlo, que tras aplicar el corte avance y que el balance/widget se actualicen al instante (corte desde prompt global y desde detalle, y pago desde detalle).
 
+### Ronda 4 — Fix "limbo" al cierre de período + apartado de pagos de tarjeta pendientes de meses anteriores (commiteado)
+Problemas reportados: (1) al llegar la fecha de corte de una tarjeta, el "monto usado" se queda en el limbo en la **Deuda exigible** del balance (aunque el widget de tarjetas y el detalle sí lo muestran); al confirmar el corte el balance vuelve a la normalidad. (2) Al pasar al mes siguiente, los pagos de tarjetas pendientes del mes pasado no se toman en cuenta; deberían restar en la proyección de fin de mes como **apartado nuevo** (no dentro de "Deuda exigible").
+
+**Cambios implementados (Pasos 1 y 2):**
+- **`credit-card-statement.service.ts`**: nuevo método público `isCutoffProcessed(card, today)` → `true` solo si `today >= closingDay` **y** el corte del período ya se procesó (`!needsCutoff`). Si el día de corte llegó pero el corte no se aplicó, devuelve `false`.
+- **`balance.service.ts`**:
+  - `sumBillableDebt`: la rama "statement" ahora se activa con `isCutoffProcessed(card, today)` en vez de `today.getDate() >= closingDay`. Así, si el corte no se ha aplicado, la tarjeta cae en la rama "en vivo" → el "monto usado del mes" sigue contando en la deuda exigible (fix del limbo).
+  - Nuevo método `sumPendingCardDebtFromPreviousPeriods(methods, allTransfers)`: suma `getAmountToPay()` de las tarjetas cuyo corte **no** se ha procesado (el `statementBalance` del mes anterior sin pagar). Se resta en `netBalanceThisMonth` y `endOfMonthProjection`, pero **no** entra en `billableDebtThisMonth` (evita doble conteo). Integrado en `calculate()`.
+  - Importado el tipo `Transfer`.
+- **`monthly-balance.model.ts`**: campo nuevo `pendingCardDebtFromPreviousPeriods: number`.
+- **`dashboard.component.html`**: línea nueva condicional en el desglose: "Pagos de tarjeta pendientes (meses anteriores)" (solo dashboard, como "Ahorros programados").
+- Build verificado OK (`npx ng build`) y `npm test` → **90 tests pasan** (sin cambios en specs). `version.ts` queda modificado sin commitear (autogenerado).
+
+**PENDIENTE — Paso 3 (rama futura aparte)**: tests con `fake-indexeddb` como devDependency (Dexie en memoria) + `balance.service.spec.ts` con `vi.setSystemTime` para escenarios: A) día de corte sin aplicar → el monto usado del mes cuenta en `billableDebtThisMonth` (limbo resuelto); B) corte aplicado → deuda = `statementBalance − pagos`; C) mes siguiente → `pendingCardDebtFromPreviousPeriods` refleja el statement anterior sin pagar y no se duplica en la deuda. **No implementado aún — se hará en una rama nueva.**
+
+**Pendiente de verificar por el usuario (ronda 4)**: al llegar la fecha de corte sin aplicar el corte, la Deuda exigible debe seguir mostrando el monto usado del mes; y en el mes siguiente debe aparecer el apartado "Pagos de tarjeta pendientes (meses anteriores)" restando en la proyección.
+
 **Próximo paso (FASE C)**: correcciones de Gastos y listas (ver sección 5, FASE C):
 1. Gasto de retiro de ahorro como `hidden: true`.
 2. Toggle de gastos ocultos en pantalla de Gastos + ocultar/mostrar manualmente.
